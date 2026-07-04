@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TilerCore
 @testable import TilerSystem
 
 // Persisted app settings (settings spec): defaults, persistence, change notifications.
@@ -51,5 +52,31 @@ import Testing
         store.onChange = { _ in count += 1 }
         store.gesturesEnabled = true   // already true
         #expect(count == 0)
+    }
+
+    @Test func tunablesOverridePersistsAndClears() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        #expect(store.tunablesOverride == nil)
+
+        var custom = Tunables()
+        custom.horizontalDominance = 1.42
+        custom.verticalDominance = 1.9
+        store.tunablesOverride = custom
+
+        let reloaded = SettingsStore(defaults: defaults)
+        #expect(reloaded.tunablesOverride == custom)
+
+        reloaded.tunablesOverride = nil
+        #expect(SettingsStore(defaults: defaults).tunablesOverride == nil)
+    }
+
+    @Test func tunablesOverrideNotifies() {
+        let store = SettingsStore(defaults: freshDefaults())
+        var count = 0
+        store.onChange = { _ in count += 1 }
+        store.tunablesOverride = Tunables()
+        store.tunablesOverride = nil
+        #expect(count == 2)
     }
 }

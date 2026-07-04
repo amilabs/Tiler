@@ -17,6 +17,9 @@ final class SettingsModel: ObservableObject {
         didSet { applyLaunchAtLogin() }
     }
     @Published var conflicts: [SystemConflict] = []
+    @Published var isCalibrated: Bool
+
+    var onCalibrate: (() -> Void)?
 
     private let store: SettingsStore
 
@@ -26,7 +29,21 @@ final class SettingsModel: ObservableObject {
         hotkeysEnabled = store.hotkeysEnabled
         self.accessibilityGranted = accessibilityGranted
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        isCalibrated = store.tunablesOverride != nil
         refreshConflicts()
+    }
+
+    func startCalibration() {
+        onCalibrate?()
+    }
+
+    func resetCalibration() {
+        store.tunablesOverride = nil
+        isCalibrated = false
+    }
+
+    func refreshCalibrationState() {
+        isCalibrated = store.tunablesOverride != nil
     }
 
     func refreshConflicts() {
@@ -80,13 +97,14 @@ struct SettingsView: View {
                 }
             }
             Section("Calibration") {
-                LabeledContent("Tune gesture thresholds to your hand") {
-                    Button("Calibrate…") {}
-                        .disabled(true)
+                LabeledContent(model.isCalibrated
+                    ? "Personal gesture thresholds active"
+                    : "Tune gesture thresholds to your hand") {
+                    Button("Calibrate…") { model.startCalibration() }
                 }
-                Text("Coming in this release — guided per-gesture calibration.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if model.isCalibrated {
+                    Button("Reset to defaults") { model.resetCalibration() }
+                }
             }
         }
         .formStyle(.grouped)

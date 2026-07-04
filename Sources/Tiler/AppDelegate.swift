@@ -18,6 +18,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsModel: SettingsModel?
     private var aboutWindow: AuxWindow<AboutView>?
     private var settingsWindow: AuxWindow<SettingsView>?
+    private var calibrationWindow: NSWindow?
+    private var calibrationModel: CalibrationModel?
+    private var calibrationActive = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -29,12 +32,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         handleDebugWindowArgs()
     }
 
-    /// Headless UI smoke: `--show-settings` / `--show-about` open the windows at
-    /// launch so scripts can verify they construct without a human click.
+    /// Headless UI smoke: `--show-settings` / `--show-about` / `--show-calibration`
+    /// open the windows at launch so scripts can verify they construct without a click.
     private func handleDebugWindowArgs() {
         let args = CommandLine.arguments
         if args.contains("--show-settings") { showSettings() }
         if args.contains("--show-about") { showAbout() }
+        if args.contains("--show-calibration") { showCalibration() }
+    }
+
+    // MARK: - Calibration
+
+    private func showCalibration() {
+        guard let engine else { return }
+        calibrationActive = true
+        let model = CalibrationModel(engine: engine) { [weak self] result in
+            guard let self else { return }
+            if let result {
+                self.settings.tunablesOverride = result.suggested
+                NSLog("Tiler: calibration applied (horizontal %.2f, vertical %.2f)",
+                      result.suggested.horizontalDominance, result.suggested.verticalDominance)
+            }
+            self.calibrationActive = false
+            self.calibrationWindow?.close()
+            self.calibrationWindow = nil
+            self.calibrationModel = nil
+        }
+        calibrationModel = model
+
+        let hosting = NSHostingController(rootView: CalibrationView(model: model))
+        let window = NSWindow(contentViewController: hosting)
+        window.title = "Gesture Calibration"
+        window.styleMask = [.titled]
+        window.isReleasedWhenClosed = false
+        window.center()
+        window.level = .floating
+        calibrationWindow = window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        NSLog("Tiler: calibration window shown")
     }
 
     // MARK: - Permissions
@@ -91,9 +127,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 self.hotkeys?.unregisterAll()
             }
-            NSLog("Tiler: settings — gestures %@, hotkeys %@",
+            self.engine?.stageTunables(store.effectiveTunables)
+            NSLog("Tiler: settings — gestures %@, hotkeys %@, calibrated %@",
                   store.gesturesEnabled ? "on" : "off",
-                  store.hotkeysEnabled ? "on" : "off")
+                  store.hotkeysEnabled ? "on" : "off",
+                  store.tunablesOverride == nil ? "no" : "yes")
         }
     }
 
@@ -107,7 +145,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Touch pipeline
 
     private func startTouchPipeline() {
-        let engine = GestureEngine(recorder: makeRecorderIfRequested()) { [weak self] action in
+        let engine = GestureEngine(
+            recorder: makeRecorderIfRequested(),
+            tunables: settings.effectiveTunables
+        ) { [weak self] action in
             Task { @MainActor in
                 self?.route(action)
             }
@@ -127,7 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func route(_ action: GestureAction) {
-        guard settings.gesturesEnabled else { return }
+        guard settings.gesturesEnabled, !calibrationActive else { return }
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
         let command: TilingCommand
         switch action.direction {
@@ -205,6 +246,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 store: settings,
                 accessibilityGranted: permissionMonitor?.trusted ?? false
             )
+            settingsModel?.onCalibrate = { [weak self] in
+                self?.showCalibration()
+            }
         }
         settingsModel?.refreshConflicts()
         if settingsWindow == nil, let model = settingsModel {

@@ -62,9 +62,13 @@ per phase, `[USER GATE]` = owner touchpoints.
 - [x] 4.2 Clamp ranges (horizontal 1.15…2.0, vertical 1.35…2.2) + corner property
       tests: golden 190 s blocker window silent, synthetic blockers silent, canonical
       swipes still fire — at all 4 corners.
-- [ ] 4.3 Calibration UI (SwiftUI sheet from Settings): per-gesture mini animation
-      (Canvas/keyframe, no assets), attempt counter, live success/accuracy animation,
-      progress; apply/save/reset-to-defaults.
+- [x] 4.3 Calibration UI: floating window from Settings → Calibrate…; looping
+      three-dot Canvas demo per gesture, attempt dots (green/red), live accuracy bar,
+      miss reason with measured angle, summary with per-gesture accuracy + resulting
+      cones, Apply/Discard/Recalibrate; Reset-to-defaults in Settings. Engine gains
+      lock-protected stageTunables + frame tap; actions suppressed while calibrating;
+      overrides persist via SettingsStore.tunablesOverride (TDD: 2 new tests) and
+      load at launch. Headless smoke via --show-calibration.
 - [x] 4.4 GestureRecognizer.updateTunables: staged, applied only from clean idle —
       mid-gesture swap keeps old values (unit tests both ways).
 - [ ] 4.5 **[USER GATE #3]** Owner runs calibration; verify their right swipe reaches

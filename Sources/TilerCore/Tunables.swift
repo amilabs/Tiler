@@ -1,6 +1,6 @@
 /// Every gesture/hotkey threshold in one place (design.md §2). Values are refined
 /// against golden traces in task 8.2 — change them here, nowhere else.
-public struct Tunables: Sendable, Equatable {
+public struct Tunables: Sendable, Equatable, Codable {
     /// Contacts below this size are ignored entirely (kills size=0 stale artifacts).
     public var minContactSize: Double = 0.05
     /// Contacts above this size are palm-class: never counted, and block arming.
