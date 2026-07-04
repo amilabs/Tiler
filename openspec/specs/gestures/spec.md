@@ -71,16 +71,17 @@ states) SHALL be ignored entirely — they neither count toward the 3 nor block 
 
 After arming, an action SHALL fire only when all hold: centroid displacement from the
 arm baseline ≥ `minDisplacement` on the dominant axis; direction dominance —
-horizontal `|dx| ≥ 1.3·|dy|` (≈ ≤37.6°), vertical-up `|dy| ≥ 1.6·|dx|` with dy pointing
+horizontal `|dx| ≥ 1.15·|dy|` (≈ ≤41°), vertical-up `|dy| ≥ 1.6·|dx|` with dy pointing
 up; the dominance and monotonicity (cumulative backtrack ≤ `reversalTolerance`) hold for
 `confirmSamples` consecutive frames; mean speed ≥ `minMeanSpeed`; elapsed time since
 arming ≤ `maxGestureDuration`. Movements failing any condition SHALL abort without action.
 
-> Owner-approved retune 2026-07-04: the brief's original horizontal guideline (2.0,
-> ≈26.6°, "~30° diagonals ambiguous") rejected ~half of the owner's natural right
-> swipes, which tilt +25…+36° (golden trace evidence); their real diagonal gestures
-> measure ≥48°. The horizontal cone was widened to 1.3 (≈37.6°); the ambiguous band
-> is now ≈37.6°–58°. Verified against the golden trace: zero blocker-segment actions.
+> Owner-approved retunes (2026-07-04, twice): the brief's original horizontal
+> guideline (2.0, ≈26.6°, "~30° diagonals ambiguous") rejected ~half of the owner's
+> natural right swipes. Golden-trace evidence moved the cone to 1.3 (≈37.6°); a
+> dedicated rights-only trace (13 natural rights, tilts up to +40°) moved it to the
+> calibration floor 1.15 (≈41°). Ambiguous band is now ≈41°–58°. Blocker safety at
+> 1.15 is proven by clamp-corner property tests on the golden blocker window.
 
 ##### Scenario: Diagonal ~45° movement is ambiguous
 - WHEN 3 fingers move at ≈40–56° from horizontal (fails both dominance tests)

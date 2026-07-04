@@ -61,15 +61,15 @@ import Testing
     @Test func missedAttemptReportsMeasuredAngle() {
         let session = CalibrationSession(gestures: [.left], attemptsPerGesture: 2)
         var driver = Driver(session)
-        // 140° = left tilted 40° up: outside the 37.6° horizontal cone → not recognized.
-        driver.attempt(vector(degrees: 140, magnitude: 0.15))
+        // 136° = left tilted 44° up: outside the 41° horizontal cone → not recognized.
+        driver.attempt(vector(degrees: 136, magnitude: 0.15))
         let missed = driver.events.compactMap { event -> Double?? in
             if case .attemptMissed(step: .left, attempt: 1, let angle) = event { return angle }
             return nil
         }
         #expect(missed.count == 1)
         let angle = missed[0] ?? nil
-        #expect(angle != nil && abs(angle! - 140) < 4, "angle \(String(describing: angle))")
+        #expect(angle != nil && abs(angle! - 136) < 4, "angle \(String(describing: angle))")
     }
 
     @Test func nonThreeFingerNoiseConsumesNoAttempts() {

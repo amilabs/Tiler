@@ -5,15 +5,16 @@ per phase, `[USER GATE]` = owner touchpoints.
 
 ## 1. Right-swipe diagnosis & default retune
 
-- [ ] 1.1 **[USER GATE #1]** Owner records a rights-only trace (~10 natural right
-      swipes + 5 deliberate diagonals): `Scripts/record-golden.sh
-      Tests/TilerCoreTests/Fixtures/rights-YYYYMMDD.jsonl` (any steps may be skipped
-      with Enter — only the right-swipe and diagonal steps matter).
-- [ ] 1.2 TraceCheck + per-episode angle/speed/assembly analysis: identify exactly why
-      misses fail (angle > 37.6°? speed? assembly window? reversal?). Retune defaults
-      if the data allows without touching blocker behavior; regenerate golden
-      expected files; all tests green.
-- [ ] 1.3 Commit "rights diagnosis + retune".
+- [x] 1.1 **[USER GATE #1 PASSED]** (frictionless path: Claude ran the recorder in
+      the background, owner just swiped). rights-20260704.jsonl: 13 natural rights,
+      7 lefts, 9 ups, 4 diagonals, 3 finger-rest sessions; 4308 frames.
+- [x] 1.2 Analysis: lefts (163–179°) and ups (87–92°) flawless; rights tilt +10…+40°
+      with one 40.1° miss at dominance 1.19, plus one +66° outlier (geometrically an
+      up-swipe; calibration UI will surface it). Speed/assembly/duration all clean.
+      Retuned horizontalDominance 1.3 → 1.15 (= calibration floor, already
+      blocker-proven by corner property tests). Rights trace frozen as a second
+      golden fixture (20 expected actions); main golden regenerated (47).
+- [x] 1.3 Commit "rights diagnosis + retune".
 
 ## 2. App identity: icon, About, menu
 

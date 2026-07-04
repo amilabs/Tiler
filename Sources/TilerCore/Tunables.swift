@@ -12,10 +12,11 @@ public struct Tunables: Sendable, Equatable {
     public var touchdownAssemblyWindow: Double = 0.060
     /// Min centroid displacement from the arm baseline (normalized units).
     public var minDisplacement: Double = 0.10
-    /// Horizontal swipe requires |dx| >= horizontalDominance * |dy| (≈ ≤37.6°).
-    /// Retuned 2.0 → 1.3 from golden-trace data (2026-07-04): owner's natural right
-    /// swipes tilt +25…+36°, while their real diagonals start at ≥48°.
-    public var horizontalDominance: Double = 1.3
+    /// Horizontal swipe requires |dx| >= horizontalDominance * |dy| (≈ ≤41°).
+    /// Retuned 2.0 → 1.3 → 1.15 (= calibration floor, blocker-safety proven at this
+    /// value by corner property tests) from golden + rights-trace evidence: owner's
+    /// natural rights tilt up to +40°; lefts/ups are clean.
+    public var horizontalDominance: Double = 1.15
     /// Vertical swipe requires |dy| >= verticalDominance * |dx| (≈ ≤32°).
     public var verticalDominance: Double = 1.6
     /// Consecutive frames satisfying all confirm conditions required to fire.

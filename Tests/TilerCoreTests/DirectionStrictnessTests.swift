@@ -1,10 +1,9 @@
 import Testing
 @testable import TilerCore
 
-// Direction dominance: horizontal |dx| ≥ 1.3·|dy| (≤37.6°; retuned 2026-07-04 from
-// golden-trace data — owner's natural rights tilt to +36°, their diagonals start ≥48°),
-// vertical-up |dy| ≥ 1.6·|dx| (≤32° off vertical, i.e. ≥58° from horizontal).
-// Anything in the 37.6°–58° band is ambiguous and must not act.
+// Direction dominance: horizontal |dx| ≥ 1.15·|dy| (≤41°; retuned twice from golden +
+// rights traces — owner's natural rights tilt up to +40°), vertical-up |dy| ≥ 1.6·|dx|
+// (≤32° off vertical, i.e. ≥58° from horizontal). The ~42°–58° band is ambiguous.
 @Suite("Direction strictness") struct DirectionStrictnessTests {
 
     // 45° — dead center of the ambiguous band, in all four quadrants.
@@ -22,10 +21,17 @@ import Testing
         #expect(sim.actions == [GestureAction(direction: .right, nextDisplay: false)])
     }
 
-    // 40° off horizontal: ratio 1.19 < 1.3 — just outside the horizontal cone.
-    @Test func horizontalAt40DegreesRejected() {
+    // 40° off horizontal: ratio 1.19 ≥ 1.15 — inside the cone after the rights retune.
+    @Test func horizontalAt40DegreesFires() {
         var sim = Sim()
         sim.performValidSwipe(vector(degrees: 40, magnitude: 0.15))
+        #expect(sim.actions == [GestureAction(direction: .right, nextDisplay: false)])
+    }
+
+    // 44° off horizontal: ratio 1.04 < 1.15 — just outside the cone.
+    @Test func horizontalAt44DegreesRejected() {
+        var sim = Sim()
+        sim.performValidSwipe(vector(degrees: 44, magnitude: 0.15))
         #expect(sim.actions.isEmpty)
     }
 
@@ -38,7 +44,7 @@ import Testing
 
     // The whole ambiguous band sampled every 2°: nothing may fire.
     @Test func ambiguousBandNeverFires() {
-        for angle in stride(from: 40.0, through: 56.0, by: 2.0) {
+        for angle in stride(from: 44.0, through: 56.0, by: 2.0) {
             var sim = Sim()
             sim.performValidSwipe(vector(degrees: angle, magnitude: 0.15))
             #expect(sim.actions.isEmpty, "angle \(angle)° fired \(sim.actions)")

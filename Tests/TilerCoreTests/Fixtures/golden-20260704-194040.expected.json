@@ -160,7 +160,7 @@
     "nextDisplay" : false
   },
   {
-    "direction" : "left",
+    "direction" : "right",
     "nextDisplay" : false
   },
   {
@@ -169,6 +169,22 @@
   },
   {
     "direction" : "left",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "left",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
     "nextDisplay" : false
   }
 ]
