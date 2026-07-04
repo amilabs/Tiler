@@ -31,6 +31,15 @@ public final class SettingsStore {
         }
     }
 
+    /// First-run flag for the Guide window. Pure UX bookkeeping: intentionally
+    /// does NOT fire onChange (no engine wiring depends on it).
+    public var hasSeenGuide: Bool {
+        didSet {
+            guard hasSeenGuide != oldValue else { return }
+            defaults.set(hasSeenGuide, forKey: "hasSeenGuide")
+        }
+    }
+
     /// Personal calibration result; nil = stock defaults (calibration spec).
     public var tunablesOverride: Tunables? {
         didSet {
@@ -53,6 +62,7 @@ public final class SettingsStore {
         self.defaults = defaults
         gesturesEnabled = defaults.object(forKey: Key.gestures) as? Bool ?? true
         hotkeysEnabled = defaults.object(forKey: Key.hotkeys) as? Bool ?? true
+        hasSeenGuide = defaults.object(forKey: "hasSeenGuide") as? Bool ?? false
         if let data = defaults.data(forKey: Key.tunables) {
             tunablesOverride = try? JSONDecoder().decode(Tunables.self, from: data)
         }

@@ -71,6 +71,17 @@ import TilerCore
         #expect(SettingsStore(defaults: defaults).tunablesOverride == nil)
     }
 
+    @Test func hasSeenGuideDefaultsFalseAndPersists() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        var notified = 0
+        store.onChange = { _ in notified += 1 }
+        #expect(!store.hasSeenGuide)
+        store.hasSeenGuide = true
+        #expect(SettingsStore(defaults: defaults).hasSeenGuide)
+        #expect(notified == 0, "UX flag must not re-trigger engine wiring")
+    }
+
     @Test func tunablesOverrideNotifies() {
         let store = SettingsStore(defaults: freshDefaults())
         var count = 0

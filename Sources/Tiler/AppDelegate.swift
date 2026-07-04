@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsModel: SettingsModel?
     private var aboutWindow: AuxWindow<AboutView>?
     private var settingsWindow: AuxWindow<SettingsView>?
+    private var guideModel: GuideModel?
+    private var guideWindow: AuxWindow<GuideView>?
     private var calibrationWindow: NSWindow?
     private var calibrationModel: CalibrationModel?
     private var calibrationActive = false
@@ -39,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--show-settings") { showSettings() }
         if args.contains("--show-about") { showAbout() }
         if args.contains("--show-calibration") { showCalibration() }
+        if args.contains("--show-guide") { showGuide() }
     }
 
     // MARK: - Calibration
@@ -95,14 +98,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func applyPermissionState(_ trusted: Bool) {
         statusItem?.button?.title = trusted ? "" : " ⚠︎"
         settingsModel?.accessibilityGranted = trusted
+        guideModel?.accessibilityGranted = trusted
         NSLog("Tiler: accessibility %@", trusted ? "granted" : "missing")
     }
 
-    /// Startup flow (app-shell spec): without permission the user lands one click
-    /// away from the fix — Settings window with the highlighted row.
+    /// Startup flow v2 (add-onboarding-guide): first launch ever, or any launch
+    /// without permission, lands on the Guide.
     private func runStartupPermissionFlow() {
-        if !(permissionMonitor?.trusted ?? false) {
-            showSettings()
+        if !settings.hasSeenGuide || !(permissionMonitor?.trusted ?? false) {
+            showGuide()
         }
     }
 
@@ -208,6 +212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let menu = NSMenu()
         menu.addItem(makeItem("About Tiler", #selector(showAbout)))
+        menu.addItem(makeItem("Shortcuts & Help", #selector(showGuideAction)))
         let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
@@ -238,6 +243,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showSettingsAction() {
         showSettings()
+    }
+
+    @objc private func showGuideAction() {
+        showGuide()
+    }
+
+    private func showGuide() {
+        settings.hasSeenGuide = true
+        if guideModel == nil {
+            let model = GuideModel(accessibilityGranted: permissionMonitor?.trusted ?? false)
+            model.onOpenAccessibility = { [weak self] in self?.openAccessibilitySettings() }
+            model.onCalibrate = { [weak self] in self?.showCalibration() }
+            model.onOpenSettings = { [weak self] in self?.showSettings() }
+            guideModel = model
+        }
+        guideModel?.refreshConflicts()
+        if guideWindow == nil, let model = guideModel {
+            guideWindow = AuxWindow(title: "Welcome to Tiler") { GuideView(model: model) }
+        }
+        guideWindow?.show()
+        NSLog("Tiler: guide window shown")
+    }
+
+    private func openAccessibilitySettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
     }
 
     private func showSettings() {
