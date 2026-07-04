@@ -3,6 +3,33 @@ import SwiftUI
 import TilerCore
 import TilerSystem
 
+/// False while the hosting window is closed or fully occluded — demo animations
+/// MUST pause then (idle CPU budget: <1% whenever no fingers touch the pad).
+private struct AnimationsActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var animationsActive: Bool {
+        get { self[AnimationsActiveKey.self] }
+        set { self[AnimationsActiveKey.self] = newValue }
+    }
+}
+
+@MainActor
+final class WindowVisibility: ObservableObject {
+    @Published var isVisible = true
+}
+
+private struct VisibilityGate<C: View>: View {
+    @ObservedObject var visibility: WindowVisibility
+    let content: C
+
+    var body: some View {
+        content.environment(\.animationsActive, visibility.isVisible)
+    }
+}
+
 /// Single source for the cheat sheet, mirroring the hotkeys/gestures specs.
 enum GuideContent {
     struct HotkeyRow: Identifiable {
@@ -122,10 +149,7 @@ struct GuideView: View {
                         GridRow {
                             HStack(spacing: 6) {
                                 if row.cmd { keycaps(["⌘"]) }
-                                GestureDemoView(direction: row.direction)
-                                    .frame(width: 84, height: 40)
-                                    .background(Color.secondary.opacity(0.08),
-                                                in: RoundedRectangle(cornerRadius: 8))
+                                HoverDemo(direction: row.direction)
                             }
                             .gridColumnAlignment(.trailing)
                             Text(row.action)
@@ -325,20 +349,52 @@ struct GuideView: View {
 /// Hero animation: the three-finger demo cycling left → right → up.
 struct HeroDemoView: View {
     var body: some View {
-        TimelineView(.animation) { context in
+        // Periodic pose cycling: one redraw per 1.4 s — alive, but ~zero CPU
+        // (idle budget holds even with the window open and focused).
+        TimelineView(.periodic(from: .now, by: 1.4)) { context in
             let slot = Int(context.date.timeIntervalSinceReferenceDate / 1.4) % 3
             let direction: GestureDirection = [.left, .right, .up][slot]
-            GestureDemoView(direction: direction)
+            GestureDemoView(direction: direction, animated: false)
         }
     }
 }
 
+/// Static direction pose that comes alive under the pointer.
+struct HoverDemo: View {
+    let direction: GestureDirection
+    @State private var hovered = false
+
+    var body: some View {
+        GestureDemoView(direction: direction, animated: hovered)
+            .frame(width: 84, height: 40)
+            .background(Color.secondary.opacity(0.08),
+                        in: RoundedRectangle(cornerRadius: 8))
+            .onHover { hovered = $0 }
+    }
+}
+
+/// Non-generic NSWindowDelegate helper (generic NSObject subclasses can't expose
+/// @objc members).
+@MainActor
+private final class AuxWindowDelegate: NSObject, NSWindowDelegate {
+    var onClose: (() -> Void)?
+
+    func windowWillClose(_ notification: Notification) {
+        onClose?()
+    }
+}
+
 /// Reusable host for small auxiliary windows in this LSUIElement app.
+/// CPU discipline: the window (and its SwiftUI animations) is fully RELEASED on
+/// close and recreated on the next show; while open, occlusion pauses animations.
 @MainActor
 final class AuxWindow<Content: View> {
     private var window: NSWindow?
     private let title: String
     private let content: () -> Content
+    private let visibility = WindowVisibility()
+    private let delegateHelper = AuxWindowDelegate()
+    private var occlusionObserver: NSObjectProtocol?
 
     init(title: String, content: @escaping () -> Content) {
         self.title = title
@@ -347,14 +403,30 @@ final class AuxWindow<Content: View> {
 
     func show() {
         if window == nil {
-            let hosting = NSHostingController(rootView: content())
+            let root = VisibilityGate(visibility: visibility, content: content())
+            let hosting = NSHostingController(rootView: root)
             let window = NSWindow(contentViewController: hosting)
             window.title = title
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
+            window.delegate = delegateHelper
+            delegateHelper.onClose = { [weak self] in
+                self?.releaseWindow()
+            }
+            occlusionObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didChangeOcclusionStateNotification,
+                object: window, queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.visibility.isVisible =
+                        self.window?.occlusionState.contains(.visible) ?? false
+                }
+            }
             self.window = window
         }
+        visibility.isVisible = true
         NSApp.activate(ignoringOtherApps: true)
         if let window, let screen = NSScreen.main {
             let maxHeight = screen.visibleFrame.height - 20
@@ -365,5 +437,19 @@ final class AuxWindow<Content: View> {
             }
         }
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    func close() {
+        window?.close()
+    }
+
+    private func releaseWindow() {
+        visibility.isVisible = false
+        if let occlusionObserver {
+            NotificationCenter.default.removeObserver(occlusionObserver)
+        }
+        occlusionObserver = nil
+        window?.delegate = nil
+        window = nil
     }
 }

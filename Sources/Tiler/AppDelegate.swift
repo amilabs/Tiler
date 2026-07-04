@@ -42,6 +42,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if args.contains("--show-settings") { showSettings() }
         if args.contains("--show-calibration") { showCalibration() }
         if args.contains("--show-guide") || args.contains("--show-about") { showGuide() }
+        // Harness: open the animated window, close it after 2 s — post-close idle
+        // CPU must be back under budget (the retained-animations regression).
+        if args.contains("--exercise-ui") {
+            showGuide()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.guideWindow?.close()
+                NSLog("Tiler: exercise-ui window closed")
+            }
+        }
     }
 
     // MARK: - Calibration

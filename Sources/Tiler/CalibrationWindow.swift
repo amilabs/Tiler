@@ -215,15 +215,27 @@ struct CalibrationView: View {
     }
 }
 
-/// Looping three-dot animation demonstrating the prompted swipe direction.
+/// Three-dot demo of a swipe direction. `animated` loops the stroke (use for the
+/// active calibration prompt or on hover); otherwise a static mid-stroke pose is
+/// drawn — direction stays readable at zero CPU (idle budget).
 struct GestureDemoView: View {
     let direction: GestureDirection
+    var animated: Bool = true
+    @Environment(\.animationsActive) private var animationsActive
 
     var body: some View {
-        TimelineView(.animation) { context in
-            Canvas { canvas, size in
+        if animated && animationsActive {
+            TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: false)) { context in
                 let t = context.date.timeIntervalSinceReferenceDate
-                let phase = CGFloat(t.truncatingRemainder(dividingBy: 1.4) / 1.4)
+                demoCanvas(phase: CGFloat(t.truncatingRemainder(dividingBy: 1.4) / 1.4))
+            }
+        } else {
+            demoCanvas(phase: 0.55)
+        }
+    }
+
+    private func demoCanvas(phase: CGFloat) -> some View {
+            Canvas { canvas, size in
                 let progress = min(1, max(0, (phase - 0.15) / 0.6))
                 let travel: CGFloat = 66
                 let offset: CGVector
@@ -255,6 +267,5 @@ struct GestureDemoView: View {
                                 with: .color(.accentColor.opacity(fade)))
                 }
             }
-        }
     }
 }

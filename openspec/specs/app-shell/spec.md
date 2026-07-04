@@ -73,13 +73,27 @@ acceptance is performed with system three-finger gestures disabled.
 
 #### Requirement: Idle CPU budget
 
-With the trackpad untouched and permission granted, Tiler's process CPU SHALL stay below
-1% (no polling timers in steady state; multitouch callback is push-based; hotkeys are
-event-driven).
+With the trackpad untouched, Tiler's process CPU SHALL stay below 1% in EVERY
+no-finger state: freshly launched with no UI, with the unified window open (demo
+animations are static poses; they animate only under the pointer or during an active
+calibration; occluded windows pause everything), and after UI windows are closed
+(closed windows are fully released — retained off-screen animations are the
+regression this guards against). CPU SHALL be measured as true utilization
+(cputime delta over a wall interval) — `ps %cpu` is a lifetime average on macOS and
+lies in both directions.
 
-##### Scenario: 60-second idle sample
-- WHEN Tiler idles for 60 s with no trackpad contact and permission granted
-- THEN sampled CPU (`ps -o %cpu`) stays < 1%
+##### Scenario: Idle after launch
+- WHEN Tiler idles with no trackpad contact and no windows
+- THEN true utilization stays < 1%
+
+##### Scenario: Idle with the unified window open
+- WHEN the unified window is open and focused but the trackpad is untouched
+- THEN true utilization stays < 1%
+
+##### Scenario: Idle after the UI was used
+- WHEN the unified window was opened and then closed
+- THEN true utilization returns below 1% (measured 2026-07-05: 0.13% / 0.50% /
+  0.20% for the three states; pre-fix regression burned 15–21%)
 
 #### Requirement: Crash and kill safety
 
