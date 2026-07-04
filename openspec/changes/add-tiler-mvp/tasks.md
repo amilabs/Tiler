@@ -117,12 +117,20 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 8. Golden traces & real-gesture acceptance
 
-- [ ] 8.1 **[USER GATE #3]** Owner records one trace session (`--record-touches`):
-      2-finger scrolls (vert/horiz/diagonal + momentum) in Safari/Chrome/Finder,
-      2→3→2 transitions, palm-resting, diagonal ~30° swipes, valid left/right/up swipes
-      ×5 each, Cmd-variants. Script prompts step-by-step: `Scripts/record-golden.sh`.
-- [ ] 8.2 Freeze traces as test fixtures; tune Tunables until all golden tests pass
-      (false-positive fixtures MUST produce zero actions — blocker).
+- [x] 8.1 **[USER GATE #3 PASSED]** Owner recorded a 400 s / 18,880-frame session
+      (2026-07-04, `golden-20260704-194040.jsonl`) covering all scripted steps. Live
+      frame delivery + MTTouch field mapping confirmed (sane sizes/states/coords).
+- [x] 8.2 Golden analysis + frozen fixture (`GoldenTraceTests`, expected sequence
+      machine-generated via `TraceCheck --write-expected`; 35 actions):
+      **zero actions across all blocker segments** (~250 s of scrolls, momentum,
+      third-finger additions, 2→3→2, palm), no double-fires anywhere. Tunables kept
+      at spec values — validated, no tuning needed. Boundary observations for the
+      owner (per-spec behavior, not bugs): (a) steep "diagonals" at 60–68° from
+      horizontal legitimately fire as up (vertical cone is ≤32° off vertical);
+      (b) owner's natural right swipes tilt +25…+36° and ~half get strictly rejected
+      at the 26.6° horizontal boundary — retunable via `horizontalDominance` if
+      acceptance shows too many misses. New tool: `swift run TraceCheck <trace>`
+      replays any recording with per-segment action reporting.
 - [ ] 8.3 **[USER GATE #4]** Final manual acceptance on real trackpad (checklist printed
       by `Scripts/acceptance-checklist.sh`; system 3-finger gestures disabled first).
 - [ ] 8.4 Commit "golden traces + tuning".

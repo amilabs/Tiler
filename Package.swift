@@ -19,9 +19,15 @@ let package = Package(
             name: "Tiler",
             dependencies: ["TilerCore", "TilerSystem"]
         ),
+        // CLI: replay a recorded JSONL trace through the recognizer (tuning/debugging).
+        .executableTarget(
+            name: "TraceCheck",
+            dependencies: ["TilerCore"]
+        ),
         .testTarget(
             name: "TilerCoreTests",
-            dependencies: ["TilerCore"]
+            dependencies: ["TilerCore"],
+            resources: [.copy("Fixtures")]
         ),
         // AX-dependent integration tests; auto-skip unless the test host is trusted.
         .testTarget(
