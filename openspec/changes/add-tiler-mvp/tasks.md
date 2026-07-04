@@ -70,17 +70,20 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 5. Hotkeys + permission lifecycle
 
-- [ ] 5.1 HotkeyController: Carbon registration of all bindings; double-press ↑
-      disambiguation (300 ms); unit tests for the disambiguation timer logic (abstracted
-      clock).
-- [ ] 5.2 PermissionMonitor per permissions spec (prompt once, poll 2 s only while
-      missing, stop when granted, soft re-entry on revocation).
+- [x] 5.1 HotkeyController: Carbon registration of all 6 bindings, EventHotKeyID
+      routing, double-press ↑ via pure `DoublePressResolver` (TilerCore, TDD: 7 tests,
+      RED verified against stub; abstracted clock = timestamps + injected expiry).
+- [x] 5.2 PermissionMonitor per permissions spec (TDD: 4 tests, RED verified): injected
+      trust check, poll only while missing, stops when granted, `noteActionFailed()`
+      re-entry on revocation. Wired: launch prompt (once), status-item warning ▦⚠︎,
+      WindowActions failures feed the monitor. Smoke: launch without AX → warning
+      logged, hotkeys registered, stream alive, CPU 0.1%, clean exit.
 - [ ] 5.3 E2E: CGEventPost synthetic hotkey presses → assert window frames; single vs
       double press timing; no-op without permission (`tccutil reset Accessibility
       pro.amilabs.tiler` for the negative case — self-service).
       **[USER GATE #2]** One re-grant click after the negative test, verifying
       no-restart recovery (permissions spec scenario).
-- [ ] 5.4 Commit "hotkeys + permission lifecycle".
+- [x] 5.4 Commit "hotkeys + permission lifecycle".
 
 ## 6. App shell
 

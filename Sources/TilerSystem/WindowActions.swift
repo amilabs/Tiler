@@ -30,32 +30,36 @@ public final class WindowActions {
     public init() {}
 
     /// Acts on the focused window of the frontmost application.
-    public func perform(_ command: TilingCommand) {
+    /// Returns false when AX is unusable (no permission / no window) so the caller
+    /// can feed PermissionMonitor.noteActionFailed().
+    @discardableResult
+    public func perform(_ command: TilingCommand) -> Bool {
         guard let (app, window) = frontmostFocusedWindow() else {
             NSLog("Tiler: no focused window for \(command) — ignoring")
-            return
+            return false
         }
-        perform(command, app: app, window: window)
+        return perform(command, app: app, window: window)
     }
 
     /// Testable entry point with an explicit target (integration tests resolve
     /// the window by pid instead of relying on frontmost focus).
-    public func perform(_ command: TilingCommand, app: AXUIElement, window: AXUIElement) {
+    @discardableResult
+    public func perform(_ command: TilingCommand, app: AXUIElement, window: AXUIElement) -> Bool {
         trimStoresIfNeeded()
         guard let currentAX = frame(of: window) else {
             NSLog("Tiler: cannot read window frame — ignoring \(command)")
-            return
+            return false
         }
         let key = WindowKey(element: window)
 
         if command == .restore {
             guard let original = originalFrames[key] else {
                 NSLog("Tiler: no restore history for this window")
-                return
+                return true // defined no-op, not an AX failure
             }
             setFrame(original, window: window, app: app)
             lastSetFrames[key] = original
-            return
+            return true
         }
 
         // Capture the pre-Tiler frame; re-capture if the user moved the window
@@ -66,11 +70,12 @@ public final class WindowActions {
 
         guard let targetCocoa = targetRect(for: command, currentAXFrame: currentAX) else {
             NSLog("Tiler: no screen geometry for \(command) — ignoring")
-            return
+            return true
         }
         let targetAX = cocoaToAX(targetCocoa)
         setFrame(targetAX, window: window, app: app)
         lastSetFrames[key] = targetAX
+        return true
     }
 
     // MARK: - Geometry

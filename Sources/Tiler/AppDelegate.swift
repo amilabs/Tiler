@@ -7,11 +7,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
     private var engine: GestureEngine?
+    private var hotkeys: HotkeyController?
+    private var permissionMonitor: PermissionMonitor?
     private let windowActions = WindowActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
+        setUpPermissionMonitor()
+        setUpHotkeys()
         startTouchPipeline()
+    }
+
+    // MARK: - Permissions & hotkeys
+
+    private func setUpPermissionMonitor() {
+        // One-time system prompt on first launch (permissions spec).
+        // Literal key: kAXTrustedCheckOptionPrompt is a C global var, unusable
+        // under Swift 6 strict concurrency.
+        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+
+        let monitor = PermissionMonitor(
+            pollInterval: Tunables.default.permissionPollInterval,
+            check: { AXIsProcessTrusted() },
+            onChange: { [weak self] trusted in
+                self?.statusItem?.button?.title = trusted ? "▦" : "▦⚠︎"
+                NSLog("Tiler: accessibility %@", trusted ? "granted" : "missing")
+            }
+        )
+        monitor.start()
+        permissionMonitor = monitor
+    }
+
+    private func setUpHotkeys() {
+        let controller = HotkeyController()
+        controller.handler = { [weak self] command in
+            self?.execute(command)
+        }
+        controller.registerAll()
+        hotkeys = controller
+    }
+
+    private func execute(_ command: TilingCommand) {
+        if !windowActions.perform(command) {
+            // Failed AX action: cheap revocation/permission re-check.
+            permissionMonitor?.noteActionFailed()
+        }
     }
 
     // MARK: - Touch pipeline
@@ -44,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .right: command = .rightHalf(nextDisplay: action.nextDisplay)
         case .up: command = .maximize
         }
-        windowActions.perform(command)
+        execute(command)
     }
 
     private func makeRecorderIfRequested() -> TraceRecorder? {
