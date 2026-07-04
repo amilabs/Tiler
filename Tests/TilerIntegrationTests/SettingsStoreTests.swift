@@ -1,0 +1,55 @@
+import Foundation
+import Testing
+@testable import TilerSystem
+
+// Persisted app settings (settings spec): defaults, persistence, change notifications.
+@MainActor
+@Suite("Settings store") struct SettingsStoreTests {
+
+    private func freshDefaults() -> UserDefaults {
+        let name = "tiler-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    @Test func defaultsAreEnabled() {
+        let store = SettingsStore(defaults: freshDefaults())
+        #expect(store.gesturesEnabled)
+        #expect(store.hotkeysEnabled)
+    }
+
+    @Test func togglesPersistAcrossInstances() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        store.gesturesEnabled = false
+        store.hotkeysEnabled = false
+
+        let reloaded = SettingsStore(defaults: defaults)
+        #expect(!reloaded.gesturesEnabled)
+        #expect(!reloaded.hotkeysEnabled)
+
+        reloaded.hotkeysEnabled = true
+        let third = SettingsStore(defaults: defaults)
+        #expect(!third.gesturesEnabled)
+        #expect(third.hotkeysEnabled)
+    }
+
+    @Test func changesNotifyObserver() {
+        let store = SettingsStore(defaults: freshDefaults())
+        var events: [String] = []
+        store.onChange = { events.append("\($0.gesturesEnabled)/\($0.hotkeysEnabled)") }
+        store.gesturesEnabled = false
+        store.hotkeysEnabled = false
+        store.hotkeysEnabled = true
+        #expect(events == ["false/true", "false/false", "false/true"])
+    }
+
+    @Test func settingSameValueDoesNotNotify() {
+        let store = SettingsStore(defaults: freshDefaults())
+        var count = 0
+        store.onChange = { _ in count += 1 }
+        store.gesturesEnabled = true   // already true
+        #expect(count == 0)
+    }
+}

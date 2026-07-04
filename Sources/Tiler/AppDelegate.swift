@@ -1,11 +1,11 @@
 import AppKit
-import ServiceManagement
+import SwiftUI
 import TilerCore
 import TilerSystem
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.1.0-dev"
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    static let version = "0.2.0-dev"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -13,23 +13,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var hotkeys: HotkeyController?
     private var permissionMonitor: PermissionMonitor?
     private let windowActions = WindowActions()
-    private let diagnostics = ConflictDiagnostics()
-    private var gesturesEnabled = true
+    private let settings = SettingsStore()
 
-    // Menu items that reflect live state.
-    private let permissionItem = NSMenuItem(title: "Accessibility: checking…", action: nil, keyEquivalent: "")
-    private let gesturesItem = NSMenuItem(title: "Gestures Enabled", action: #selector(toggleGestures), keyEquivalent: "")
-    private let loginItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-    private let diagnosticsMenu = NSMenu(title: "Diagnostics")
+    private var settingsModel: SettingsModel?
+    private var aboutWindow: AuxWindow<AboutView>?
+    private var settingsWindow: AuxWindow<SettingsView>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
         setUpPermissionMonitor()
         setUpHotkeys()
+        setUpSettingsWiring()
         startTouchPipeline()
+        runStartupPermissionFlow()
+        handleDebugWindowArgs()
     }
 
-    // MARK: - Permissions & hotkeys
+    /// Headless UI smoke: `--show-settings` / `--show-about` open the windows at
+    /// launch so scripts can verify they construct without a human click.
+    private func handleDebugWindowArgs() {
+        let args = CommandLine.arguments
+        if args.contains("--show-settings") { showSettings() }
+        if args.contains("--show-about") { showAbout() }
+    }
+
+    // MARK: - Permissions
 
     private func setUpPermissionMonitor() {
         // One-time system prompt on first launch (permissions spec).
@@ -50,19 +58,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func applyPermissionState(_ trusted: Bool) {
         statusItem?.button?.title = trusted ? "▦" : "▦⚠︎"
-        permissionItem.title = trusted
-            ? "Accessibility: granted"
-            : "Accessibility: NOT granted — windows won’t move"
+        settingsModel?.accessibilityGranted = trusted
         NSLog("Tiler: accessibility %@", trusted ? "granted" : "missing")
     }
+
+    /// Startup flow (app-shell spec): without permission the user lands one click
+    /// away from the fix — Settings window with the highlighted row.
+    private func runStartupPermissionFlow() {
+        if !(permissionMonitor?.trusted ?? false) {
+            showSettings()
+        }
+    }
+
+    // MARK: - Hotkeys & settings wiring
 
     private func setUpHotkeys() {
         let controller = HotkeyController()
         controller.handler = { [weak self] command in
             self?.execute(command)
         }
-        controller.registerAll()
+        if settings.hotkeysEnabled {
+            controller.registerAll()
+        }
         hotkeys = controller
+    }
+
+    private func setUpSettingsWiring() {
+        settings.onChange = { [weak self] store in
+            guard let self else { return }
+            if store.hotkeysEnabled {
+                self.hotkeys?.registerAll()
+            } else {
+                self.hotkeys?.unregisterAll()
+            }
+            NSLog("Tiler: settings — gestures %@, hotkeys %@",
+                  store.gesturesEnabled ? "on" : "off",
+                  store.hotkeysEnabled ? "on" : "off")
+        }
     }
 
     private func execute(_ command: TilingCommand) {
@@ -95,7 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func route(_ action: GestureAction) {
-        guard gesturesEnabled else { return }
+        guard settings.gesturesEnabled else { return }
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
         let command: TilingCommand
         switch action.direction {
@@ -121,36 +153,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    // MARK: - Menu
+    // MARK: - Menu (app-shell spec: About / Settings… / Quit)
 
     private func setUpStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.title = "▦"
 
         let menu = NSMenu()
-        menu.delegate = self
-
-        permissionItem.isEnabled = false
-        menu.addItem(permissionItem)
-        menu.addItem(makeItem("Open Accessibility Settings…", #selector(openAccessibilitySettings)))
+        menu.addItem(makeItem("About Tiler", #selector(showAbout)))
+        let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
+        settingsItem.keyEquivalent = ","
+        menu.addItem(settingsItem)
         menu.addItem(.separator())
-
-        gesturesItem.target = self
-        gesturesItem.state = .on
-        menu.addItem(gesturesItem)
-
-        let diagnosticsItem = NSMenuItem(title: "Diagnostics", action: nil, keyEquivalent: "")
-        diagnosticsItem.submenu = diagnosticsMenu
-        menu.addItem(diagnosticsItem)
-        menu.addItem(.separator())
-
-        loginItem.target = self
-        menu.addItem(loginItem)
-        menu.addItem(.separator())
-
-        let versionItem = NSMenuItem(title: "Tiler \(Self.version)", action: nil, keyEquivalent: "")
-        versionItem.isEnabled = false
-        menu.addItem(versionItem)
         menu.addItem(NSMenuItem(
             title: "Quit Tiler",
             action: #selector(NSApplication.terminate(_:)),
@@ -167,54 +181,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return item
     }
 
-    /// Refresh dynamic state right before the menu shows.
-    func menuWillOpen(_ menu: NSMenu) {
-        gesturesItem.state = gesturesEnabled ? .on : .off
-        loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        rebuildDiagnosticsMenu()
-    }
-
-    private func rebuildDiagnosticsMenu() {
-        diagnosticsMenu.removeAllItems()
-        let conflicts = diagnostics.conflicts()
-        if conflicts.isEmpty {
-            let ok = NSMenuItem(title: "No conflicting system gestures detected", action: nil, keyEquivalent: "")
-            ok.isEnabled = false
-            diagnosticsMenu.addItem(ok)
+    @objc private func showAbout() {
+        if aboutWindow == nil {
+            aboutWindow = AuxWindow(title: "About Tiler") { AboutView() }
         }
-        for conflict in conflicts {
-            let header = NSMenuItem(title: "⚠︎ \(conflict.title)", action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            diagnosticsMenu.addItem(header)
-            let detail = NSMenuItem(title: conflict.guidance, action: nil, keyEquivalent: "")
-            detail.isEnabled = false
-            detail.indentationLevel = 1
-            diagnosticsMenu.addItem(detail)
+        aboutWindow?.show()
+        NSLog("Tiler: about window shown")
+    }
+
+    @objc private func showSettingsAction() {
+        showSettings()
+    }
+
+    private func showSettings() {
+        if settingsModel == nil {
+            settingsModel = SettingsModel(
+                store: settings,
+                accessibilityGranted: permissionMonitor?.trusted ?? false
+            )
         }
-    }
-
-    // MARK: - Menu actions
-
-    @objc private func toggleGestures() {
-        gesturesEnabled.toggle()
-        NSLog("Tiler: gestures %@", gesturesEnabled ? "enabled" : "disabled")
-    }
-
-    @objc private func toggleLaunchAtLogin() {
-        do {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-            } else {
-                try SMAppService.mainApp.register()
-            }
-        } catch {
-            // Fails for unbundled dev binaries; harmless.
-            NSLog("Tiler: launch-at-login toggle failed: \(error)")
+        settingsModel?.refreshConflicts()
+        if settingsWindow == nil, let model = settingsModel {
+            settingsWindow = AuxWindow(title: "Tiler Settings") { SettingsView(model: model) }
         }
-    }
-
-    @objc private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
+        settingsWindow?.show()
+        NSLog("Tiler: settings window shown")
     }
 }

@@ -40,8 +40,13 @@ public final class HotkeyController {
         resolver = DoublePressResolver(window: tunables.doublePressWindow)
     }
 
-    /// Registers all bindings. Failures are logged per key; the app stays alive.
+    public private(set) var isRegistered = false
+
+    /// Registers all bindings (idempotent). Failures are logged per key; the app
+    /// stays alive.
     public func registerAll() {
+        guard !isRegistered else { return }
+        isRegistered = true
         installEventHandlerIfNeeded()
         for key in Key.allCases {
             var ref: EventHotKeyRef?
@@ -56,7 +61,11 @@ public final class HotkeyController {
         NSLog("Tiler: hotkeys registered")
     }
 
+    /// Releases the key combos back to the system (settings toggle; idempotent).
     public func unregisterAll() {
+        guard isRegistered else { return }
+        isRegistered = false
+        cancelExpiryTimer()
         for ref in registered {
             if let ref { UnregisterEventHotKey(ref) }
         }

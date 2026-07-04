@@ -13,7 +13,8 @@ cd "$(dirname "$0")/.."
 
 IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
 BUNDLE_ID="pro.amilabs.tilerx"
-VERSION="0.1.0"
+VERSION="0.2.0"
+BUILD_DATE="$(date -u +"%Y-%m-%d %H:%M UTC")"
 APP="build/Tiler.app"
 
 swift build -c release
@@ -34,6 +35,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
+    <key>TilerBuildDate</key><string>${BUILD_DATE}</string>
     <key>LSUIElement</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>

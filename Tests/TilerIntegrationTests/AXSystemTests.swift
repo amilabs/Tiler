@@ -243,6 +243,11 @@ struct AXSystemTests {
             return process
         }
 
+        private func refocus(_ target: AXSystemTests.TextEditTarget) {
+            target.running.activate()
+            usleep(400_000)
+        }
+
         private func mods(cmd: Bool) -> String {
             cmd ? "control down, shift down, command down" : "control down, shift down"
         }
@@ -279,6 +284,7 @@ struct AXSystemTests {
             let target = try await AXSystemTests.launchTextEdit(activate: true)
             defer { target.terminate() }
 
+            refocus(target)
             press(kVK_LeftArrow)
             try await Task.sleep(nanoseconds: 1_000_000_000)
 
@@ -297,6 +303,7 @@ struct AXSystemTests {
             let actions = WindowActions()
             let before = actions.frame(of: target.window)
 
+            refocus(target)
             press(kVK_UpArrow)
             try await Task.sleep(nanoseconds: 120_000_000)
             AXSystemTests.expectClose(actions.frame(of: target.window), before ?? .zero, "no move inside window")
@@ -313,6 +320,7 @@ struct AXSystemTests {
             let target = try await AXSystemTests.launchTextEdit(activate: true)
             defer { target.terminate() }
 
+            refocus(target)
             pressTwiceFast(kVK_UpArrow)
             try await Task.sleep(nanoseconds: 1_200_000_000)
 
@@ -332,6 +340,7 @@ struct AXSystemTests {
             let actions = WindowActions()
             let original = actions.frame(of: target.window)
 
+            refocus(target)
             press(kVK_RightArrow)
             try await Task.sleep(nanoseconds: 1_000_000_000)
             press(kVK_DownArrow)
