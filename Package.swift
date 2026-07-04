@@ -7,9 +7,11 @@ let package = Package(
     targets: [
         // Pure decision logic: gesture recognizer, tunables, models. No system imports.
         .target(name: "TilerCore"),
+        // C-layout structs for the private MultitouchSupport framework.
+        .target(name: "CMultitouchSupport"),
         .executableTarget(
             name: "Tiler",
-            dependencies: ["TilerCore"]
+            dependencies: ["TilerCore", "CMultitouchSupport"]
         ),
         .testTarget(
             name: "TilerCoreTests",

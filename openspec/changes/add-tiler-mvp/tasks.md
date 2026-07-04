@@ -40,12 +40,17 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 3. TouchStream + trace tooling
 
-- [ ] 3.1 TouchStream wrapper (device attach/detach, frame normalization, background
-      queue → recognizer). `--record-touches <path>` debug flag dumps raw frames as JSON.
-      **[USER GATE #1]** Grant AX to the dev/test host when asked; then a short live
-      sanity run: does the callback deliver frames (owner touches the pad once).
-- [ ] 3.2 Trace replay: JSON → `TouchFrame` stream in tests (same path as synthetic).
-- [ ] 3.3 Commit "touch stream + record/replay".
+- [x] 3.1 TouchStream wrapper: dlopen/dlsym, C-shim target `CMultitouchSupport` for the
+      MTTouch layout, serial queue → GestureEngine → recognizer, `--record-touches`
+      JSONL recorder. Smoke-verified: stream starts, recorder writes, clean exit,
+      zero build warnings (Swift 6 concurrency-clean).
+      Devices are enumerated at start; hotplug (Magic Trackpad attach) re-scan is
+      deferred to Phase 6 diagnostics work.
+      **[USER GATE #1 — still pending]** live sanity: owner touches the pad during a
+      short `--record-touches` run to confirm frame delivery + MTTouch field mapping.
+- [x] 3.2 Trace replay: JSONL round-trip + replay parity tests (TraceIO in TilerCore);
+      replayed trace reproduces identical actions. 50 tests green.
+- [x] 3.3 Commit "touch stream + record/replay".
 
 ## 4. WindowActions (AX) + integration tests
 
