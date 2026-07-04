@@ -121,7 +121,7 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 9. Wrap-up
 
-- [ ] 9.1 README: install, permissions, conflicts/diagnostics guide, hotkey/gesture table.
+- [x] 9.1 README: install, permissions, conflicts/diagnostics guide, hotkey/gesture table.
 - [ ] 9.2 Archive this change: move to `openspec/changes/archive/YYYY-MM-DD-add-tiler-mvp/`,
       merge spec deltas into `openspec/specs/`, update `openspec/project.md`.
 - [ ] 9.3 Final commit + push.
