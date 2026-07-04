@@ -87,18 +87,25 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 6. App shell
 
-- [ ] 6.1 Menu per app-shell spec: status/warning states, Settings-pane shortcut,
-      gestures toggle, Launch at Login (SMAppService), version, Quit.
-- [ ] 6.2 Diagnostics: read trackpad/dock defaults, list conflicts + guidance.
-      Manual-check script `Scripts/diagnose.sh` mirrors it for CLI verification.
-- [ ] 6.3 Commit "app shell + diagnostics".
+- [x] 6.1 Menu per app-shell spec: permission status line + warning glyph ▦⚠︎,
+      "Open Accessibility Settings…" deep link, Gestures Enabled toggle (gates the
+      gesture route only, hotkeys untouched), Diagnostics submenu (rebuilt on open),
+      Launch at Login (SMAppService, soft-fails unbundled), version, Quit.
+- [x] 6.2 ConflictDiagnostics (TDD: 4 tests, RED verified; injected reader): Three
+      Finger Drag + system 3-finger swipes across built-in and Bluetooth-trackpad
+      domains. `Scripts/diagnose.sh` mirrors it for CLI. Owner's system verified
+      clean — no conflicting gestures enabled (2026-07-04).
+- [x] 6.3 Commit "app shell + diagnostics".
 
 ## 7. Performance & resilience acceptance (self-service)
 
-- [ ] 7.1 `Scripts/run-acceptance.sh`: 60 s idle CPU sampling (< 1% budget), kill -9 →
-      system input unaffected → relaunch clean, launch-without-permission alive check.
-- [ ] 7.2 Fix regressions until green; record results in this file.
-- [ ] 7.3 Commit "acceptance harness + results".
+- [x] 7.1 `Scripts/run-acceptance.sh`: launch health, 60 s idle CPU sampling, kill -9
+      orphan/relaunch checks, without-permission alive path.
+- [x] 7.2 Results (2026-07-04, unpermitted worst case — permission poll active):
+      ALL PASS. Launch health ✓; idle CPU 12/12 samples < 1% (max 0.9%); kill -9 →
+      no orphans, clean relaunch, hotkeys re-registered. CPU drops further once AX
+      is granted (poll stops).
+- [x] 7.3 Commit "acceptance harness + results".
 
 ## 8. Golden traces & real-gesture acceptance
 
