@@ -17,7 +17,9 @@ public final class GestureRecognizer {
         case left, right, up, down
     }
 
-    private let tun: Tunables
+    private var tun: Tunables
+    /// Staged by updateTunables; applied only from a clean idle pad (never mid-gesture).
+    private var pendingTunables: Tunables?
 
     // Phase and per-session bookkeeping. A "session" spans from the first contact
     // after a clean idle pad to full lift-off.
@@ -44,6 +46,20 @@ public final class GestureRecognizer {
         tun = tunables
     }
 
+    /// Stage new tunables (e.g. from calibration). Applied on the next frame that
+    /// finds the pad in a clean idle state — a gesture already in progress is
+    /// evaluated entirely with the old values (gestures spec).
+    public func updateTunables(_ new: Tunables) {
+        pendingTunables = new
+        applyPendingTunablesIfIdle()
+    }
+
+    private func applyPendingTunablesIfIdle() {
+        guard let pending = pendingTunables, phase == .idle, sessionStart == nil else { return }
+        tun = pending
+        pendingTunables = nil
+    }
+
     /// Process one frame. `cmdHeld` is the Cmd-modifier snapshot at frame time.
     /// Returns an action only at the exact moment a gesture is confirmed.
     public func process(_ frame: TouchFrame, cmdHeld: Bool = false) -> GestureAction? {
@@ -54,6 +70,7 @@ public final class GestureRecognizer {
         if let last = lastFrameTimestamp, t - last >= tun.liftOffQuiet + tun.cooldown {
             resetToCleanIdle()
         }
+        applyPendingTunablesIfIdle()
         lastFrameTimestamp = t
 
         let active = frame.contacts.filter { c in

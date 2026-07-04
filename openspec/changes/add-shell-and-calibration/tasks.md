@@ -50,17 +50,18 @@ per phase, `[USER GATE]` = owner touchpoints.
 
 ## 4. Calibration
 
-- [ ] 4.1 CalibrationSession (TilerCore, TDD): consumes TouchFrames + recognizer
-      verdicts per prompted gesture; computes per-attempt recognized/missed, running
-      accuracy, and suggested tunables (dominance cones from measured angle
-      distributions, clamped to safe ranges); records session JSONL trace.
-- [ ] 4.2 Safe-range clamps defined + regression proof: golden blocker fixtures must
-      yield zero actions at ANY in-range tunables (property test over clamp corners).
+- [x] 4.1 CalibrationSession (TilerCore, TDD: 8 tests, RED verified): prompt
+      progression, per-attempt recognized/missed with measured angle, noise attempts
+      not consumed, step accuracy, suggested dominance from the most-demanding
+      attempt ×0.95 margin (floor/ceiling clamps), frames recorded for diagnostics.
+- [x] 4.2 Clamp ranges (horizontal 1.15…2.0, vertical 1.35…2.2) + corner property
+      tests: golden 190 s blocker window silent, synthetic blockers silent, canonical
+      swipes still fire — at all 4 corners.
 - [ ] 4.3 Calibration UI (SwiftUI sheet from Settings): per-gesture mini animation
       (Canvas/keyframe, no assets), attempt counter, live success/accuracy animation,
       progress; apply/save/reset-to-defaults.
-- [ ] 4.4 Live tunables application: recognizer swaps tunables only from clean idle
-      (spec scenario) — unit test.
+- [x] 4.4 GestureRecognizer.updateTunables: staged, applied only from clean idle —
+      mid-gesture swap keeps old values (unit tests both ways).
 - [ ] 4.5 **[USER GATE #3]** Owner runs calibration; verify their right swipe reaches
       reliable detection; blocker acceptance re-run (scrolls move nothing).
 - [ ] 4.6 Commit "calibration".
