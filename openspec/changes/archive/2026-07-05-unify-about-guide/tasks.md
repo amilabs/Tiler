@@ -13,4 +13,4 @@
 - [x] 1.5 Owner follow-ups: cross-display width bug fixed (position-first +
       read-back-correct; strict 2-display integration test) and Settings redesigned
       as tabs (General / Gestures) so nothing scrolls.
-- [ ] 1.6 Merge remaining spec deltas, archive.
+- [x] 1.6 Owner confirmed cross-display hotkeys correct; specs merged; archived.

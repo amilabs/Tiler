@@ -1,16 +1,16 @@
-# app-shell — current spec (merged from add-tiler-mvp, 2026-07-04)
+# app-shell — current spec (last merged: unify-about-guide, 2026-07-05)
 
 ## Requirements
 
 #### Requirement: Menu-bar-only application
 
 Tiler SHALL run as an `LSUIElement` app with an `NSStatusItem` (no Dock icon, no main
-window). The menu SHALL contain exactly: About Tiler, Shortcuts & Help, Settings…,
-Quit. Permission status/fix path, toggles, Launch at Login, and Diagnostics live in
-Settings (settings spec); Shortcuts & Help opens the Guide. The status item SHALL show
-a distinct alert appearance (with explanatory tooltip) when Accessibility is missing
-OR conflicting system gestures are detected; the conflict check re-runs at launch and
-on every menu open.
+window). The menu SHALL contain exactly TWO items: **Tiler…** (single entry point,
+opening the unified About & Guide window) and **Quit**. Settings are reached from
+within the unified window (prominent header button + troubleshooting link). The
+status item SHALL show a distinct alert appearance (with explanatory tooltip) when
+Accessibility is missing OR conflicting system gestures are detected; the conflict
+check re-runs at launch and on every menu open.
 
 ##### Scenario: Warning state visible
 - WHEN AX permission is missing
@@ -21,23 +21,43 @@ on every menu open.
 Tiler.app SHALL ship an app icon (owner-picked hand.pinch glyph on the violet tile,
 generated at build) and a matching template menu-bar icon.
 
-#### Requirement: About window
+#### Requirement: Unified About & Guide window
 
-The About window SHALL show the app name/icon, a multi-sentence description of what
-Tiler does, the version, the build timestamp (injected at build time, displayed in
-the user's local timezone), and a clickable link to https://github.com/amilabs/Tiler.
+One window SHALL serve as About, guide, and entry point, containing: an animated hero
+(cycling gesture demo) with the app name and a one-line tagline; a short value section
+grounded in the original brief (reliability/no false positives, per-hand calibration,
+lightweight resilience); the live permission card; the complete hotkey and gesture
+reference (keycaps + looping direction animations, Cmd variants, double-press ↑,
+restore); a troubleshooting section (inline conflicts + Calibrate); a prominent
+Settings entry; and a footer with version, build timestamp (injected at build,
+displayed in the user's LOCAL timezone), and the GitHub link.
 
 ##### Scenario: Build time reflects the actual build
-- WHEN the app is rebuilt and About is opened
+- WHEN the app is rebuilt and the unified window is opened
 - THEN the displayed build timestamp matches the new build, not a stale constant
+
+##### Scenario: Story and reference in one place
+- WHEN the unified window is open
+- THEN the user can read what the app is for AND see every binding/gesture without
+  opening anything else
+
+#### Requirement: Fits small screens
+
+Auxiliary windows SHALL never exceed the screen's visible height: the unified window's
+content scrolls vertically when it does not fit, and window heights are clamped to the
+visible frame.
+
+##### Scenario: Small display
+- WHEN the unified window opens on a display whose visible height is smaller than the
+  full content
+- THEN the window is clamped to the screen and the content is reachable by scrolling
 
 #### Requirement: Startup flow
 
 On the very first launch, on any launch without Accessibility, and on any launch with
-conflicting system gestures detected, Tiler SHALL open the Guide window (live
-permission card, full hotkey/gesture reference, troubleshooting with inline conflicts
-and a Calibrate button), continuing to run normally otherwise. Granting the permission
-while the Guide is open SHALL flip its permission card without relaunch.
+conflicting system gestures detected, Tiler SHALL open the unified window (permission
+card highlighted when relevant), continuing to run normally otherwise. Granting the
+permission while the window is open SHALL flip its permission card without relaunch.
 
 #### Requirement: Conflict diagnostics
 
