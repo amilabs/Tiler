@@ -343,6 +343,7 @@ struct AXSystemTests {
             refocus(target)
             press(kVK_RightArrow)
             try await Task.sleep(nanoseconds: 1_000_000_000)
+            refocus(target)
             press(kVK_DownArrow)
             try await Task.sleep(nanoseconds: 1_000_000_000)
 

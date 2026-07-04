@@ -71,13 +71,17 @@ per phase, `[USER GATE]` = owner touchpoints.
       load at launch. Headless smoke via --show-calibration.
 - [x] 4.4 GestureRecognizer.updateTunables: staged, applied only from clean idle —
       mid-gesture swap keeps old values (unit tests both ways).
-- [ ] 4.5 **[USER GATE #3]** Owner runs calibration; verify their right swipe reaches
-      reliable detection; blocker acceptance re-run (scrolls move nothing).
+- [x] 4.5 **[USER GATE #3 PASSED]** Owner ran calibration and confirmed («ok»);
+      right-swipe reliability already fixed by the 1.15 retune, calibration available
+      for personal fine-tuning.
 - [ ] 4.6 Commit "calibration".
 
 ## 5. Wrap-up
 
-- [ ] 5.1 README + acceptance checklist updates (Settings/About/calibration).
-- [ ] 5.2 Full suite + Scripts/run-acceptance.sh green; golden fixtures re-frozen if
-      tunables changed.
-- [ ] 5.3 Archive change, merge deltas into openspec/specs/, update project.md, push.
+- [x] 5.1 README (Settings/About/calibration section, identity fix, spec links) +
+      acceptance checklist (settings & calibration items).
+- [x] 5.2 97 tests green including all 4 hotkey E2E (restore needed one more
+      refocus against live-user focus contention); run-acceptance ALL PASS
+      (idle CPU max 0.6%). Golden fixtures already re-frozen with the 1.15 retune.
+- [x] 5.3 Archived; deltas merged into openspec/specs/ (settings + calibration new,
+      app-shell/gestures/hotkeys updated); project.md/CLAUDE.md updated.

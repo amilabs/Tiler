@@ -5,13 +5,34 @@
 #### Requirement: Menu-bar-only application
 
 Tiler SHALL run as an `LSUIElement` app with an `NSStatusItem` (no Dock icon, no main
-window). The menu SHALL provide: permission status (with a shortcut to the System
-Settings Accessibility pane), gestures enable/disable toggle, Diagnostics, Launch at
-Login (SMAppService), version, Quit.
+window). The menu SHALL contain exactly: About Tiler, Settings…, Quit. Permission
+status/fix path, toggles, Launch at Login, and Diagnostics live in Settings
+(settings spec). When Accessibility is missing, the status item SHALL show a distinct
+alert appearance.
 
 ##### Scenario: Warning state visible
 - WHEN AX permission is missing
-- THEN the status item shows a distinct warning appearance and the menu explains how to fix it
+- THEN the status item shows a distinct alert appearance until the permission is granted
+
+#### Requirement: App icon
+
+Tiler.app SHALL ship an app icon (owner-picked hand.pinch glyph on the violet tile,
+generated at build) and a matching template menu-bar icon.
+
+#### Requirement: About window
+
+The About window SHALL show the app name/icon, version, build timestamp (injected at
+build time), and a clickable link to https://github.com/amilabs/Tiler.
+
+##### Scenario: Build time reflects the actual build
+- WHEN the app is rebuilt and About is opened
+- THEN the displayed build timestamp matches the new build, not a stale constant
+
+#### Requirement: Startup permission flow
+
+On launch without Accessibility, Tiler SHALL (beyond the one-shot system prompt) open
+its Settings window with the permission problem highlighted, leaving the user one click
+from the system pane, while continuing to run normally otherwise.
 
 #### Requirement: Conflict diagnostics
 

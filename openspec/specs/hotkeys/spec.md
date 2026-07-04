@@ -50,3 +50,11 @@ or disable systemwide input if Tiler hangs or crashes.
 Hotkeys SHALL be registered at launch regardless of AX permission state. Without
 permission, a hotkey press SHALL be a safe no-op (with the warning state visible in the
 menu bar) and SHALL NOT crash or unregister the hotkey.
+Hotkeys SHALL be globally toggleable from Settings: when disabled, Tiler unregisters
+its Carbon hotkeys (the combos reach other apps normally) and re-registers on enable,
+persisting the choice across relaunches.
+
+##### Scenario: Toggle releases the key combos
+- WHEN hotkeys are disabled in Settings
+- THEN Ctrl+Shift+arrows behave as if Tiler were not running, and re-enabling restores
+  Tiler's handling without relaunch

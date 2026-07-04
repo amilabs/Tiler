@@ -23,12 +23,19 @@ trigger anything.
 
 ```sh
 swift build && swift test     # library + unit tests
-Scripts/make-app.sh           # signed build/Tiler.app (identity: WindowGestures Local Dev)
+Scripts/make-app.sh           # signed build/Tiler.app (Apple Development identity)
 Scripts/install.sh            # install to ~/Applications for a stable Accessibility grant
 ```
 
 Requires macOS 26+. The app is unsandboxed (needs the private MultitouchSupport
 framework and the Accessibility API) and is not App Store distributable.
+
+The menu bar item (pinch icon; ⚠︎ suffix when unpermitted) opens About and
+**Settings**: gestures/hotkeys toggles, permission status with a fix path, launch
+at login, conflict diagnostics, and **gesture calibration** — a guided dialog that
+measures your own swipes (animated demo, live per-attempt feedback) and derives
+personal thresholds, clamped to ranges that provably cannot re-enable false
+positives. Reset to defaults any time.
 
 **Install to ~/Applications, not build/.** Grant Accessibility to the copy in
 `~/Applications` (via `Scripts/install.sh`). Two reasons:
@@ -85,10 +92,11 @@ System three-finger gestures consume swipes before Tiler sees them. Check with
 
 ## Development
 
-Spec-driven: see [openspec/project.md](openspec/project.md) and the active change
-[openspec/changes/add-tiler-mvp/](openspec/changes/add-tiler-mvp/) (proposal, design,
-requirement specs, task plan). Gesture logic is a pure state machine (`TilerCore`)
-developed strictly test-first; system integration lives in `TilerSystem`.
+Spec-driven: see [openspec/project.md](openspec/project.md), current requirement
+specs in [openspec/specs/](openspec/specs/), and archived changes with full design
+history in [openspec/changes/archive/](openspec/changes/archive/). Gesture logic is a
+pure state machine (`TilerCore`) developed strictly test-first; system integration
+lives in `TilerSystem`.
 
 - `Scripts/run-acceptance.sh` — self-service acceptance: launch health, idle CPU < 1%,
   kill -9 resilience

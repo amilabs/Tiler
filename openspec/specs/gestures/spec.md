@@ -75,6 +75,9 @@ horizontal `|dx| ≥ 1.15·|dy|` (≈ ≤41°), vertical-up `|dy| ≥ 1.6·|dx|`
 up; the dominance and monotonicity (cumulative backtrack ≤ `reversalTolerance`) hold for
 `confirmSamples` consecutive frames; mean speed ≥ `minMeanSpeed`; elapsed time since
 arming ≤ `maxGestureDuration`. Movements failing any condition SHALL abort without action.
+The recognizer SHALL use the effective `Tunables` = stock defaults overridden by
+persisted per-user calibration values (clamped per the calibration spec); changes
+apply live, but never mid-gesture (taken up from the next clean idle state).
 
 > Owner-approved retunes (2026-07-04, twice): the brief's original horizontal
 > guideline (2.0, ≈26.6°, "~30° diagonals ambiguous") rejected ~half of the owner's
@@ -82,6 +85,11 @@ arming ≤ `maxGestureDuration`. Movements failing any condition SHALL abort wit
 > dedicated rights-only trace (13 natural rights, tilts up to +40°) moved it to the
 > calibration floor 1.15 (≈41°). Ambiguous band is now ≈41°–58°. Blocker safety at
 > 1.15 is proven by clamp-corner property tests on the golden blocker window.
+
+##### Scenario: Calibrated tunables apply live
+- WHEN calibration saves new dominance values while Tiler runs
+- THEN the very next gesture is evaluated with the new values, and any gesture already
+  in progress is evaluated entirely with the old ones
 
 ##### Scenario: Diagonal ~45° movement is ambiguous
 - WHEN 3 fingers move at ≈40–56° from horizontal (fails both dominance tests)
