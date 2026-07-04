@@ -209,6 +209,33 @@ struct AXSystemTests {
             }
             #expect(matches, "no screen's left half matches \(frame)")
         }
+
+        // Strict cross-display test (only meaningful with 2+ displays, esp. of
+        // different sizes): after a next-display move the window must land FULLY on
+        // the OTHER screen with THAT screen's exact half width — not a width carried
+        // over from the source display (the reported bug).
+        @Test(.enabled(if: NSScreen.screens.count >= 2))
+        func nextDisplayMovesToOtherScreenWithCorrectWidth() async throws {
+            let target = try await AXSystemTests.launchTextEdit(activate: false)
+            defer { target.terminate() }
+            let actions = WindowActions()
+
+            // Anchor on the primary as left half, then push to the next display.
+            actions.perform(.leftHalf(nextDisplay: false), app: target.axApp, window: target.window)
+            try await Task.sleep(for: .milliseconds(300))
+            let startVF = AXSystemTests.visibleFrame(around: actions.frame(of: target.window) ?? .zero)
+
+            actions.perform(.leftHalf(nextDisplay: true), app: target.axApp, window: target.window)
+            try await Task.sleep(for: .milliseconds(400))
+            guard let moved = actions.frame(of: target.window) else {
+                Issue.record("frame unreadable"); return
+            }
+            let destVF = AXSystemTests.visibleFrame(around: moved)
+            #expect(destVF != startVF, "window did not change displays: \(moved)")
+            AXSystemTests.expectClose(moved, AXSystemTests.axRect(fromCocoa: CGRect(
+                x: destVF.minX, y: destVF.minY, width: destVF.width / 2, height: destVF.height)),
+                "next-display left half on destination screen")
+        }
     }
 
     // MARK: - Hotkeys end-to-end (task 5.3)

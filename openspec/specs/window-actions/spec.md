@@ -42,8 +42,17 @@ restore point.
 
 Next-display variants SHALL cycle through `NSScreen.screens` (wrapping) and apply the
 same fractional geometry on the target screen's visible frame. Cross-display moves SHALL
-apply size → position → size to defeat source-display size clamping. With a single
-display, next-display variants SHALL act on the current screen.
+land the window FULLY on the target display with that display's exact target width and
+height, even when the displays differ in size (position-first application plus a
+read-back-and-correct pass, defeating source-display size clamping and window-server
+reassociation lag). With a single display, next-display variants SHALL act on the
+current screen.
+
+##### Scenario: Move from a wide display to a narrower one and back
+- WHEN a window on a wide display is sent to the next (narrower) display's left half,
+  then sent back
+- THEN each result exactly matches the destination display's half — never a width
+  carried over from the source display
 
 ##### Scenario: Left half on next monitor
 - WHEN Cmd+Ctrl+Shift+← fires with two displays and the window on display 1

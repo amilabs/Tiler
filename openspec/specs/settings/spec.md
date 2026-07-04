@@ -4,10 +4,11 @@
 
 #### Requirement: Settings window
 
-Tiler SHALL provide a Settings window (opened from the menu) with: a Gestures
+Tiler SHALL provide a Settings window (opened from the unified window) with a Gestures
 enable/disable toggle, a Hotkeys enable/disable toggle, the Accessibility permission
-status, and a Calibration entry point. All toggles SHALL persist across relaunches
-and apply immediately (no restart).
+status, and a Calibration entry point. All toggles SHALL persist across relaunches and
+apply immediately (no restart). The window SHALL be organized so its content fits
+without vertical scrolling on ordinary displays (tabbed: General / Gestures).
 
 ##### Scenario: Disabling hotkeys
 - WHEN the user turns the Hotkeys toggle off

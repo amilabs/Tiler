@@ -10,4 +10,7 @@
 - [x] 1.4 Owner follow-up: calibration progress indicators — Step X of Y capsule +
       overall progress bar (steps + fraction) + Attempt N of M counter; session
       exposes stepNumber/stepCount/attemptNumberInStep (TDD).
-- [ ] 1.5 Merge spec delta, archive.
+- [x] 1.5 Owner follow-ups: cross-display width bug fixed (position-first +
+      read-back-correct; strict 2-display integration test) and Settings redesigned
+      as tabs (General / Gestures) so nothing scrolls.
+- [ ] 1.6 Merge remaining spec deltas, archive.

@@ -148,17 +148,39 @@ public final class WindowActions {
         return CGRect(origin: position, size: size)
     }
 
-    /// Rectangle-proven sequence: clear AXEnhancedUserInterface (Chrome/Electron
-    /// animated-move bug), then size → position → size (cross-display clamping).
+    /// Applies a target frame robustly across displays of different sizes.
+    ///
+    /// macOS clamps a window's size to the display it currently occupies, and the
+    /// window server reassociates a window with its new display only after the move
+    /// is processed. So we **position first** (move onto the target display, where
+    /// position is not size-clamped), then size (now bounded by the target display),
+    /// then re-assert both (an AX size change grows from the top-left and can nudge
+    /// the origin). Finally we read back and, if the result is off — which happens
+    /// when the target display is larger than the source and the first size still got
+    /// clamped — retry the position→size pair once. Clears AXEnhancedUserInterface
+    /// first (Chrome/Electron animated-move bug).
     private func setFrame(_ axRect: CGRect, window: AXUIElement, app: AXUIElement) {
         let enhancedAttr = "AXEnhancedUserInterface"
         let wasEnhanced = boolAttribute(app, enhancedAttr) == true
         if wasEnhanced { setBoolAttribute(app, enhancedAttr, false) }
         defer { if wasEnhanced { setBoolAttribute(app, enhancedAttr, true) } }
 
+        setPosition(window, axRect.origin)
         setSize(window, axRect.size)
         setPosition(window, axRect.origin)
         setSize(window, axRect.size)
+
+        // Verify and self-correct once (defeats the reassociation-lag size clamp).
+        if let achieved = frame(of: window), !frameMatches(achieved, axRect) {
+            setPosition(window, axRect.origin)
+            setSize(window, axRect.size)
+            setPosition(window, axRect.origin)
+        }
+    }
+
+    private func frameMatches(_ a: CGRect, _ b: CGRect, tolerance: CGFloat = 3) -> Bool {
+        abs(a.minX - b.minX) <= tolerance && abs(a.minY - b.minY) <= tolerance
+            && abs(a.width - b.width) <= tolerance && abs(a.height - b.height) <= tolerance
     }
 
     private func setPosition(_ window: AXUIElement, _ point: CGPoint) {

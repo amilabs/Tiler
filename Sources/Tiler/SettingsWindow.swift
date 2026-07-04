@@ -65,22 +65,49 @@ final class SettingsModel: ObservableObject {
     }
 }
 
-/// Settings window (settings spec): toggles, permission status with problem
-/// highlight, diagnostics, calibration entry point.
+/// Settings window (settings spec): tabbed to stay compact — General (permission +
+/// toggles) and Gestures (conflicts + calibration), the macOS-idiomatic pattern for
+/// small preference windows, so nothing needs to scroll.
 struct SettingsView: View {
     @ObservedObject var model: SettingsModel
 
     var body: some View {
+        TabView {
+            generalTab
+                .tabItem { Label("General", systemImage: "gearshape") }
+            gesturesTab
+                .tabItem { Label("Gestures", systemImage: "hand.point.up.left") }
+        }
+        .frame(width: 460)
+        .padding(.top, 4)
+        .scenePadding()
+    }
+
+    private var generalTab: some View {
         Form {
-            Section {
-                permissionRow
-            }
+            Section { permissionRow }
             Section("Control") {
                 Toggle("Enable trackpad gestures", isOn: $model.gesturesEnabled)
                 Toggle("Enable hotkeys", isOn: $model.hotkeysEnabled)
                 Toggle("Launch at login", isOn: $model.launchAtLogin)
             }
-            Section("Gesture conflicts") {
+        }
+        .formStyle(.grouped)
+    }
+
+    private var gesturesTab: some View {
+        Form {
+            Section("Calibration") {
+                LabeledContent(model.isCalibrated
+                    ? "Personal gesture thresholds active"
+                    : "Tune gesture thresholds to your hand") {
+                    Button("Calibrate…") { model.startCalibration() }
+                }
+                if model.isCalibrated {
+                    Button("Reset to defaults") { model.resetCalibration() }
+                }
+            }
+            Section("System gesture conflicts") {
                 if model.conflicts.isEmpty {
                     Label("No conflicting system gestures detected", systemImage: "checkmark.circle")
                         .foregroundStyle(.secondary)
@@ -96,20 +123,8 @@ struct SettingsView: View {
                     }
                 }
             }
-            Section("Calibration") {
-                LabeledContent(model.isCalibrated
-                    ? "Personal gesture thresholds active"
-                    : "Tune gesture thresholds to your hand") {
-                    Button("Calibrate…") { model.startCalibration() }
-                }
-                if model.isCalibrated {
-                    Button("Reset to defaults") { model.resetCalibration() }
-                }
-            }
         }
         .formStyle(.grouped)
-        .frame(width: 420,
-               height: min(560, (NSScreen.main?.visibleFrame.height ?? 900) - 80))
     }
 
     @ViewBuilder
