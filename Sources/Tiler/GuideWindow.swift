@@ -18,6 +18,27 @@ enum GuideContent {
         let action: String
     }
 
+    struct ValueRow: Identifiable {
+        let id = UUID()
+        let symbol: String
+        let title: String
+        let text: String
+    }
+
+    static let tagline = "Put any window exactly where you want it — without touching the mouse."
+
+    static let values: [ValueRow] = [
+        ValueRow(symbol: "hand.raised.fill",
+                 title: "A swipe you can trust",
+                 text: "An action fires only when exactly three fingers move decisively in one direction. Scrolling, resting palms, and stray touches never move your windows — false positives are treated as bugs of the highest order."),
+        ValueRow(symbol: "person.fill.checkmark",
+                 title: "Tuned to your hand",
+                 text: "Everyone swipes differently. One-minute calibration measures your own strokes and adapts the recognition angles — within provably safe bounds."),
+        ValueRow(symbol: "bolt.fill",
+                 title: "Featherweight and unbreakable",
+                 text: "Event-driven engine: under 1% CPU when idle, no input hooks that could ever jam your keyboard, and instant recovery if permissions change."),
+    ]
+
     static let hotkeys: [HotkeyRow] = [
         HotkeyRow(keys: ["⌃", "⇧", "←"], action: "Left half of the current screen"),
         HotkeyRow(keys: ["⌃", "⇧", "→"], action: "Right half of the current screen"),
@@ -59,14 +80,15 @@ final class GuideModel: ObservableObject {
     }
 }
 
-/// "Welcome to Tiler" — description, live permission card, full cheat sheet,
-/// troubleshooting (app-shell spec, add-onboarding-guide).
+/// Unified About & Guide (app-shell spec, unify-about-guide): story, live
+/// permission card, full cheat sheet, troubleshooting, version footer.
 struct GuideView: View {
     @ObservedObject var model: GuideModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            header
+            hero
+            valueSection
             permissionCard
             section("Hotkeys") {
                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
@@ -103,25 +125,57 @@ struct GuideView: View {
                     .padding(.top, 2)
             }
             troubleshooting
+            footer
         }
         .padding(24)
         .frame(width: 560)
     }
 
-    private var header: some View {
-        HStack(spacing: 14) {
+    // MARK: - Hero & story
+
+    private var hero: some View {
+        HStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 56, height: 56)
-            VStack(alignment: .leading, spacing: 3) {
+                .frame(width: 64, height: 64)
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Tiler")
-                    .font(.title2.weight(.medium))
-                Text("Snap the active window with hotkeys and precise three-finger trackpad swipes.")
+                    .font(.largeTitle.weight(.medium))
+                Text(GuideContent.tagline)
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            HeroDemoView()
+                .frame(width: 96, height: 64)
+                .background(Color.accentColor.opacity(0.07),
+                            in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private var valueSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(GuideContent.values) { row in
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: row.symbol)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 22)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.title)
+                            .font(.callout.weight(.medium))
+                        Text(row.text)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
     }
+
+    // MARK: - Permission & troubleshooting
 
     @ViewBuilder
     private var permissionCard: some View {
@@ -185,6 +239,38 @@ struct GuideView: View {
         }
     }
 
+    // MARK: - Footer
+
+    private var footer: some View {
+        HStack(spacing: 6) {
+            Text("Tiler \(version)")
+            Text("·").foregroundStyle(.tertiary)
+            Text("built \(buildDate)")
+            Text("·").foregroundStyle(.tertiary)
+            Link("github.com/amilabs/Tiler", destination: URL(string: "https://github.com/amilabs/Tiler")!)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 2)
+    }
+
+    private var version: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? AppDelegate.version
+    }
+
+    /// Build stamp is ISO8601 UTC in Info.plist; shown in the user's local time.
+    private var buildDate: String {
+        guard let raw = Bundle.main.infoDictionary?["TilerBuildDate"] as? String else {
+            return "from source (swift run)"
+        }
+        let parser = ISO8601DateFormatter()
+        guard let date = parser.date(from: raw) else { return raw }
+        return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    // MARK: - Bits
+
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -211,5 +297,43 @@ struct GuideView: View {
                     )
             }
         }
+    }
+}
+
+/// Hero animation: the three-finger demo cycling left → right → up.
+struct HeroDemoView: View {
+    var body: some View {
+        TimelineView(.animation) { context in
+            let slot = Int(context.date.timeIntervalSinceReferenceDate / 1.4) % 3
+            let direction: GestureDirection = [.left, .right, .up][slot]
+            GestureDemoView(direction: direction)
+        }
+    }
+}
+
+/// Reusable host for small auxiliary windows in this LSUIElement app.
+@MainActor
+final class AuxWindow<Content: View> {
+    private var window: NSWindow?
+    private let title: String
+    private let content: () -> Content
+
+    init(title: String, content: @escaping () -> Content) {
+        self.title = title
+        self.content = content
+    }
+
+    func show() {
+        if window == nil {
+            let hosting = NSHostingController(rootView: content())
+            let window = NSWindow(contentViewController: hosting)
+            window.title = title
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            self.window = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
     }
 }

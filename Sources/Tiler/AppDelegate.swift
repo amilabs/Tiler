@@ -17,7 +17,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let diagnostics = ConflictDiagnostics()
 
     private var settingsModel: SettingsModel?
-    private var aboutWindow: AuxWindow<AboutView>?
     private var settingsWindow: AuxWindow<SettingsView>?
     private var guideModel: GuideModel?
     private var guideWindow: AuxWindow<GuideView>?
@@ -40,9 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func handleDebugWindowArgs() {
         let args = CommandLine.arguments
         if args.contains("--show-settings") { showSettings() }
-        if args.contains("--show-about") { showAbout() }
         if args.contains("--show-calibration") { showCalibration() }
-        if args.contains("--show-guide") { showGuide() }
+        if args.contains("--show-guide") || args.contains("--show-about") { showGuide() }
     }
 
     // MARK: - Calibration
@@ -241,8 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
-        menu.addItem(makeItem("About Tiler", #selector(showAbout)))
-        menu.addItem(makeItem("Shortcuts & Help", #selector(showGuideAction)))
+        menu.addItem(makeItem("About Tiler", #selector(showGuideAction)))
         let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
@@ -264,14 +261,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return item
     }
 
-    @objc private func showAbout() {
-        if aboutWindow == nil {
-            aboutWindow = AuxWindow(title: "About Tiler") { AboutView() }
-        }
-        aboutWindow?.show()
-        NSLog("Tiler: about window shown")
-    }
-
     @objc private func showSettingsAction() {
         showSettings()
     }
@@ -291,7 +280,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         guideModel?.refreshConflicts()
         if guideWindow == nil, let model = guideModel {
-            guideWindow = AuxWindow(title: "Welcome to Tiler") { GuideView(model: model) }
+            guideWindow = AuxWindow(title: "About Tiler") { GuideView(model: model) }
         }
         guideWindow?.show()
         NSLog("Tiler: guide window shown")
