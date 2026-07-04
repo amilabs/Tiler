@@ -9,13 +9,24 @@ let package = Package(
         .target(name: "TilerCore"),
         // C-layout structs for the private MultitouchSupport framework.
         .target(name: "CMultitouchSupport"),
+        // System layer (AppKit/AX/multitouch): TouchStream, GestureEngine, WindowActions.
+        // A library (not the executable) so integration tests can import it.
+        .target(
+            name: "TilerSystem",
+            dependencies: ["TilerCore", "CMultitouchSupport"]
+        ),
         .executableTarget(
             name: "Tiler",
-            dependencies: ["TilerCore", "CMultitouchSupport"]
+            dependencies: ["TilerCore", "TilerSystem"]
         ),
         .testTarget(
             name: "TilerCoreTests",
             dependencies: ["TilerCore"]
+        ),
+        // AX-dependent integration tests; auto-skip unless the test host is trusted.
+        .testTarget(
+            name: "TilerIntegrationTests",
+            dependencies: ["TilerCore", "TilerSystem"]
         ),
     ]
 )

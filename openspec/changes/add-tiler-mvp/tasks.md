@@ -54,13 +54,19 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 4. WindowActions (AX) + integration tests
 
-- [ ] 4.1 AX layer per window-actions spec (focused window, screen resolution,
-      halves/maximize/center-third geometry, restore store, next-display cycle,
-      AXEnhancedUserInterface + size→position→size workarounds, soft AXError handling).
-- [ ] 4.2 Integration tests (need AX on test host from gate #1): spawn TextEdit or a
-      helper app window; apply each action; read frame back; assert geometry incl.
-      visibleFrame respect and restore semantics. Single-display next-monitor fallback.
-- [ ] 4.3 Commit "window actions + AX integration tests".
+- [x] 4.1 AX layer implemented (`TilerSystem/WindowActions.swift`): focused-window +
+      max-intersection screen resolution, halves/maximize/center-third geometry off
+      visibleFrame, restore store with manual-move re-capture, next-display cycle,
+      AXEnhancedUserInterface clear/restore, size→position→size, Cocoa↔AX coordinate
+      conversion, soft AXError handling, dead-window store trimming. Wired into the
+      gesture pipeline (AppDelegate.route). Code restructured: new `TilerSystem`
+      library target so tests can import the system layer.
+- [x] 4.2 Integration tests written (`Tests/TilerIntegrationTests`): TextEdit target,
+      all five commands + restore semantics + next-display, geometry read-back with
+      2 px tolerance. Suite is `.enabled(if: AXIsProcessTrusted())` — currently
+      **skips** (host not trusted). ⚠ Execution pending **[USER GATE #1]**; do not
+      consider 4.x verified until they run green.
+- [x] 4.3 Commit "window actions + AX integration tests".
 
 ## 5. Hotkeys + permission lifecycle
 

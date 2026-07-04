@@ -8,17 +8,17 @@ import TilerCore
 /// cache (design.md §1 probe findings). Push-based: zero CPU while untouched.
 /// @unchecked Sendable: mutable state (devices/running) is only touched from
 /// start()/stop() on the owner's actor; the C callback reads only immutable members.
-final class TouchStream: @unchecked Sendable {
+public final class TouchStream: @unchecked Sendable {
     typealias CreateListFn = @convention(c) () -> Unmanaged<CFMutableArray>?
     typealias RegisterCallbackFn = @convention(c) (TLMTDeviceRef, TLMTContactCallback?) -> Void
     typealias StartFn = @convention(c) (TLMTDeviceRef, Int32) -> Void
     typealias StopFn = @convention(c) (TLMTDeviceRef) -> Void
 
-    enum StreamError: Error, CustomStringConvertible {
+    public enum StreamError: Error, CustomStringConvertible {
         case frameworkUnavailable(String)
         case noDevices
 
-        var description: String {
+        public var description: String {
             switch self {
             case .frameworkUnavailable(let detail): "MultitouchSupport unavailable: \(detail)"
             case .noDevices: "no multitouch devices found"
@@ -41,7 +41,7 @@ final class TouchStream: @unchecked Sendable {
     private let stopDevice: StopFn
 
     /// `handler` is called on the stream's serial queue for every contact frame.
-    init(handler: @escaping @Sendable (TouchFrame) -> Void) throws {
+    public init(handler: @escaping @Sendable (TouchFrame) -> Void) throws {
         self.handler = handler
 
         guard let lib = dlopen(
@@ -62,7 +62,7 @@ final class TouchStream: @unchecked Sendable {
         stopDevice = try sym("MTDeviceStop", StopFn.self)
     }
 
-    func start() throws {
+    public func start() throws {
         guard !running else { return }
         guard let listUnmanaged = createList() else { throw StreamError.noDevices }
         let list = listUnmanaged.takeRetainedValue()
@@ -81,7 +81,7 @@ final class TouchStream: @unchecked Sendable {
         running = true
     }
 
-    func stop() {
+    public func stop() {
         guard running else { return }
         for dev in devices {
             stopDevice(dev)

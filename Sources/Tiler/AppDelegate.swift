@@ -1,11 +1,13 @@
 import AppKit
 import TilerCore
+import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
     private var engine: GestureEngine?
+    private let windowActions = WindowActions()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -15,9 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Touch pipeline
 
     private func startTouchPipeline() {
-        let engine = GestureEngine(recorder: makeRecorderIfRequested()) { action in
-            NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
-            // Phase 4 routes this into WindowActions.
+        let engine = GestureEngine(recorder: makeRecorderIfRequested()) { [weak self] action in
+            Task { @MainActor in
+                self?.route(action)
+            }
         }
         self.engine = engine
         do {
@@ -31,6 +34,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // No trackpad / framework change: gestures unavailable, app stays alive.
             NSLog("Tiler: touch stream unavailable: \(error)")
         }
+    }
+
+    private func route(_ action: GestureAction) {
+        NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
+        let command: TilingCommand
+        switch action.direction {
+        case .left: command = .leftHalf(nextDisplay: action.nextDisplay)
+        case .right: command = .rightHalf(nextDisplay: action.nextDisplay)
+        case .up: command = .maximize
+        }
+        windowActions.perform(command)
     }
 
     private func makeRecorderIfRequested() -> TraceRecorder? {
