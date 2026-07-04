@@ -4,7 +4,9 @@
 cat <<'CHECKLIST'
 Tiler — final acceptance checklist (real trackpad)
 ==================================================
-Precondition: Scripts/diagnose.sh → OK; Tiler.app launched; Accessibility granted.
+Precondition: Scripts/diagnose.sh → OK; Tiler INSTALLED via Scripts/install.sh
+(runs from ~/Applications, NOT build/); launched on its own (Finder/open, not as a
+child of a granted terminal); Accessibility granted to the ~/Applications copy.
 
 HOTKEYS (focus a normal window, e.g. TextEdit):
  [ ] Ctrl+Shift+←        → left half of current screen

@@ -24,11 +24,24 @@ trigger anything.
 ```sh
 swift build && swift test     # library + unit tests
 Scripts/make-app.sh           # signed build/Tiler.app (identity: WindowGestures Local Dev)
-open build/Tiler.app
+Scripts/install.sh            # install to ~/Applications for a stable Accessibility grant
 ```
 
 Requires macOS 26+. The app is unsandboxed (needs the private MultitouchSupport
 framework and the Accessibility API) and is not App Store distributable.
+
+**Install to ~/Applications, not build/.** Grant Accessibility to the copy in
+`~/Applications` (via `Scripts/install.sh`). Two reasons:
+- `make-app.sh` deletes and recreates `build/Tiler.app` on every build, which drops
+  the TCC grant on the bundle you granted.
+- macOS is reluctant to persist Accessibility grants for apps under a world-writable
+  path (this repo lives under `/Users/Shared`, whose root is `drwxrwxrwt`).
+
+**Launch context matters for the grant.** Accessibility is attributed to the
+"responsible process". Launch Tiler on its own (Finder double-click, `open`, or at
+login) so it is its own responsible process. If you launch its binary as a child of a
+terminal that already has Accessibility, Tiler *inherits* that grant and will appear to
+work without its own entry — misleading, since a normal launch won't.
 
 ## Permissions
 
