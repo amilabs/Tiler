@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var settingsModel: SettingsModel?
     private var settingsWindow: AuxWindow<SettingsView>?
+    private var settingsMenuItem: NSMenuItem?
     private var guideModel: GuideModel?
     private var guideWindow: AuxWindow<GuideView>?
     private var calibrationWindow: NSWindow?
@@ -121,8 +122,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem?.button?.toolTip = !trusted
             ? "Tiler: Accessibility permission missing"
             : (conflictsPresent
-                ? "Tiler: conflicting system trackpad gestures detected — see Shortcuts & Help"
+                ? "Tiler: conflicting system trackpad gestures detected — see Tiler…"
                 : "Tiler")
+        // Settings item carries the permission alert (stabilize-menu spec).
+        settingsMenuItem?.title = trusted ? "Settings…" : "Settings… ⚠︎"
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -240,6 +243,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let menu = NSMenu()
         menu.addItem(makeItem("Tiler…", #selector(showGuideAction)))
+        let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
+        settingsItem.keyEquivalent = ","
+        menu.addItem(settingsItem)
+        settingsMenuItem = settingsItem
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
             title: "Quit Tiler",
