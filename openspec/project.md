@@ -33,6 +33,10 @@ and recover gracefully when the permission is missing.
    questions/permission requests into single batched asks. Owner gates are marked
    `[USER GATE]` in tasks.md.
 3. False positives of gestures are **blockers** — see `specs` deltas in the active change.
+   Numeric thresholds in the owner's brief are **empirical guidelines, not contracts**
+   (owner statement, 2026-07-04): retune them from golden-trace evidence whenever
+   practice disagrees, keep false-positive zero as the invariant, and document every
+   deviation in the spec with data and date (see the horizontalDominance retune).
 4. TDD for all recognizer/window logic; verification evidence before claiming done.
 5. Completed changes move to `openspec/changes/archive/YYYY-MM-DD-<change-id>/` and their
    requirement deltas are merged into `openspec/specs/`.
