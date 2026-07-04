@@ -55,10 +55,16 @@ States: `idle → tracking → candidate → confirmed(fired) → lockout → id
   size ≤ `palmSizeThreshold`, keyed by (deviceID, fingerID). States breaking / lingering /
   leaving / notTracking and size = 0 contacts are *never* counted (kills stale-contact
   false threes).
+- **Session rule (2026-07-04, found during TDD):** a touch session runs from the first
+  contact after zero to full lift-off. Arming additionally requires a *clean* session:
+  all 3 fingers assembled within `touchdownAssemblyWindow` of the session's first touch,
+  and no session poisoning (count > 3 at any point, any count decrease while contacts
+  remain, palm-class contact). This is what actually blocks "third finger added
+  mid-scroll" — stable-frame counting alone would not.
 - `idle → tracking`: exactly 3 active contacts and zero palm-class contacts on the
-  device, sustained for `stableArmFrames` consecutive frames; ended/zero-size artifacts
-  are ignored entirely (neither counted nor blocking). Baseline centroid captured at
-  arm time.
+  device in a clean session, sustained for `stableArmFrames` consecutive frames;
+  ended/zero-size artifacts are ignored entirely (neither counted nor blocking).
+  Baseline centroid captured at arm time.
 - `tracking → candidate`: centroid displacement ≥ `minDisplacement` on the dominant axis.
 - `candidate → confirmed`: for `confirmSamples` consecutive frames the direction test
   holds and displacement is monotonic (cumulative backtrack ≤ `reversalTolerance`):
@@ -81,6 +87,7 @@ States: `idle → tracking → candidate → confirmed(fired) → lockout → id
 | minContactSize | 0.05 | below → contact ignored (incl. size=0 stale) |
 | palmSizeThreshold | 2.0 | above → palm, ignored |
 | stableArmFrames | 4 | consecutive exact-3 frames to arm (~33 ms @120 Hz) |
+| touchdownAssemblyWindow | 60 ms | all 3 fingers must land within this window of first touch |
 | minDisplacement | 0.10 | normalized units, dominant axis, from arm baseline |
 | horizontalDominance | 2.0 | |dx| ≥ k·|dy| |
 | verticalDominance | 1.6 | |dy| ≥ k·|dx| |

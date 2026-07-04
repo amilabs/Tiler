@@ -1,0 +1,239 @@
+/// Deterministic 3-finger swipe recognizer (design.md §2, specs/gestures/spec.md).
+/// Pure logic: feed frames in timestamp order, get at most one action per physical gesture.
+/// Not thread-safe by design — call from a single queue (TouchStream's).
+public final class GestureRecognizer {
+    private struct FingerKey: Hashable {
+        let device: UInt64
+        let finger: Int32
+    }
+
+    private enum Phase {
+        case idle       // waiting for a clean exact-3 session to stabilize
+        case tracking   // armed: accumulating centroid movement from baseline
+        case lockout    // fired or aborted: dead until full lift-off + cooldown
+    }
+
+    private enum Direction {
+        case left, right, up, down
+    }
+
+    private let tun: Tunables
+
+    // Phase and per-session bookkeeping. A "session" spans from the first contact
+    // after a clean idle pad to full lift-off.
+    private var phase: Phase = .idle
+    private var lastFrameTimestamp: Double?
+    private var zeroContactsSince: Double?
+    private var sessionStart: Double?
+    private var sessionDirty = false
+    private var firstThreeAt: Double?
+    private var previousActiveCount = 0
+    private var armingStreak = 0
+
+    // Tracking (armed) state.
+    private var armTimestamp = 0.0
+    private var trackedFingers: Set<FingerKey> = []
+    private var baselineX = 0.0
+    private var baselineY = 0.0
+    private var peakDx = 0.0
+    private var peakDy = 0.0
+    private var confirmStreak = 0
+    private var pendingDirection: Direction?
+
+    public init(tunables: Tunables = .default) {
+        tun = tunables
+    }
+
+    /// Process one frame. `cmdHeld` is the Cmd-modifier snapshot at frame time.
+    /// Returns an action only at the exact moment a gesture is confirmed.
+    public func process(_ frame: TouchFrame, cmdHeld: Bool = false) -> GestureAction? {
+        let t = frame.timestamp
+
+        // Stream silence implies zero contacts for the whole gap: if the gap covers
+        // lift-off quiet time plus cooldown, the pad is clean again.
+        if let last = lastFrameTimestamp, t - last >= tun.liftOffQuiet + tun.cooldown {
+            resetToCleanIdle()
+        }
+        lastFrameTimestamp = t
+
+        let active = frame.contacts.filter { c in
+            (c.state == .making || c.state == .touching)
+                && c.size >= tun.minContactSize
+                && c.size <= tun.palmSizeThreshold
+        }
+        let palmPresent = frame.contacts.contains { c in
+            (c.state == .making || c.state == .touching) && c.size > tun.palmSizeThreshold
+        }
+
+        if active.isEmpty && !palmPresent {
+            return processZeroContacts(at: t)
+        }
+        zeroContactsSince = nil
+
+        updateSession(activeCount: active.count, palmPresent: palmPresent, at: t)
+
+        switch phase {
+        case .lockout:
+            return nil
+        case .idle:
+            processIdle(active: active, palmPresent: palmPresent, at: t)
+            return nil
+        case .tracking:
+            return processTracking(active: active, palmPresent: palmPresent, at: t, cmdHeld: cmdHeld)
+        }
+    }
+
+    // MARK: - Frame handling
+
+    private func processZeroContacts(at t: Double) -> GestureAction? {
+        previousActiveCount = 0
+        if zeroContactsSince == nil { zeroContactsSince = t }
+        if phase == .tracking {
+            // Fingers vanished before confirmation: cancelled gesture.
+            lockoutNow()
+        }
+        if let z = zeroContactsSince, t - z >= tun.liftOffQuiet + tun.cooldown {
+            resetToCleanIdle()
+            zeroContactsSince = z // still zero; keep the quiet clock running
+        }
+        return nil
+    }
+
+    private func updateSession(activeCount: Int, palmPresent: Bool, at t: Double) {
+        if sessionStart == nil {
+            sessionStart = t
+            sessionDirty = false
+            firstThreeAt = nil
+        }
+        if palmPresent { sessionDirty = true }
+        if activeCount > 3 { sessionDirty = true }
+        if activeCount < previousActiveCount { sessionDirty = true }
+        if activeCount == 3, firstThreeAt == nil {
+            firstThreeAt = t
+            if let s = sessionStart, t - s > tun.touchdownAssemblyWindow {
+                sessionDirty = true
+            }
+        }
+        previousActiveCount = activeCount
+    }
+
+    private func processIdle(active: [Contact], palmPresent: Bool, at t: Double) {
+        guard !sessionDirty, !palmPresent, active.count == 3 else {
+            armingStreak = 0
+            return
+        }
+        armingStreak += 1
+        guard armingStreak >= tun.stableArmFrames else { return }
+
+        phase = .tracking
+        armTimestamp = t
+        trackedFingers = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
+        (baselineX, baselineY) = centroid(active)
+        peakDx = 0
+        peakDy = 0
+        confirmStreak = 0
+        pendingDirection = nil
+    }
+
+    private func processTracking(active: [Contact], palmPresent: Bool,
+                                 at t: Double, cmdHeld: Bool) -> GestureAction? {
+        let keys = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
+        guard !palmPresent, active.count == 3, keys == trackedFingers else {
+            lockoutNow()
+            return nil
+        }
+        guard t - armTimestamp <= tun.maxGestureDuration else {
+            lockoutNow()
+            return nil
+        }
+
+        let (cx, cy) = centroid(active)
+        let dx = cx - baselineX
+        let dy = cy - baselineY
+        if abs(dx) > abs(peakDx) { peakDx = dx }
+        if abs(dy) > abs(peakDy) { peakDy = dy }
+
+        // Reversal check on the dominant axis: backtracking past tolerance aborts.
+        let (peak, current) = abs(peakDx) >= abs(peakDy) ? (peakDx, dx) : (peakDy, dy)
+        let backtrack = peak >= 0 ? peak - current : current - peak
+        if backtrack > tun.reversalTolerance * max(abs(peak), tun.minDisplacement) {
+            lockoutNow()
+            return nil
+        }
+
+        let progress = max(abs(dx), abs(dy))
+        guard progress >= tun.minDisplacement else {
+            confirmStreak = 0
+            return nil
+        }
+
+        // Direction dominance on the cumulative vector. Ambiguous at threshold = abort.
+        let direction: Direction
+        if abs(dx) >= tun.horizontalDominance * abs(dy) {
+            direction = dx < 0 ? .left : .right
+        } else if abs(dy) >= tun.verticalDominance * abs(dx) {
+            direction = dy > 0 ? .up : .down
+        } else {
+            lockoutNow()
+            return nil
+        }
+
+        if pendingDirection != direction {
+            pendingDirection = direction
+            confirmStreak = 0
+        }
+
+        let elapsed = t - armTimestamp
+        guard elapsed > 0, progress / elapsed >= tun.minMeanSpeed else {
+            confirmStreak = 0
+            return nil
+        }
+
+        confirmStreak += 1
+        guard confirmStreak >= tun.confirmSamples else { return nil }
+
+        // Confirmed: exactly one decision per physical gesture.
+        lockoutNow()
+        switch direction {
+        case .down:
+            return nil // deliberately not implemented
+        case .up:
+            return cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false)
+        case .left:
+            return GestureAction(direction: .left, nextDisplay: cmdHeld)
+        case .right:
+            return GestureAction(direction: .right, nextDisplay: cmdHeld)
+        }
+    }
+
+    // MARK: - State transitions
+
+    private func lockoutNow() {
+        phase = .lockout
+        sessionDirty = true
+        armingStreak = 0
+        confirmStreak = 0
+        pendingDirection = nil
+        trackedFingers = []
+    }
+
+    private func resetToCleanIdle() {
+        phase = .idle
+        sessionStart = nil
+        sessionDirty = false
+        firstThreeAt = nil
+        previousActiveCount = 0
+        armingStreak = 0
+        confirmStreak = 0
+        pendingDirection = nil
+        trackedFingers = []
+        zeroContactsSince = nil
+    }
+
+    private func centroid(_ contacts: [Contact]) -> (Double, Double) {
+        let n = Double(contacts.count)
+        let sx = contacts.reduce(0.0) { $0 + $1.x }
+        let sy = contacts.reduce(0.0) { $0 + $1.y }
+        return (sx / n, sy / n)
+    }
+}

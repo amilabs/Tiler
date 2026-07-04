@@ -34,12 +34,26 @@ SHALL never be trusted directly.
 - THEN no gesture is armed (a resting hand indicates non-gesture input; missing a gesture
   is acceptable, a false trigger is not)
 
-#### Requirement: Arming requires exactly three stable contacts
+#### Requirement: Arming requires exactly three stable contacts from a clean session
 
-The recognizer SHALL arm only when exactly 3 active contacts persist for at least
-`stableArmFrames` consecutive frames, AND no palm-class contact (size > palmSizeThreshold)
-is present anywhere on the device. Ended/stale artifacts (size = 0 or ended states) SHALL
-be ignored entirely — they neither count toward the 3 nor block arming.
+A touch session starts when the pad goes from zero to nonzero active contacts and ends
+with full lift-off. The recognizer SHALL arm only when, within a clean session, exactly
+3 active contacts persist for at least `stableArmFrames` consecutive frames, AND all
+three touched down within `touchdownAssemblyWindow` of the session's first touch, AND no
+palm-class contact (size > palmSizeThreshold) is present anywhere on the device.
+A session is poisoned (no arming until full lift-off) by: a third finger assembling too
+late, more than 3 active contacts at any point, any decrease of the active-contact count
+while contacts remain, or a palm-class contact. Ended/stale artifacts (size = 0 or ended
+states) SHALL be ignored entirely — they neither count toward the 3 nor block arming.
+
+##### Scenario: Third finger added during a two-finger scroll, then swipe-like motion
+- WHEN a 2-finger scroll runs for a while, a third finger lands, and all three then move
+  with valid swipe kinematics
+- THEN no action fires until the next clean session after full lift-off
+
+##### Scenario: Naturally staggered three-finger touchdown
+- WHEN 3 fingers land staggered within `touchdownAssemblyWindow` and swipe
+- THEN the gesture fires normally (staggering within the window is normal usage)
 
 ##### Scenario: Momentary third finger during two-finger scroll
 - WHEN a 2-finger scroll briefly becomes 3 contacts for fewer than `stableArmFrames` frames (2→3→2)

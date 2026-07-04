@@ -21,16 +21,22 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 2. GestureRecognizer (pure FSM, TDD — core of the product)
 
-- [ ] 2.1 Models: `Contact`, `TouchFrame`, `GestureAction`, `Tunables` (all initial
+- [x] 2.1 Models: `Contact`, `TouchFrame`, `GestureAction`, `Tunables` (all initial
       values from design.md §2 table).
-- [ ] 2.2 Test suite from gestures spec — every Scenario becomes a named test:
-      stale/size-0 contacts, palm, 2→3→2, 3→4, 3→2, re-form without lift-off,
-      diagonal ~30°, short/slow/jerky/reversed/timeout, momentum-after-liftoff,
-      swipe-down no-op, Cmd variants, one-action-per-gesture, lockout/cooldown,
-      exact-3 arming, direction dominance boundaries (26.5°/26.7°, 32°±).
-- [ ] 2.3 Implement FSM until suite green. No system imports in `TilerCore`.
-- [ ] 2.4 Fuzz test: randomized 1/2/4-finger noise streams × 10k frames → zero actions.
-- [ ] 2.5 Commit "gesture recognizer + tests".
+- [x] 2.2 Test suite from gestures spec — every Scenario is a named test (47 tests,
+      6 suites): stale/size-0, ended states, palm (incl. palm+3), 2→3→2, 3→4, 3→2,
+      re-form without lift-off, scroll+late-third (new session rule), staggered
+      touchdown positive, diagonal 28°/30°/55°/ambiguous band, short/slow/jerky/
+      reversed/timeout/cancelled, momentum, swipe-down no-op, Cmd variants,
+      one-action-per-gesture, lockout/cooldown, mutation guard for the session rule.
+      RED verified: 15 positive tests failed against the nil stub before implementation.
+- [x] 2.3 FSM implemented, suite green (47/47). No system imports in `TilerCore`.
+      Spec strengthened during TDD: clean-session rule + `touchdownAssemblyWindow`
+      (see gestures spec + design.md §2) — stable-frame counting alone did not block
+      "third finger added mid-scroll".
+- [x] 2.4 Fuzz: seeded non-3-finger noise (~10k+ frames) and ambiguous-angle sweeps
+      (200 random swipes, 28°–56° band) → zero actions; positive harness control.
+- [x] 2.5 Commit "gesture recognizer + tests".
 
 ## 3. TouchStream + trace tooling
 
