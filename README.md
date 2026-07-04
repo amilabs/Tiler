@@ -27,8 +27,14 @@ Scripts/make-app.sh           # signed build/Tiler.app (Apple Development identi
 Scripts/install.sh            # install to ~/Applications for a stable Accessibility grant
 ```
 
-Requires macOS 26+. The app is unsandboxed (needs the private MultitouchSupport
-framework and the Accessibility API) and is not App Store distributable.
+Requires macOS 26+. **Developed and verified exclusively on macOS 26.5 (Apple
+Silicon)** — every acceptance claim in this repo refers to that configuration.
+Older macOS: assessed as low-risk to port (public APIs are macOS 13-era; the
+private multitouch struct layout has been stable for years), but explicitly NOT
+tested — lowering the deployment target is a small build change gated on a real
+acceptance run on such a machine (gestures can't be verified in a VM: no
+multitouch devices there). The app is unsandboxed (private MultitouchSupport
+framework + Accessibility API) and is not App Store distributable.
 
 The menu bar item (pinch icon; ⚠︎ suffix when unpermitted) opens About and
 **Settings**: gestures/hotkeys toggles, permission status with a fix path, launch

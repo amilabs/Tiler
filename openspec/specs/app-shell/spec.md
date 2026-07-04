@@ -30,7 +30,9 @@ lightweight resilience); the live permission card; the complete hotkey and gestu
 reference (keycaps + looping direction animations, Cmd variants, double-press ↑,
 restore); a troubleshooting section (inline conflicts + Calibrate); a prominent
 Settings entry; and a footer with version, build timestamp (injected at build,
-displayed in the user's LOCAL timezone), and the GitHub link.
+displayed in the user's LOCAL timezone), the honest verified-configuration note
+("verified on macOS 26.5 only" until another configuration passes acceptance),
+and the GitHub link.
 
 ##### Scenario: Build time reflects the actual build
 - WHEN the app is rebuilt and the unified window is opened

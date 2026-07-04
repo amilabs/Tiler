@@ -20,4 +20,8 @@
       layout (880×771 measured; story + troubleshooting left, reference right,
       header/permission/footer full-width; density tightened). CPU behavior
       accepted by owner («поведение хорошее»).
-- [ ] 1.5 Owner confirms the layout; merge spec, archive.
+- [x] 1.5 Honesty about the tested configuration: footer states "verified on
+      macOS 26.5 only"; README spells out that all acceptance claims refer to that
+      configuration and porting is untested; spec requires the note until another
+      configuration passes acceptance.
+- [ ] 1.6 Owner confirms; archive.

@@ -86,6 +86,9 @@ enum GuideContent {
 
     static let gestureFootnote =
         "Exactly three fingers, one confident stroke. Two- and four-finger movements and swipe-down do nothing — by design."
+
+    /// Honesty marker: the only configuration this build was actually verified on.
+    static let verifiedOn = "verified on macOS 26.5 only"
 }
 
 @MainActor
@@ -291,6 +294,8 @@ struct GuideView: View {
             Text("Tiler \(version)")
             Text("·").foregroundStyle(.tertiary)
             Text("built \(buildDate)")
+            Text("·").foregroundStyle(.tertiary)
+            Text(GuideContent.verifiedOn)
             Text("·").foregroundStyle(.tertiary)
             Link("github.com/amilabs/Tiler", destination: URL(string: "https://github.com/amilabs/Tiler")!)
         }
