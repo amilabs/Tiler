@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IDENTITY="WindowGestures Local Dev"
+IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
 DEST="$HOME/Applications/Tiler.app"
 
 Scripts/make-app.sh > /dev/null
@@ -22,7 +22,7 @@ rm -rf "$DEST"
 mkdir -p "$HOME/Applications"
 cp -R build/Tiler.app "$DEST"
 xattr -cr "$DEST" 2>/dev/null || true
-codesign --force --sign "$IDENTITY" "$DEST"
+codesign --force --options runtime --sign "$IDENTITY" "$DEST"
 
 echo "Installed: $DEST"
 echo ""

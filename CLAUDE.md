@@ -20,8 +20,10 @@ needed; merge your branch back to `main` and push when a phase completes.
 **Hard rules:**
 - False gesture positives are release blockers (see gestures spec).
 - TDD for recognizer/window logic; run `swift build && swift test` before claiming done.
-- Sign every .app build with identity "WindowGestures Local Dev" (never ad-hoc) so
-  TCC grants survive rebuilds.
+- Sign every .app build with the Apple Development identity and keep bundle id
+  `pro.amilabs.tilerx` (constants in Scripts/make-app.sh — change neither: self-signed
+  certs never enroll in Accessibility on macOS 26, and the original id's TCC record is
+  wedged on the owner's machine; see README "TCC enrollment" for the full recipe).
 - No new system-wide installs or external dependencies without asking the owner.
 - Minimize owner involvement: batch questions; the only owner touchpoints are the
   `[USER GATE]` items in tasks.md.

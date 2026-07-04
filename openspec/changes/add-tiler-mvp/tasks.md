@@ -137,6 +137,16 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 9. Wrap-up
 
+- [x] 9.0 **TCC enrollment saga resolved** (2026-07-04 evening): Accessibility row
+      never persisted for self-signed builds (prompt shown, row silently dropped;
+      System-keychain trust, ad-hoc, reboot — all ineffective). Working recipe:
+      Apple Development signature (WWDR G3 intermediate had to be imported — the
+      System-keychain copy expired 2023) + fresh bundle id `pro.amilabs.tilerx`
+      (the original id's TCC client record is wedged on this machine). Grant now
+      persists across rebuilds via `Scripts/install.sh`; verified `trusted=true`
+      as own responsible process with zero prompts. Documented in README; scripts
+      updated; gestures confirmed working by owner on the granted build.
+
 - [x] 9.1 README: install, permissions, conflicts/diagnostics guide, hotkey/gesture table.
 - [ ] 9.2 Archive this change: move to `openspec/changes/archive/YYYY-MM-DD-add-tiler-mvp/`,
       merge spec deltas into `openspec/specs/`, update `openspec/project.md`.

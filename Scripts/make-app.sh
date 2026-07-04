@@ -1,10 +1,18 @@
 #!/bin/zsh
 # Assemble and codesign Tiler.app from the SwiftPM release build.
-# Signing uses the stable local identity so TCC grants survive rebuilds.
+#
+# Signing/identity rules (hard-won, see README "Permissions & TCC" + tasks.md):
+#  - Identity MUST be an Apple-issued one (Apple Development). Self-signed certs —
+#    even trusted in the System keychain — never get an Accessibility row on
+#    macOS 26 (tccd shows the prompt but silently refuses to persist the entry).
+#  - Bundle id is pro.amilabs.tilerx, NOT ...tiler: the original id's TCC client
+#    record got wedged on the dev machine (prompt shown, row never created, survives
+#    reboot). Fresh id enrolled instantly. Keep this id or the owner re-grants.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IDENTITY="WindowGestures Local Dev"
+IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
+BUNDLE_ID="pro.amilabs.tilerx"
 VERSION="0.1.0"
 APP="build/Tiler.app"
 
@@ -20,7 +28,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key><string>Tiler</string>
-    <key>CFBundleIdentifier</key><string>pro.amilabs.tiler</string>
+    <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleName</key><string>Tiler</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
@@ -32,6 +40,6 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-codesign --force --sign "$IDENTITY" "$APP"
+codesign --force --options runtime --sign "$IDENTITY" "$APP"
 echo "Built and signed: $APP"
 codesign -dv "$APP" 2>&1 | grep -E 'Identifier|Authority|Signature' || true

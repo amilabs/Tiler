@@ -7,9 +7,12 @@ and recover gracefully when the permission is missing.
 ## Tech stack
 
 - Swift 6.3, AppKit, SwiftPM executable package (no .xcodeproj) — build and test fully from CLI.
-- App bundle assembled by `Scripts/make-app.sh` (Info.plist with `LSUIElement`, codesign).
-- Codesign identity: **"WindowGestures Local Dev"** (already in the login keychain).
-  Always sign with it so TCC grants survive rebuilds. Never ship ad-hoc signed builds.
+- App bundle assembled by `Scripts/make-app.sh` (Info.plist with `LSUIElement`, codesign);
+  installed to `~/Applications` by `Scripts/install.sh` (TCC-stable location).
+- Codesign identity: **"Apple Development: alexnsk@gmail.com (PHYV972T38)"**, bundle id
+  **pro.amilabs.tilerx** — both are TCC-load-bearing, change neither (self-signed certs
+  don't enroll in Accessibility on macOS 26; the original `pro.amilabs.tiler` TCC record
+  is wedged on the owner's machine). Full recipe: README "TCC enrollment on macOS 26".
 - Deployment target: **macOS 26 only** (owner's machine: macOS 26.5.1, Xcode 26.6). Approved decision.
 - Private framework `MultitouchSupport.framework` is linked for raw trackpad contact frames.
   App Sandbox stays disabled (required for both MultitouchSupport and AX control).
