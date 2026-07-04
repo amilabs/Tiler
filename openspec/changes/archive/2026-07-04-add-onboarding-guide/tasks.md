@@ -7,5 +7,9 @@
 - [x] 1.4 AppDelegate: menu item Shortcuts & Help; startup flow v2 (first run or
       unpermitted → Guide); permission state pushed into GuideModel; --show-guide
       smoke arg.
-- [ ] 1.5 Tests green, UI smoke, install; owner eyeballs the Guide [USER GATE].
-- [ ] 1.6 Update specs merge + archive change.
+- [x] 1.5 Owner eyeballed the Guide («Все отлично») with follow-ups, all done:
+      richer About description, build time in LOCAL timezone (ISO stamp in
+      Info.plist, formatted at display), conflict ALERTING (status-item ⚠︎ +
+      tooltip, re-check on menu open, Guide-on-launch when conflicts present) —
+      live-verified by toggling a real system setting and reverting.
+- [x] 1.6 Specs merged (app-shell), change archived.

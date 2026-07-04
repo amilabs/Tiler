@@ -72,6 +72,10 @@ Root causes found on 2026-07-04, in order of discovery:
    A **fresh bundle id** enrolled instantly — hence the current id
    `pro.amilabs.tilerx`. Don't "clean it up" back to the old id: the grant follows
    (bundle id + signing team), and the old id is dead on this machine.
+4. **The list row may vanish while the grant persists.** System Settings sometimes
+   stops SHOWING the Tiler row even though the TCC grant is alive (windows still
+   move; `Tiler --ax-report <file>` prints `trusted=true`). Cosmetic Settings-UI
+   flakiness on this machine — verify functionally, don't chase the row.
 
 ## Permissions
 

@@ -5,10 +5,12 @@
 #### Requirement: Menu-bar-only application
 
 Tiler SHALL run as an `LSUIElement` app with an `NSStatusItem` (no Dock icon, no main
-window). The menu SHALL contain exactly: About Tiler, Settings…, Quit. Permission
-status/fix path, toggles, Launch at Login, and Diagnostics live in Settings
-(settings spec). When Accessibility is missing, the status item SHALL show a distinct
-alert appearance.
+window). The menu SHALL contain exactly: About Tiler, Shortcuts & Help, Settings…,
+Quit. Permission status/fix path, toggles, Launch at Login, and Diagnostics live in
+Settings (settings spec); Shortcuts & Help opens the Guide. The status item SHALL show
+a distinct alert appearance (with explanatory tooltip) when Accessibility is missing
+OR conflicting system gestures are detected; the conflict check re-runs at launch and
+on every menu open.
 
 ##### Scenario: Warning state visible
 - WHEN AX permission is missing
@@ -21,18 +23,21 @@ generated at build) and a matching template menu-bar icon.
 
 #### Requirement: About window
 
-The About window SHALL show the app name/icon, version, build timestamp (injected at
-build time), and a clickable link to https://github.com/amilabs/Tiler.
+The About window SHALL show the app name/icon, a multi-sentence description of what
+Tiler does, the version, the build timestamp (injected at build time, displayed in
+the user's local timezone), and a clickable link to https://github.com/amilabs/Tiler.
 
 ##### Scenario: Build time reflects the actual build
 - WHEN the app is rebuilt and About is opened
 - THEN the displayed build timestamp matches the new build, not a stale constant
 
-#### Requirement: Startup permission flow
+#### Requirement: Startup flow
 
-On launch without Accessibility, Tiler SHALL (beyond the one-shot system prompt) open
-its Settings window with the permission problem highlighted, leaving the user one click
-from the system pane, while continuing to run normally otherwise.
+On the very first launch, on any launch without Accessibility, and on any launch with
+conflicting system gestures detected, Tiler SHALL open the Guide window (live
+permission card, full hotkey/gesture reference, troubleshooting with inline conflicts
+and a Calibrate button), continuing to run normally otherwise. Granting the permission
+while the Guide is open SHALL flip its permission card without relaunch.
 
 #### Requirement: Conflict diagnostics
 

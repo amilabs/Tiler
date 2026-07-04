@@ -48,3 +48,20 @@ diagnostics and a Calibrate button.
 - WHEN gestures underperform and the user opens the Guide
 - THEN conflicting system gestures (if any) are listed inline and one click starts
   calibration
+
+#### Requirement: Conflict alerting (modified diagnostics)
+
+Beyond read-only reporting, Tiler SHALL actively alert on conflicting system
+gestures: the status item shows its alert appearance with an explanatory tooltip;
+the check re-runs at launch and on every menu open; a launch with conflicts present
+opens the Guide.
+
+##### Scenario: Conflict appears while Tiler runs
+- WHEN a conflicting system trackpad setting is enabled while Tiler is running
+- THEN the next menu open shows the alert glyph, and the Guide lists the conflict
+  with guidance
+
+##### Scenario: About window content
+- WHEN About opens
+- THEN it shows a multi-sentence description of what Tiler does, the version, the
+  build time in the user's LOCAL timezone, and the GitHub link

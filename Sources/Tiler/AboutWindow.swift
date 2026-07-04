@@ -9,8 +9,14 @@ struct AboutView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? AppDelegate.version
     }
 
+    /// Build stamp is ISO8601 UTC in Info.plist; shown in the user's local time.
     private var buildDate: String {
-        Bundle.main.infoDictionary?["TilerBuildDate"] as? String ?? "dev build (swift run)"
+        guard let raw = Bundle.main.infoDictionary?["TilerBuildDate"] as? String else {
+            return "dev build (swift run)"
+        }
+        let parser = ISO8601DateFormatter()
+        guard let date = parser.date(from: raw) else { return raw }
+        return date.formatted(date: .abbreviated, time: .shortened)
     }
 
     var body: some View {
@@ -20,10 +26,19 @@ struct AboutView: View {
                 .frame(width: 72, height: 72)
             Text("Tiler")
                 .font(.title2.weight(.medium))
-            Text("Move and resize windows with hotkeys\nand precise 3-finger trackpad gestures.")
+            Text("""
+            Tiler snaps the active window into halves, maximized, or a centered \
+            third — on any of your displays — driven by fixed hotkeys and precise \
+            three-finger trackpad swipes. It is built reliability-first: a swipe \
+            counts only when exactly three fingers move decisively, so ordinary \
+            scrolling never touches your windows, and swipe thresholds can be \
+            calibrated to your hand. See Shortcuts & Help in the menu for the full \
+            reference.
+            """)
                 .font(.callout)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(.leading)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Divider().frame(width: 220)
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                 GridRow {
@@ -40,7 +55,7 @@ struct AboutView: View {
                 .font(.callout)
         }
         .padding(28)
-        .frame(width: 320)
+        .frame(width: 380)
     }
 }
 

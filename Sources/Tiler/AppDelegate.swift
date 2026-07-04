@@ -4,7 +4,7 @@ import TilerCore
 import TilerSystem
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     static let version = "0.2.0-dev"
 
     private var statusItem: NSStatusItem?
@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var permissionMonitor: PermissionMonitor?
     private let windowActions = WindowActions()
     private let settings = SettingsStore()
+    private let diagnostics = ConflictDiagnostics()
 
     private var settingsModel: SettingsModel?
     private var aboutWindow: AuxWindow<AboutView>?
@@ -95,17 +96,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissionMonitor = monitor
     }
 
+    private var conflictsPresent = false
+
     private func applyPermissionState(_ trusted: Bool) {
-        statusItem?.button?.title = trusted ? "" : " ⚠︎"
         settingsModel?.accessibilityGranted = trusted
         guideModel?.accessibilityGranted = trusted
+        updateStatusGlyph()
         NSLog("Tiler: accessibility %@", trusted ? "granted" : "missing")
     }
 
-    /// Startup flow v2 (add-onboarding-guide): first launch ever, or any launch
-    /// without permission, lands on the Guide.
+    /// Re-reads system trackpad settings; alerts (glyph + log) when they compete
+    /// with Tiler's gestures. Called at launch and every time the menu opens.
+    private func refreshConflictAlert() {
+        let conflicts = diagnostics.conflicts()
+        if conflicts.isEmpty != !conflictsPresent {
+            NSLog("Tiler: system gesture conflicts: %d", conflicts.count)
+        }
+        conflictsPresent = !conflicts.isEmpty
+        updateStatusGlyph()
+    }
+
+    private func updateStatusGlyph() {
+        let trusted = permissionMonitor?.trusted ?? false
+        let alert = !trusted || conflictsPresent
+        statusItem?.button?.title = alert ? " ⚠︎" : ""
+        statusItem?.button?.toolTip = !trusted
+            ? "Tiler: Accessibility permission missing"
+            : (conflictsPresent
+                ? "Tiler: conflicting system trackpad gestures detected — see Shortcuts & Help"
+                : "Tiler")
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshConflictAlert()
+    }
+
+    /// Startup flow v2 (add-onboarding-guide): first launch ever, launch without
+    /// permission, or launch with conflicting system gestures lands on the Guide.
     private func runStartupPermissionFlow() {
-        if !settings.hasSeenGuide || !(permissionMonitor?.trusted ?? false) {
+        refreshConflictAlert()
+        if !settings.hasSeenGuide || !(permissionMonitor?.trusted ?? false) || conflictsPresent {
             showGuide()
         }
     }
@@ -223,6 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: "q"
         ))
 
+        menu.delegate = self
         item.menu = menu
         statusItem = item
     }

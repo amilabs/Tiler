@@ -14,7 +14,7 @@ cd "$(dirname "$0")/.."
 IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
 BUNDLE_ID="pro.amilabs.tilerx"
 VERSION="0.2.0"
-BUILD_DATE="$(date -u +"%Y-%m-%d %H:%M UTC")"
+BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 APP="build/Tiler.app"
 
 swift build -c release

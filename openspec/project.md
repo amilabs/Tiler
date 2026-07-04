@@ -58,5 +58,6 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 (none — start the next change per workflow rule 1)
 
 Archived: `2026-07-04-add-tiler-mvp` (MVP), `2026-07-04-add-shell-and-calibration`
-(v0.2: icon/About/Settings, startup flow, per-user calibration, dominance retunes).
-Specs in `openspec/specs/` are current truth.
+(v0.2: icon/About/Settings, startup flow, per-user calibration, dominance retunes),
+`2026-07-04-add-onboarding-guide` (Guide window, cheat sheet, conflict alerting,
+startup flow v2). Specs in `openspec/specs/` are current truth.
