@@ -16,4 +16,8 @@
       mandatory states — launch idle 0.13%, window open 0.50%, post-UI 0.20%.
       Root cause of the missed requirement: the harness only ever measured the
       launch state and used lifetime-average %cpu; both gaps are now closed.
-- [ ] 1.4 Owner confirms; merge spec, archive.
+- [x] 1.4 Owner follow-up: unified window reworked to a two-column, no-scroll
+      layout (880×771 measured; story + troubleshooting left, reference right,
+      header/permission/footer full-width; density tightened). CPU behavior
+      accepted by owner («поведение хорошее»).
+- [ ] 1.5 Owner confirms the layout; merge spec, archive.

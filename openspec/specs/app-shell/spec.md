@@ -41,16 +41,16 @@ displayed in the user's LOCAL timezone), and the GitHub link.
 - THEN the user can read what the app is for AND see every binding/gesture without
   opening anything else
 
-#### Requirement: Fits small screens
+#### Requirement: Fits without vertical scrolling
 
-Auxiliary windows SHALL never exceed the screen's visible height: the unified window's
-content scrolls vertically when it does not fit, and window heights are clamped to the
-visible frame.
+The unified window SHALL fit ordinary displays with NO vertical scrolling: a
+two-column layout (story/troubleshooting left, full hotkey/gesture reference right;
+header, permission card and footer spanning both) within ≈880×780 pt. Auxiliary
+window heights remain clamped to the screen's visible frame as a safety net.
 
-##### Scenario: Small display
-- WHEN the unified window opens on a display whose visible height is smaller than the
-  full content
-- THEN the window is clamped to the screen and the content is reachable by scrolling
+##### Scenario: Everything visible at once
+- WHEN the unified window opens on a display with ≥800 pt of visible height
+- THEN all sections are visible simultaneously without scrolling
 
 #### Requirement: Startup flow
 

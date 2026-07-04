@@ -57,13 +57,13 @@ enum GuideContent {
     static let values: [ValueRow] = [
         ValueRow(symbol: "hand.raised.fill",
                  title: "A swipe you can trust",
-                 text: "An action fires only when exactly three fingers move decisively in one direction. Scrolling, resting palms, and stray touches never move your windows — false positives are treated as bugs of the highest order."),
+                 text: "An action fires only when exactly three fingers move decisively in one direction. Scrolling, resting palms, and stray touches never move your windows."),
         ValueRow(symbol: "person.fill.checkmark",
                  title: "Tuned to your hand",
-                 text: "Everyone swipes differently. One-minute calibration measures your own strokes and adapts the recognition angles — within provably safe bounds."),
+                 text: "Everyone swipes differently. One-minute calibration adapts the recognition angles to your strokes — within provably safe bounds."),
         ValueRow(symbol: "bolt.fill",
                  title: "Featherweight and unbreakable",
-                 text: "Event-driven engine: under 1% CPU when idle, no input hooks that could ever jam your keyboard, and instant recovery if permissions change."),
+                 text: "Event-driven engine: under 1% CPU at idle, no input hooks, instant recovery when permissions change."),
     ]
 
     static let hotkeys: [HotkeyRow] = [
@@ -112,60 +112,59 @@ final class GuideModel: ObservableObject {
 struct GuideView: View {
     @ObservedObject var model: GuideModel
 
-    /// Window height: content-sized, but never taller than the screen (spec:
-    /// fits small screens — content scrolls instead).
-    private var windowHeight: CGFloat {
-        let screenCap = (NSScreen.main?.visibleFrame.height ?? 900) - 60
-        return min(1010, screenCap)
-    }
-
+    // Two-column layout (owner: no vertical scrolling): story on the left,
+    // the full reference on the right, header/permission/footer span both.
     var body: some View {
-        ScrollView(.vertical) {
-            content
-        }
-        .frame(width: 560, height: windowHeight)
-    }
-
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 13) {
             hero
-            valueSection
             permissionCard
-            section("Hotkeys") {
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
-                    ForEach(GuideContent.hotkeys) { row in
-                        GridRow {
-                            keycaps(row.keys)
-                                .gridColumnAlignment(.trailing)
-                            Text(row.action)
-                                .font(.callout)
-                        }
-                    }
+            HStack(alignment: .top, spacing: 30) {
+                VStack(alignment: .leading, spacing: 14) {
+                    valueSection
+                    troubleshooting
+                    Spacer(minLength: 0)
                 }
-            }
-            section("Trackpad gestures") {
-                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 10) {
-                    ForEach(GuideContent.gestures) { row in
-                        GridRow {
-                            HStack(spacing: 6) {
-                                if row.cmd { keycaps(["⌘"]) }
-                                HoverDemo(direction: row.direction)
+                .frame(width: 340, alignment: .topLeading)
+                VStack(alignment: .leading, spacing: 14) {
+                    section("Hotkeys") {
+                        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
+                            ForEach(GuideContent.hotkeys) { row in
+                                GridRow {
+                                    keycaps(row.keys)
+                                        .gridColumnAlignment(.trailing)
+                                    Text(row.action)
+                                        .font(.callout)
+                                }
                             }
-                            .gridColumnAlignment(.trailing)
-                            Text(row.action)
-                                .font(.callout)
                         }
                     }
+                    section("Trackpad gestures") {
+                        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 9) {
+                            ForEach(GuideContent.gestures) { row in
+                                GridRow {
+                                    HStack(spacing: 6) {
+                                        if row.cmd { keycaps(["⌘"]) }
+                                        HoverDemo(direction: row.direction)
+                                    }
+                                    .gridColumnAlignment(.trailing)
+                                    Text(row.action)
+                                        .font(.callout)
+                                }
+                            }
+                        }
+                        Text(GuideContent.gestureFootnote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
+                    }
                 }
-                Text(GuideContent.gestureFootnote)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            troubleshooting
             footer
         }
-        .padding(24)
+        .padding(26)
+        .frame(width: 880)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Hero & story
@@ -174,10 +173,10 @@ struct GuideView: View {
         HStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 64, height: 64)
-            VStack(alignment: .leading, spacing: 4) {
+                .frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 3) {
                 Text("Tiler")
-                    .font(.largeTitle.weight(.medium))
+                    .font(.title.weight(.medium))
                 Text(GuideContent.tagline)
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -186,7 +185,7 @@ struct GuideView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 6) {
                 HeroDemoView()
-                    .frame(width: 96, height: 58)
+                    .frame(width: 92, height: 50)
                     .background(Color.accentColor.opacity(0.07),
                                 in: RoundedRectangle(cornerRadius: 12))
                 Button {
@@ -230,7 +229,7 @@ struct GuideView: View {
                   systemImage: "checkmark.circle.fill")
                 .font(.callout)
                 .foregroundStyle(.green)
-                .padding(12)
+                .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
         } else {
@@ -366,7 +365,7 @@ struct HoverDemo: View {
 
     var body: some View {
         GestureDemoView(direction: direction, animated: hovered)
-            .frame(width: 84, height: 40)
+            .frame(width: 76, height: 34)
             .background(Color.secondary.opacity(0.08),
                         in: RoundedRectangle(cornerRadius: 8))
             .onHover { hovered = $0 }
