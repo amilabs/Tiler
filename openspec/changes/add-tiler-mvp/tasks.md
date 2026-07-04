@@ -46,8 +46,9 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       zero build warnings (Swift 6 concurrency-clean).
       Devices are enumerated at start; hotplug (Magic Trackpad attach) re-scan is
       deferred to Phase 6 diagnostics work.
-      **[USER GATE #1 — still pending]** live sanity: owner touches the pad during a
-      short `--record-touches` run to confirm frame delivery + MTTouch field mapping.
+      **[USER GATE #1 PASSED]** AX granted to the host; all AX integration + hotkey
+      E2E tests run green. Live single-touch frame-delivery sanity folds into gate 3
+      (golden recording) — still needs the owner's fingers.
 - [x] 3.2 Trace replay: JSONL round-trip + replay parity tests (TraceIO in TilerCore);
       replayed trace reproduces identical actions. 50 tests green.
 - [x] 3.3 Commit "touch stream + record/replay".
@@ -61,11 +62,11 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       conversion, soft AXError handling, dead-window store trimming. Wired into the
       gesture pipeline (AppDelegate.route). Code restructured: new `TilerSystem`
       library target so tests can import the system layer.
-- [x] 4.2 Integration tests written (`Tests/TilerIntegrationTests`): TextEdit target,
-      all five commands + restore semantics + next-display, geometry read-back with
-      2 px tolerance. Suite is `.enabled(if: AXIsProcessTrusted())` — currently
-      **skips** (host not trusted). ⚠ Execution pending **[USER GATE #1]**; do not
-      consider 4.x verified until they run green.
+- [x] 4.2 Integration tests (`Tests/TilerIntegrationTests/AXSystemTests.swift`):
+      TextEdit target, all five commands + restore semantics + next-display, geometry
+      read-back with 2 px tolerance. **GATE #1 PASSED** — AX granted to the host,
+      all 6 window tests GREEN. Both AX suites nested under one `.serialized` parent so
+      global-hotkey E2E never races the window suite for frontmost focus.
 - [x] 4.3 Commit "window actions + AX integration tests".
 
 ## 5. Hotkeys + permission lifecycle
@@ -78,11 +79,18 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       re-entry on revocation. Wired: launch prompt (once), status-item warning ▦⚠︎,
       WindowActions failures feed the monitor. Smoke: launch without AX → warning
       logged, hotkeys registered, stream alive, CPU 0.1%, clean exit.
-- [ ] 5.3 E2E: CGEventPost synthetic hotkey presses → assert window frames; single vs
-      double press timing; no-op without permission (`tccutil reset Accessibility
-      pro.amilabs.tiler` for the negative case — self-service).
-      **[USER GATE #2]** One re-grant click after the negative test, verifying
-      no-restart recovery (permissions spec scenario).
+- [x] 5.3 E2E: hotkey presses via System Events (CGEventPost does NOT reach Carbon
+      RegisterEventHotKey on macOS 26 — discovered and documented; AppleScript key
+      events do). 4 E2E tests green vs real Tiler.app + TextEdit: left half, single-up
+      maximize after the 300 ms window (with the in-window no-move assertion), double-up
+      center-third (never maximizes), restore. Revocation: `tccutil reset` → Tiler
+      stays ALIVE, no crash (verified). NOTE: macOS caches AX trust inside an already-
+      trusted running process (that's why it SIGKILLs GUI apps on reset; our CLI process
+      kept its grant), so live in-process revocation detection can't be scripted — the
+      warning/repoll transition is covered deterministically by PermissionMonitor unit
+      tests. **[USER GATE #2 — remaining]** revoke via System Settings UI (triggers the
+      OS kill/re-request) and one re-grant, eyeballing the ▦⚠︎ warning + no-restart
+      recovery per the permissions spec.
 - [x] 5.4 Commit "hotkeys + permission lifecycle".
 
 ## 6. App shell

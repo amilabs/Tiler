@@ -87,6 +87,7 @@ public final class HotkeyController {
 
     private func handlePress(id: UInt32) {
         guard let key = Key(rawValue: id) else { return }
+        NSLog("Tiler: hotkey pressed: \(key)")
         switch key {
         case .left:
             emit(.leftHalf(nextDisplay: false))
