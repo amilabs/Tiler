@@ -50,9 +50,10 @@ States: `idle → tracking → candidate → confirmed(fired) → lockout → id
   size ≤ `palmSizeThreshold`, keyed by (deviceID, fingerID). States breaking / lingering /
   leaving / notTracking and size = 0 contacts are *never* counted (kills stale-contact
   false threes).
-- `idle → tracking`: exactly 3 active contacts, and total contacts (incl. non-active) on
-  the device do not exceed 3, sustained for `stableArmFrames` consecutive frames.
-  Baseline centroid captured at arm time.
+- `idle → tracking`: exactly 3 active contacts and zero palm-class contacts on the
+  device, sustained for `stableArmFrames` consecutive frames; ended/zero-size artifacts
+  are ignored entirely (neither counted nor blocking). Baseline centroid captured at
+  arm time.
 - `tracking → candidate`: centroid displacement ≥ `minDisplacement` on the dominant axis.
 - `candidate → confirmed`: for `confirmSamples` consecutive frames the direction test
   holds and displacement is monotonic (cumulative backtrack ≤ `reversalTolerance`):

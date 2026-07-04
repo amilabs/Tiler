@@ -12,7 +12,7 @@ Tiler SHALL register the following global hotkeys via Carbon `RegisterEventHotKe
 | Ctrl+Shift+← | left half of the window's current screen |
 | Ctrl+Shift+→ | right half of the window's current screen |
 | Ctrl+Shift+↑ | maximize on the window's current screen (visible frame) |
-| Ctrl+Shift+↑ ×2 (within window) | full height, horizontally centered, width = 1/3 of screen |
+| Ctrl+Shift+↑ ×2 (second press ≤ 300 ms after first) | full height, horizontally centered, width = 1/3 of screen |
 | Ctrl+Shift+↓ | restore the window's pre-Tiler frame |
 | Cmd+Ctrl+Shift+← | left half on the next display |
 | Cmd+Ctrl+Shift+→ | right half on the next display |

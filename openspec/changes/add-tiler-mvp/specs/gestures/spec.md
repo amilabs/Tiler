@@ -29,10 +29,17 @@ SHALL never be trusted directly.
 - WHEN two fingers move while a palm-sized contact (size > palmSizeThreshold) is present
 - THEN the palm is not counted and no 3-finger gesture is armed
 
+##### Scenario: Palm present alongside three fingers
+- WHEN exactly 3 active finger contacts move while a palm-class contact rests on the pad
+- THEN no gesture is armed (a resting hand indicates non-gesture input; missing a gesture
+  is acceptable, a false trigger is not)
+
 #### Requirement: Arming requires exactly three stable contacts
 
-The recognizer SHALL arm only when exactly 3 active contacts (and no additional non-active
-contacts beyond those 3) persist for at least `stableArmFrames` consecutive frames.
+The recognizer SHALL arm only when exactly 3 active contacts persist for at least
+`stableArmFrames` consecutive frames, AND no palm-class contact (size > palmSizeThreshold)
+is present anywhere on the device. Ended/stale artifacts (size = 0 or ended states) SHALL
+be ignored entirely — they neither count toward the 3 nor block arming.
 
 ##### Scenario: Momentary third finger during two-finger scroll
 - WHEN a 2-finger scroll briefly becomes 3 contacts for fewer than `stableArmFrames` frames (2→3→2)
