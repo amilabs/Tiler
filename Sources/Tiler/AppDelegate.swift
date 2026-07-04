@@ -57,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applyPermissionState(_ trusted: Bool) {
-        statusItem?.button?.title = trusted ? "▦" : "▦⚠︎"
+        statusItem?.button?.title = trusted ? "" : " ⚠︎"
         settingsModel?.accessibilityGranted = trusted
         NSLog("Tiler: accessibility %@", trusted ? "granted" : "missing")
     }
@@ -157,7 +157,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setUpStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.title = "▦"
+        // Same glyph family as the app icon (owner pick #6); auto-templates for
+        // menu bar light/dark. The ⚠︎ title appears next to it when unpermitted.
+        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        item.button?.image = NSImage(systemSymbolName: "hand.pinch.fill",
+                                     accessibilityDescription: "Tiler")?
+            .withSymbolConfiguration(config)
+        item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
         menu.addItem(makeItem("About Tiler", #selector(showAbout)))

@@ -17,10 +17,14 @@ per phase, `[USER GATE]` = owner touchpoints.
 
 ## 2. App identity: icon, About, menu
 
-- [ ] 2.1 **[USER GATE #2]** Owner picks one of 3 proposed icon concepts (done in chat).
-- [ ] 2.2 Icon pipeline: render chosen concept to .icns via Swift/CoreGraphics script
-      (Scripts/make-icons.swift) at build; template menu-bar icon (normal + alert
-      variants) replaces the text glyph.
+- [x] 2.1 **[USER GATE #2 PASSED]** Owner iterated through 4 concept rounds and picked
+      catalog glyph #6 (hand.pinch.fill) as-is; custom pinch art rejected. SF-Symbol-in-
+      app-icon license caveat flagged and accepted for this private build (revisit
+      before any public distribution).
+- [x] 2.2 Icon pipeline: make-icons.swift renders hand.pinch.fill on the violet
+      squircle to .icns at build (make-app.sh embeds CFBundleIconFile + Resources);
+      menu bar shows the same symbol as a template image with a ⚠︎ suffix when
+      Accessibility is missing.
 - [x] 2.3 make-app.sh: build timestamp (TilerBuildDate) embedded; version 0.2.0.
       CFBundleIconFile lands with 2.2 once the owner picks a concept.
 - [x] 2.4 About window (SwiftUI): icon, name, version, build time (TilerBuildDate,
@@ -29,7 +33,7 @@ per phase, `[USER GATE]` = owner touchpoints.
 - [x] 2.5 Menu restructure per spec: About / Settings… (⌘,) / Quit; ▦⚠︎ alert glyph
       until the real icon lands. Diagnostics + Launch at Login + permission line
       moved into Settings.
-- [ ] 2.6 Commit "app identity".
+- [x] 2.6 Commit "app identity".
 
 ## 3. Settings window
 
@@ -46,7 +50,7 @@ per phase, `[USER GATE]` = owner touchpoints.
 - [x] 3.4 Startup flow: launch without permission auto-opens Settings with the
       highlighted row (runStartupPermissionFlow). Verified by code path + smoke logs;
       full unpermitted-launch E2E folds into 5.2 acceptance.
-- [ ] 3.5 Commit "settings".
+- [x] 3.5 Commit "settings".
 
 ## 4. Calibration
 

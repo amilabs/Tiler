@@ -20,8 +20,9 @@ APP="build/Tiler.app"
 swift build -c release
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/Tiler "$APP/Contents/MacOS/Tiler"
+swift Scripts/make-icons.swift --icns "$APP/Contents/Resources/AppIcon.icns" > /dev/null
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,6 +36,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>TilerBuildDate</key><string>${BUILD_DATE}</string>
     <key>LSUIElement</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
