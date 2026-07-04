@@ -68,7 +68,7 @@ States: `idle → tracking → candidate → confirmed(fired) → lockout → id
 - `tracking → candidate`: centroid displacement ≥ `minDisplacement` on the dominant axis.
 - `candidate → confirmed`: for `confirmSamples` consecutive frames the direction test
   holds and displacement is monotonic (cumulative backtrack ≤ `reversalTolerance`):
-  - horizontal: `|dx| ≥ 2.0·|dy|` (≈ ≤26.6° off horizontal)
+  - horizontal: `|dx| ≥ 1.3·|dy|` (≈ ≤37.6° off horizontal; retuned from 2.0, see Tunables note)
   - vertical-up: `|dy| ≥ 1.6·|dx|` (≈ ≤32° off vertical), dy must point up
   - anything else (incl. ~30° diagonals) = ambiguous → **abort**
   - mean speed ≥ `minMeanSpeed`; elapsed ≤ `maxGestureDuration`
@@ -89,7 +89,7 @@ States: `idle → tracking → candidate → confirmed(fired) → lockout → id
 | stableArmFrames | 4 | consecutive exact-3 frames to arm (~33 ms @120 Hz) |
 | touchdownAssemblyWindow | 60 ms | all 3 fingers must land within this window of first touch |
 | minDisplacement | 0.10 | normalized units, dominant axis, from arm baseline |
-| horizontalDominance | 2.0 | |dx| ≥ k·|dy| |
+| horizontalDominance | 1.3 | |dx| ≥ k·|dy| (was 2.0; retuned from golden trace 2026-07-04 — owner's rights tilt to +36°, diagonals start ≥48°) |
 | verticalDominance | 1.6 | |dy| ≥ k·|dx| |
 | confirmSamples | 3 | consecutive consistent samples to fire |
 | minMeanSpeed | 0.5 /s | normalized displacement / elapsed |

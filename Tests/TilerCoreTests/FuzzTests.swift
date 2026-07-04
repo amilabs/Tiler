@@ -44,11 +44,12 @@ struct SplitMix64: RandomNumberGenerator {
     }
 
     // Perfect swipe kinematics at random angles inside the ambiguous band
-    // (28°...56° from horizontal, mirrored to all quadrants): never fires.
+    // (40°...56° from horizontal after the 2026-07-04 retune, mirrored to all
+    // quadrants): never fires.
     @Test func ambiguousAngleSwipesNeverFire() {
         var rng = SplitMix64(seed: 0xA0B1_C2D3)
         for _ in 0..<200 {
-            let base = Double.random(in: 28...56, using: &rng)
+            let base = Double.random(in: 40...56, using: &rng)
             let quadrant = [base, 180 - base, 180 + base, 360 - base]
                 .randomElement(using: &rng)!
             let magnitude = Double.random(in: 0.12...0.3, using: &rng)

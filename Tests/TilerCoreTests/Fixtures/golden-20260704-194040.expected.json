@@ -60,7 +60,19 @@
     "nextDisplay" : false
   },
   {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
     "direction" : "left",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
     "nextDisplay" : false
   },
   {
@@ -76,6 +88,18 @@
     "nextDisplay" : false
   },
   {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
     "direction" : "up",
     "nextDisplay" : false
   },
@@ -121,6 +145,14 @@
   },
   {
     "direction" : "left",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
+    "nextDisplay" : false
+  },
+  {
+    "direction" : "right",
     "nextDisplay" : false
   },
   {
