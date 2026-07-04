@@ -1,0 +1,134 @@
+# gestures — current spec (merged from add-tiler-mvp, 2026-07-04)
+
+## Requirements
+
+#### Requirement: Gesture source is raw multitouch contact frames
+
+Tiler SHALL consume raw per-contact frames from the multitouch device (private
+MultitouchSupport framework) as the only gesture source. Tiler SHALL NOT derive gesture
+actions from two-finger `scrollWheel` events or public `NSEvent` gesture events in normal
+operation.
+
+##### Scenario: No event-tap or scroll-event dependency
+- WHEN Tiler runs in normal mode
+- THEN no CGEventTap is installed and no scroll-wheel event monitor feeds the recognizer
+
+#### Requirement: Active contact definition excludes stale and ended contacts
+
+A contact SHALL be counted as active only if its state is `making` or `touching`, its
+size is ≥ `minContactSize` (> 0) and ≤ `palmSizeThreshold`, keyed uniquely by
+(deviceID, fingerID). Contacts with state `breaking`, `lingering`, `leaving`,
+`notTracking`, or size = 0 SHALL never be counted. `fingerCount` reported by the callback
+SHALL never be trusted directly.
+
+##### Scenario: Stale third contact after finger lift
+- WHEN two fingers scroll and a third contact remains in the frame with size = 0 or state `lingering`
+- THEN the recognizer counts 2 active contacts and no gesture is armed
+
+##### Scenario: Palm resting on trackpad
+- WHEN two fingers move while a palm-sized contact (size > palmSizeThreshold) is present
+- THEN the palm is not counted and no 3-finger gesture is armed
+
+##### Scenario: Palm present alongside three fingers
+- WHEN exactly 3 active finger contacts move while a palm-class contact rests on the pad
+- THEN no gesture is armed (a resting hand indicates non-gesture input; missing a gesture
+  is acceptable, a false trigger is not)
+
+#### Requirement: Arming requires exactly three stable contacts from a clean session
+
+A touch session starts when the pad goes from zero to nonzero active contacts and ends
+with full lift-off. The recognizer SHALL arm only when, within a clean session, exactly
+3 active contacts persist for at least `stableArmFrames` consecutive frames, AND all
+three touched down within `touchdownAssemblyWindow` of the session's first touch, AND no
+palm-class contact (size > palmSizeThreshold) is present anywhere on the device.
+A session is poisoned (no arming until full lift-off) by: a third finger assembling too
+late, more than 3 active contacts at any point, any decrease of the active-contact count
+while contacts remain, or a palm-class contact. Ended/stale artifacts (size = 0 or ended
+states) SHALL be ignored entirely — they neither count toward the 3 nor block arming.
+
+##### Scenario: Third finger added during a two-finger scroll, then swipe-like motion
+- WHEN a 2-finger scroll runs for a while, a third finger lands, and all three then move
+  with valid swipe kinematics
+- THEN no action fires until the next clean session after full lift-off
+
+##### Scenario: Naturally staggered three-finger touchdown
+- WHEN 3 fingers land staggered within `touchdownAssemblyWindow` and swipe
+- THEN the gesture fires normally (staggering within the window is normal usage)
+
+##### Scenario: Momentary third finger during two-finger scroll
+- WHEN a 2-finger scroll briefly becomes 3 contacts for fewer than `stableArmFrames` frames (2→3→2)
+- THEN no gesture is armed and no action fires
+
+##### Scenario: Four fingers
+- WHEN 4 active contacts are present at any point before confirmation (3→4)
+- THEN the gesture is aborted into lockout and no action fires
+
+##### Scenario: Two-finger gestures never act
+- WHEN any 2-finger movement occurs (vertical, horizontal, diagonal, any speed)
+- THEN no action fires
+
+#### Requirement: Confirmation requires sustained, unambiguous, monotonic movement
+
+After arming, an action SHALL fire only when all hold: centroid displacement from the
+arm baseline ≥ `minDisplacement` on the dominant axis; direction dominance —
+horizontal `|dx| ≥ 1.3·|dy|` (≈ ≤37.6°), vertical-up `|dy| ≥ 1.6·|dx|` with dy pointing
+up; the dominance and monotonicity (cumulative backtrack ≤ `reversalTolerance`) hold for
+`confirmSamples` consecutive frames; mean speed ≥ `minMeanSpeed`; elapsed time since
+arming ≤ `maxGestureDuration`. Movements failing any condition SHALL abort without action.
+
+> Owner-approved retune 2026-07-04: the brief's original horizontal guideline (2.0,
+> ≈26.6°, "~30° diagonals ambiguous") rejected ~half of the owner's natural right
+> swipes, which tilt +25…+36° (golden trace evidence); their real diagonal gestures
+> measure ≥48°. The horizontal cone was widened to 1.3 (≈37.6°); the ambiguous band
+> is now ≈37.6°–58°. Verified against the golden trace: zero blocker-segment actions.
+
+##### Scenario: Diagonal ~45° movement is ambiguous
+- WHEN 3 fingers move at ≈40–56° from horizontal (fails both dominance tests)
+- THEN no action fires and the gesture locks out until lift-off
+
+##### Scenario: Slow, short, jerky, or reversed movements
+- WHEN a 3-finger movement is shorter than `minDisplacement`, slower than `minMeanSpeed`,
+  exceeds `maxGestureDuration`, or reverses direction beyond `reversalTolerance`
+- THEN no action fires
+
+##### Scenario: Three-finger swipe down is not implemented
+- WHEN 3 fingers swipe down with any parameters
+- THEN no action fires (by design; not a failure)
+
+#### Requirement: Direction mapping and Cmd modifier
+
+On confirmation the recognizer SHALL emit exactly one action: left → left half,
+right → right half, up → maximize. If Cmd is held at confirmation time for left/right,
+the action SHALL target the next display instead. Cmd with up SHALL emit nothing.
+
+##### Scenario: Cmd-held three-finger swipe right
+- WHEN a valid 3-finger right swipe confirms while Cmd is physically held
+- THEN the right-half action targets the next display
+
+#### Requirement: One action per physical gesture (lockout)
+
+After firing — or after any abort — the recognizer SHALL enter lockout and ignore all
+frames until 0 active contacts persist for `liftOffQuietMs`, plus a `cooldownMs`
+cooldown. Returning to 3 contacts without full lift-off SHALL NOT re-arm.
+
+##### Scenario: Continued movement after fire
+- WHEN a confirmed swipe continues moving or produces further callbacks
+- THEN no second action fires
+
+##### Scenario: Re-forming three fingers without lift-off
+- WHEN after an abort or fire the contacts go 3→2→3 without reaching zero
+- THEN no gesture is armed until full lift-off and cooldown
+
+#### Requirement: Scrolling in applications never triggers actions (blocker class)
+
+Two-finger vertical/horizontal/diagonal scrolling — including momentum/inertial phases —
+in Safari, Chrome, Firefox, Finder, TextEdit and other ordinary applications SHALL never
+produce a Tiler action. Violations of this requirement are release blockers.
+
+##### Scenario: Momentum scroll continues after lift-off
+- WHEN a 2-finger scroll ends and inertial scrolling continues with no contacts on the pad
+- THEN no action fires
+
+##### Scenario: Accidental third finger during scroll
+- WHEN during a 2-finger scroll a third finger touches down and lifts (2→3→2) while scroll continues
+- THEN no action fires

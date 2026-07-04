@@ -55,4 +55,7 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 
 ## Active changes
 
-- `add-tiler-mvp` — initial MVP (hotkeys, gestures, window actions, permission lifecycle, menu bar).
+- `add-shell-and-calibration` — app identity (icon, About, Settings), startup permission
+  flow, per-user gesture calibration (incl. the carried-over right-swipe under-detection).
+
+Archived: `2026-07-04-add-tiler-mvp` (MVP accepted by owner; specs merged into `openspec/specs/`).

@@ -2,20 +2,19 @@
 
 **Start here every session:**
 1. Read `openspec/project.md` (context, environment, workflow rules).
-2. Read the active change: `openspec/changes/add-tiler-mvp/` — `tasks.md` is the
-   implementation plan; `design.md` holds approved decisions; `specs/` are the
-   requirements (scenarios = required tests); `brief.md` is the owner's verbatim
-   original assignment (source of truth if a spec seems off).
+2. Read the active change listed in `openspec/project.md` (currently
+   `openspec/changes/add-shell-and-calibration/`) — `tasks.md` is the implementation
+   plan; `design.md` holds approved decisions; `specs/` are requirement deltas
+   (scenarios = required tests). Current merged truth lives in `openspec/specs/`;
+   the original MVP assignment is archived under
+   `openspec/changes/archive/2026-07-04-add-tiler-mvp/` (`brief.md` is verbatim).
 3. Continue from the first unchecked task. Update `tasks.md` checkboxes **as you work**
    and keep specs in sync with any behavior change (owner mandate: everything is
    protocoled in OpenSpec, updated on any change).
 
-The design was approved by the owner on 2026-07-04 — implement it; do not re-open design
-questions unless you find a real contradiction (then fix the spec and note it in
-design.md). Build/acceptance scripts referenced in `openspec/project.md` do not exist
-until Phase 1 creates them. If your session runs in a git worktree (not the main checkout),
-persistent memory files are unavailable — this file and `openspec/` carry everything
-needed; merge your branch back to `main` and push when a phase completes.
+If your session runs in a git worktree (not the main checkout), persistent memory files
+are unavailable — this file and `openspec/` carry everything needed; merge your branch
+back to `main` and push when a phase completes.
 
 **Hard rules:**
 - False gesture positives are release blockers (see gestures spec).

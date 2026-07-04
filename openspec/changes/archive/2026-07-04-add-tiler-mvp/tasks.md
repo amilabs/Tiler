@@ -131,9 +131,14 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       at the 26.6° horizontal boundary — retunable via `horizontalDominance` if
       acceptance shows too many misses. New tool: `swift run TraceCheck <trace>`
       replays any recording with per-segment action reporting.
-- [ ] 8.3 **[USER GATE #4]** Final manual acceptance on real trackpad (checklist printed
-      by `Scripts/acceptance-checklist.sh`; system 3-finger gestures disabled first).
-- [ ] 8.4 Commit "golden traces + tuning".
+- [x] 8.3 **[USER GATE #4 PASSED]** (2026-07-04 late evening, owner: «все круто») —
+      hotkeys, gestures, permission lifecycle accepted on the granted ~/Applications
+      build. One carry-over defect, explicitly NOT a blocker (false negative, not
+      false positive): **right swipe still under-detects** for the owner's hand even
+      at horizontalDominance 1.3. Transferred to the next change
+      (`add-shell-and-calibration`) — to be fixed by per-user gesture calibration
+      plus a data-driven default retune from a fresh rights-only trace.
+- [x] 8.4 Commit "golden traces + tuning".
 
 ## 9. Wrap-up
 
@@ -148,6 +153,6 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       updated; gestures confirmed working by owner on the granted build.
 
 - [x] 9.1 README: install, permissions, conflicts/diagnostics guide, hotkey/gesture table.
-- [ ] 9.2 Archive this change: move to `openspec/changes/archive/YYYY-MM-DD-add-tiler-mvp/`,
+- [x] 9.2 Archived to `openspec/changes/archive/2026-07-04-add-tiler-mvp/`,
       merge spec deltas into `openspec/specs/`, update `openspec/project.md`.
-- [ ] 9.3 Final commit + push.
+- [x] 9.3 Final commit + push.
