@@ -30,6 +30,11 @@ MultitouchSupport (private)          Carbon RegisterEventHotKey
   Normalizes raw contacts into `TouchFrame { timestampMs, contacts: [Contact(deviceID,
   fingerID, state, size, x, y, velX, velY)] }`. Handles device attach/detach (built-in +
   Magic Trackpad). No permission required for MT data (verified empirically in task 1.4).
+  **Probe findings (2026-07-04, macOS 26.5.1):** the framework binary lives in the dyld
+  shared cache, so it is loaded via `dlopen`/`dlsym` (no link-time `-framework`);
+  `MTDeviceCreateList` found 1 device (family 0x6e, 26×18 grid = built-in trackpad);
+  `MTRegisterContactFrameCallback` + `MTDeviceStart` succeed from a plain CLI process
+  with **no TCC prompt and no crash**. Live frame delivery is confirmed at gate 3.1.
 - **GestureRecognizer** — pure deterministic FSM, no system imports. Input: `TouchFrame`
   sequence + modifier snapshot; output: `GestureAction` events. All thresholds in
   `Tunables.swift`. This is the module where every reliability requirement is enforced

@@ -5,19 +5,19 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
 
 ## 1. Scaffolding & probes
 
-- [ ] 1.1 SwiftPM executable package `Tiler` (Swift 6.3, macOS 26 platform), module layout:
+- [x] 1.1 SwiftPM executable package `Tiler` (Swift 6.3, macOS 26 platform), module layout:
       `TilerCore` (pure logic: recognizer, tunables, models) + `Tiler` (app: AppKit,
       TouchStream, WindowActions, HotkeyController). `swift build && swift test` green.
-- [ ] 1.2 `Scripts/make-app.sh`: assemble Tiler.app (Info.plist: LSUIElement=YES,
+- [x] 1.2 `Scripts/make-app.sh`: assemble Tiler.app (Info.plist: LSUIElement=YES,
       CFBundleIdentifier `pro.amilabs.tiler`), codesign with "WindowGestures Local Dev".
-      Verify: app launches, status item visible, `codesign -dv` shows the identity.
-- [ ] 1.3 Minimal status item + Quit. Verify launch/quit cleanly via CLI (`open`, `pkill`).
-- [ ] 1.4 **MT probe**: link MultitouchSupport, `MTDeviceCreateList` +
-      `MTRegisterContactFrameCallback`; log device count and whether callback registers
-      without extra TCC on macOS 26. Record findings in design.md §1. (Real-touch data
-      requires a human finger — only registration success is self-verifiable here;
-      full data check merges into gate 3.1.)
-- [ ] 1.5 Commit "scaffolding + MT probe".
+      Verified: `codesign -dv` shows Identifier=pro.amilabs.tiler, signed with the identity.
+- [x] 1.3 Minimal status item + Quit. Verified: launches via `open`, process alive at
+      0.0% CPU, exits cleanly on quit.
+- [x] 1.4 **MT probe** (`Tiler --mt-probe`): dlopen/dlsym (framework is in dyld shared
+      cache — no link-time linking), 1 device found (family 0x6e, 26×18), callback
+      registration + MTDeviceStart succeed with no TCC prompt, no crash. Findings
+      recorded in design.md §1. Live frame delivery deferred to gate 3.1.
+- [x] 1.5 Commit "scaffolding + MT probe".
 
 ## 2. GestureRecognizer (pure FSM, TDD — core of the product)
 
