@@ -31,6 +31,21 @@ public final class CalibrationSession {
     public private(set) var currentStep: Step?
     public private(set) var recordedFrames: [TouchFrame] = []
 
+    /// 1-based progress for UI ("Step 2 of 3"); the last number is kept after finish.
+    public var stepNumber: Int {
+        min(stepIndex + 1, steps.count)
+    }
+
+    public var stepCount: Int {
+        steps.count
+    }
+
+    /// Attempts already consumed within the current step (0-based until the next
+    /// attempt lands — UI shows "Attempt N+1 of M").
+    public var attemptNumberInStep: Int {
+        attemptNumber
+    }
+
     private let steps: [Step]
     private let baseTunables: Tunables
     private var stepIndex = 0

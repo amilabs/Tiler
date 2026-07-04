@@ -16,10 +16,18 @@ final class CalibrationModel: ObservableObject {
     @Published private(set) var attempts: [AttemptMark] = []
     @Published private(set) var stepAccuracy: Double?
     @Published private(set) var result: CalibrationResult?
+    @Published private(set) var stepNumber = 1
+    @Published private(set) var stepCount = 1
 
     var accuracySoFar: Double {
         guard !attempts.isEmpty else { return 1 }
         return Double(attempts.filter(\.recognized).count) / Double(attempts.count)
+    }
+
+    /// Fraction of the current step already done (for the overall progress bar).
+    var stepFraction: Double {
+        guard let prompt, prompt.attemptsRequired > 0 else { return 0 }
+        return Double(attempts.count) / Double(prompt.attemptsRequired)
     }
 
     private var session: CalibrationSession
@@ -31,6 +39,8 @@ final class CalibrationModel: ObservableObject {
         self.onFinish = onFinish
         session = CalibrationSession()
         prompt = session.currentStep
+        stepNumber = session.stepNumber
+        stepCount = session.stepCount
         attachTap()
     }
 
@@ -61,6 +71,7 @@ final class CalibrationModel: ObservableObject {
                 self.attempts = []
                 self.stepAccuracy = nil
                 self.prompt = self.session.currentStep
+                self.stepNumber = self.session.stepNumber
             }
         case .sessionCompleted(let result):
             self.result = result
@@ -75,6 +86,8 @@ final class CalibrationModel: ObservableObject {
         stepAccuracy = nil
         result = nil
         prompt = session.currentStep
+        stepNumber = session.stepNumber
+        stepCount = session.stepCount
         attachTap()
     }
 
@@ -104,8 +117,19 @@ struct CalibrationView: View {
 
     @ViewBuilder
     private func activeStep(_ prompt: CalibrationSession.Step) -> some View {
-        Text(title(for: prompt.gesture))
-            .font(.title3.weight(.medium))
+        HStack {
+            Text(title(for: prompt.gesture))
+                .font(.title3.weight(.medium))
+            Spacer()
+            Text("Step \(model.stepNumber) of \(model.stepCount)")
+                .font(.callout.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 3)
+                .padding(.horizontal, 9)
+                .background(Color.secondary.opacity(0.12), in: Capsule())
+        }
+        ProgressView(value: Double(model.stepNumber - 1) + model.stepFraction,
+                     total: Double(model.stepCount))
         GestureDemoView(direction: prompt.gesture)
             .frame(height: 110)
         Text("Swipe with exactly three fingers, \(prompt.attemptsRequired) times.")
@@ -118,6 +142,10 @@ struct CalibrationView: View {
                     .fill(color(forAttempt: i))
                     .frame(width: 14, height: 14)
             }
+            Text("Attempt \(min(model.attempts.count + 1, prompt.attemptsRequired)) of \(prompt.attemptsRequired)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
         }
         if let last = model.attempts.last, !last.recognized {
             Text(missText(last))

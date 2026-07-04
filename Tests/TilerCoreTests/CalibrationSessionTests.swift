@@ -47,6 +47,25 @@ import Testing
         #expect(session.currentStep == .init(gesture: .left, attemptsRequired: 3))
     }
 
+    @Test func exposesStepProgress() {
+        let session = CalibrationSession(gestures: [.left, .right, .up], attemptsPerGesture: 1)
+        #expect(session.stepNumber == 1)
+        #expect(session.stepCount == 3)
+        #expect(session.attemptNumberInStep == 0)
+
+        var driver = Driver(session)
+        driver.attempt((dx: -0.15, dy: 0))
+        #expect(session.stepNumber == 2)
+        #expect(session.attemptNumberInStep == 0)
+
+        driver.attempt((dx: 0.15, dy: 0))
+        #expect(session.stepNumber == 3)
+
+        driver.attempt((dx: 0, dy: 0.15))
+        #expect(session.currentStep == nil)
+        #expect(session.stepNumber == 3, "finished session keeps the last step number")
+    }
+
     @Test func recognizedAttemptsAdvanceThroughSteps() {
         let session = CalibrationSession(gestures: [.left, .right], attemptsPerGesture: 2)
         var driver = Driver(session)

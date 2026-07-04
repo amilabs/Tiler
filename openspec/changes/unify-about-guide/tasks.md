@@ -7,4 +7,7 @@
 - [x] 1.3 94 tests + smoke green; installed. Owner eyeball round 1 done; follow-ups:
       single menu entry point + Settings from within the window; vertical scroll /
       height clamp for small screens.
-- [ ] 1.4 Merge spec delta, archive.
+- [x] 1.4 Owner follow-up: calibration progress indicators — Step X of Y capsule +
+      overall progress bar (steps + fraction) + Attempt N of M counter; session
+      exposes stepNumber/stepCount/attemptNumberInStep (TDD).
+- [ ] 1.5 Merge spec delta, archive.
