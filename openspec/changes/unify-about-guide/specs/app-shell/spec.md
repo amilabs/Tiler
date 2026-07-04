@@ -4,7 +4,9 @@
 
 #### Requirement: Menu-bar-only application (modified)
 
-The menu SHALL contain exactly: **About Tiler**, **Settings…**, **Quit**.
+The menu SHALL contain exactly TWO items: **Tiler…** (the single entry point,
+opening the unified window) and **Quit**. Settings SHALL be reachable from within
+the unified window (prominent button in the header, plus the troubleshooting link).
 
 #### Requirement: About & Guide window (replaces separate About window and Guide window)
 
@@ -24,3 +26,14 @@ with version, build time in the user's local timezone, and the GitHub link.
 - WHEN the unified window is open
 - THEN the user can read what the app is for AND see every binding/gesture without
   opening anything else
+
+#### Requirement: Fits small screens
+
+Auxiliary windows SHALL never exceed the screen's visible height: the unified
+window's content scrolls vertically when it does not fit, and window heights are
+clamped to the visible frame.
+
+##### Scenario: Small display
+- WHEN the unified window opens on a display whose visible height is smaller than
+  the full content
+- THEN the window is clamped to the screen and the content is reachable by scrolling

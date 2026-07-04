@@ -4,5 +4,7 @@
       (version/local build time/GitHub) merged into the guide layout; old AboutView
       removed; AuxWindow helper relocated.
 - [x] 1.2 Menu: About Tiler / Settings… / Quit; --show-about aliases --show-guide.
-- [x] 1.3 94 tests + smoke green; installed. Owner eyeball pending.
+- [x] 1.3 94 tests + smoke green; installed. Owner eyeball round 1 done; follow-ups:
+      single menu entry point + Settings from within the window; vertical scroll /
+      height clamp for small screens.
 - [ ] 1.4 Merge spec delta, archive.

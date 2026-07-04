@@ -108,8 +108,8 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 420,
+               height: min(560, (NSScreen.main?.visibleFrame.height ?? 900) - 80))
     }
 
     @ViewBuilder

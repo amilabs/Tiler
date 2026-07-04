@@ -239,10 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
-        menu.addItem(makeItem("About Tiler", #selector(showGuideAction)))
-        let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
-        settingsItem.keyEquivalent = ","
-        menu.addItem(settingsItem)
+        menu.addItem(makeItem("Tiler…", #selector(showGuideAction)))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
             title: "Quit Tiler",

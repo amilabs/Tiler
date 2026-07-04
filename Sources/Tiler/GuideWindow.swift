@@ -85,7 +85,21 @@ final class GuideModel: ObservableObject {
 struct GuideView: View {
     @ObservedObject var model: GuideModel
 
+    /// Window height: content-sized, but never taller than the screen (spec:
+    /// fits small screens — content scrolls instead).
+    private var windowHeight: CGFloat {
+        let screenCap = (NSScreen.main?.visibleFrame.height ?? 900) - 60
+        return min(1010, screenCap)
+    }
+
     var body: some View {
+        ScrollView(.vertical) {
+            content
+        }
+        .frame(width: 560, height: windowHeight)
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 18) {
             hero
             valueSection
@@ -128,7 +142,6 @@ struct GuideView: View {
             footer
         }
         .padding(24)
-        .frame(width: 560)
     }
 
     // MARK: - Hero & story
@@ -147,10 +160,19 @@ struct GuideView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            HeroDemoView()
-                .frame(width: 96, height: 64)
-                .background(Color.accentColor.opacity(0.07),
-                            in: RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .trailing, spacing: 6) {
+                HeroDemoView()
+                    .frame(width: 96, height: 58)
+                    .background(Color.accentColor.opacity(0.07),
+                                in: RoundedRectangle(cornerRadius: 12))
+                Button {
+                    model.onOpenSettings?()
+                } label: {
+                    Label("Settings…", systemImage: "gearshape")
+                        .font(.callout)
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
         }
     }
 
@@ -334,6 +356,14 @@ final class AuxWindow<Content: View> {
             self.window = window
         }
         NSApp.activate(ignoringOtherApps: true)
+        if let window, let screen = NSScreen.main {
+            let maxHeight = screen.visibleFrame.height - 20
+            if window.frame.height > maxHeight {
+                var frame = window.frame
+                frame.size.height = maxHeight
+                window.setFrame(frame, display: true)
+            }
+        }
         window?.makeKeyAndOrderFront(nil)
     }
 }
