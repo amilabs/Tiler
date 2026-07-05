@@ -1,116 +1,88 @@
+<p align="center">
+  <img src="docs/screenshots/guide.png" width="740" alt="Tiler — unified window: story, hotkeys and gesture reference">
+</p>
+
 # Tiler
 
-macOS menu-bar utility: move and resize the active window with fixed hotkeys and precise
-3-finger trackpad gestures. Reliability-first: strict exact-3-finger detection, zero
-tolerance for false positives during normal scrolling.
+**Put any window exactly where you want it — without touching the mouse.**
 
-## Actions
+Tiler is a macOS menu-bar utility that snaps the active window into halves, full
+screen, or a centered third — on any of your displays — driven by fixed hotkeys and
+precise three-finger trackpad swipes.
+
+- **A swipe you can trust.** An action fires only when exactly three fingers move
+  decisively in one direction. Ordinary scrolling, resting palms, momentum flicks and
+  stray touches never move your windows — false positives are treated as
+  release-blocking bugs, and the recognizer is guarded by replayed real-trackpad
+  recordings.
+- **Tuned to your hand.** Everyone swipes differently. A one-minute guided
+  calibration measures your own strokes with live feedback and adapts the recognition
+  angles — clamped to ranges that provably cannot re-enable false positives.
+- **Featherweight and unbreakable.** Event-driven engine: under 1% CPU whenever your
+  fingers are off the pad (measured as true utilization in three states on every
+  release), no event taps or input hooks that could ever jam your keyboard, alive
+  without permissions, instant recovery when they change, and force-kill-safe.
+
+## Shortcuts and gestures
 
 | Input | Action |
 |---|---|
-| Ctrl+Shift+← / → | left / right half of the current screen |
-| Ctrl+Shift+↑ | maximize (after a ~300 ms double-press window) |
-| Ctrl+Shift+↑ ×2 | full height, centered, 1/3 width |
-| Ctrl+Shift+↓ | restore the window's pre-Tiler frame |
-| Cmd+Ctrl+Shift+← / → | halves on the next display |
+| ⌃⇧← / ⌃⇧→ | left / right half of the current screen |
+| ⌃⇧↑ | maximize (after a 0.3 s double-press window) |
+| ⌃⇧↑ ↑ (double press) | full height, centered, ⅓ width |
+| ⌃⇧↓ | restore the window's previous frame |
+| ⌘⌃⇧← / ⌘⌃⇧→ | halves on the next display |
 | 3-finger swipe ← / → / ↑ | left half / right half / maximize |
-| Cmd + 3-finger swipe ← / → | halves on the next display |
+| ⌘ + 3-finger swipe ← / → | halves on the next display |
 
-3-finger swipe down is deliberately not implemented; 2- and 4-finger movements never
-trigger anything.
+Swipe-down, two- and four-finger movements do nothing — by design. The full
+reference with animated demos lives in the app: menu bar → **Tiler**.
 
-## Build & run
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="420" alt="Settings — toggles, permission status, calibration">
+  <img src="docs/screenshots/calibration.png" width="300" alt="Guided gesture calibration with live accuracy">
+</p>
+
+## Install
 
 ```sh
-swift build && swift test     # library + unit tests
-Scripts/make-app.sh           # signed build/Tiler.app (Apple Development identity)
-Scripts/install.sh            # install to ~/Applications for a stable Accessibility grant
+git clone git@github.com:amilabs/Tiler.git && cd Tiler
+Scripts/install.sh          # builds, signs, installs to ~/Applications
+open ~/Applications/Tiler.app
 ```
 
-Requires macOS 26+. **Developed and verified exclusively on macOS 26.5 (Apple
-Silicon)** — every acceptance claim in this repo refers to that configuration.
-Older macOS: assessed as low-risk to port (public APIs are macOS 13-era; the
-private multitouch struct layout has been stable for years), but explicitly NOT
-tested — lowering the deployment target is a small build change gated on a real
-acceptance run on such a machine (gestures can't be verified in a VM: no
-multitouch devices there). The app is unsandboxed (private MultitouchSupport
-framework + Accessibility API) and is not App Store distributable.
+Requirements: macOS 26+, Xcode toolchain, a codesigning identity (free Apple
+Development works — see [docs/tcc-enrollment.md](docs/tcc-enrollment.md) for why
+self-signed certificates won't do).
 
-The menu bar item (pinch icon; ⚠︎ suffix when unpermitted) opens About and
-**Settings**: gestures/hotkeys toggles, permission status with a fix path, launch
-at login, conflict diagnostics, and **gesture calibration** — a guided dialog that
-measures your own swipes (animated demo, live per-attempt feedback) and derives
-personal thresholds, clamped to ranges that provably cannot re-enable false
-positives. Reset to defaults any time.
+On first launch Tiler opens its guide and asks for the **Accessibility** permission —
+the one capability it needs to move windows. Without it Tiler stays alive and shows a
+⚠︎ in the menu bar; grant it and everything starts working within seconds, no
+relaunch. If system three-finger gestures (Mission Control, three-finger drag) are
+enabled, Tiler detects the conflict and tells you exactly what to change.
 
-**Install to ~/Applications, not build/.** Grant Accessibility to the copy in
-`~/Applications` (via `Scripts/install.sh`). Two reasons:
-- `make-app.sh` deletes and recreates `build/Tiler.app` on every build, which drops
-  the TCC grant on the bundle you granted.
-- macOS is reluctant to persist Accessibility grants for apps under a world-writable
-  path (this repo lives under `/Users/Shared`, whose root is `drwxrwxrwt`).
+## When gestures misbehave
 
-**Launch context matters for the grant.** Accessibility is attributed to the
-"responsible process". Launch Tiler on its own (Finder double-click, `open`, or at
-login) so it is its own responsible process. If you launch its binary as a child of a
-terminal that already has Accessibility, Tiler *inherits* that grant and will appear to
-work without its own entry — misleading, since a normal launch won't.
-
-### TCC enrollment on macOS 26 — the hard-won recipe
-
-Symptom we fought: the Accessibility prompt appears, but the app's row **silently
-never persists** in System Settings (not via the prompt, not via "+", not via drag).
-Root causes found on 2026-07-04, in order of discovery:
-
-1. **Self-signed identities don't enroll.** A locally created certificate — even
-   imported as a trusted Code Signing root into the *System* keychain — shows the
-   prompt but tccd refuses to create the row. An Apple-issued **Apple Development**
-   certificate is required (free Apple ID is enough; Xcode → Settings → Accounts →
-   Manage Certificates → "+").
-2. **Expired WWDR intermediate breaks the identity.** If `security find-identity`
-   shows the Apple Development cert as `CSSMERR_TP_NOT_TRUSTED`, the Apple WWDR G3
-   intermediate is missing/expired locally. Fix: import
-   https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer into the login
-   keychain.
-3. **A TCC client record can wedge.** After many grant/reset cycles, the record for
-   the original bundle id (`pro.amilabs.tiler`) got stuck: prompts shown, row never
-   created, reboot didn't help, `tccutil reset` reported success but changed nothing.
-   A **fresh bundle id** enrolled instantly — hence the current id
-   `pro.amilabs.tilerx`. Don't "clean it up" back to the old id: the grant follows
-   (bundle id + signing team), and the old id is dead on this machine.
-4. **The list row may vanish while the grant persists.** System Settings sometimes
-   stops SHOWING the Tiler row even though the TCC grant is alive (windows still
-   move; `Tiler --ax-report <file>` prints `trusted=true`). Cosmetic Settings-UI
-   flakiness on this machine — verify functionally, don't chase the row.
-
-## Permissions
-
-Tiler needs **Accessibility** (System Settings → Privacy & Security → Accessibility).
-Without it, Tiler stays alive, shows ▦⚠︎ in the menu bar, and moves no windows; once
-granted it recovers within seconds, no relaunch needed. Hotkey registration and gesture
-recognition never require the permission and never install event taps — a hung or
-killed Tiler cannot affect system input.
-
-## Conflicting system gestures
-
-System three-finger gestures consume swipes before Tiler sees them. Check with
-`Scripts/diagnose.sh` or the in-app **Diagnostics** menu:
-
-- Accessibility → Pointer Control → Trackpad Options → *three-finger drag* — off
-- Trackpad → More Gestures → *Mission Control / App Exposé / Swipe between full-screen
-  applications* — set to four fingers or off
+Open **Tiler → Settings → Gestures → Calibrate**: an animated prompt walks you
+through each swipe, marks every attempt recognized/missed (with the measured angle),
+and derives personal thresholds. `Reset to defaults` brings back stock behavior.
+`Scripts/diagnose.sh` mirrors the in-app conflict diagnostics from the CLI.
 
 ## Development
 
-Spec-driven: see [openspec/project.md](openspec/project.md), current requirement
-specs in [openspec/specs/](openspec/specs/), and archived changes with full design
-history in [openspec/changes/archive/](openspec/changes/archive/). Gesture logic is a
-pure state machine (`TilerCore`) developed strictly test-first; system integration
-lives in `TilerSystem`.
+Spec-driven (OpenSpec): current requirements in [openspec/specs/](openspec/specs/),
+full design history in [openspec/changes/archive/](openspec/changes/archive/).
+Gesture logic is a pure, exhaustively unit-tested state machine (`TilerCore`);
+system integration (`TilerSystem`) is covered by integration tests against real
+windows plus hotkey E2E. Golden trackpad recordings are replayed in CI-grade tests;
+`Scripts/run-acceptance.sh` checks launch health, true idle CPU in three states, and
+kill -9 resilience.
 
-- `Scripts/run-acceptance.sh` — self-service acceptance: launch health, idle CPU < 1%,
-  kill -9 resilience
-- `Scripts/record-golden.sh` — record real-trackpad traces into replayable fixtures
-- `Scripts/acceptance-checklist.sh` — final manual checklist
+```sh
+swift test                   # 96 tests
+Scripts/run-acceptance.sh    # self-service acceptance
+Scripts/record-golden.sh     # record a real-trackpad trace into a fixture
+```
 
-License: Apache-2.0.
+Verified on **macOS 26.5 (Apple Silicon)** only — all acceptance claims refer to that
+configuration. License: Apache-2.0.

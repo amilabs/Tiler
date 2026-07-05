@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.2.0-dev"
+    static let version = "0.2.0"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -42,6 +42,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if args.contains("--show-settings") { showSettings() }
         if args.contains("--show-calibration") { showCalibration() }
         if args.contains("--show-guide") || args.contains("--show-about") { showGuide() }
+        if let i = args.firstIndex(of: "--render-shots"), args.indices.contains(i + 1) {
+            renderShots(to: args[i + 1])
+        }
         // Harness: open the animated window, close it after 2 s — post-close idle
         // CPU must be back under budget (the retained-animations regression).
         if args.contains("--exercise-ui") {
@@ -134,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 ? "Tiler: conflicting system trackpad gestures detected — see Tiler…"
                 : "Tiler")
         // Settings item carries the permission alert (stabilize-menu spec).
-        settingsMenuItem?.title = trusted ? "Settings…" : "Settings… ⚠︎"
+        settingsMenuItem?.title = trusted ? "Settings" : "Settings ⚠︎"
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -251,8 +254,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
-        menu.addItem(makeItem("Tiler…", #selector(showGuideAction)))
-        let settingsItem = makeItem("Settings…", #selector(showSettingsAction))
+        menu.addItem(makeItem("Tiler", #selector(showGuideAction)))
+        let settingsItem = makeItem("Settings", #selector(showSettingsAction))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
         settingsMenuItem = settingsItem
@@ -297,6 +300,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         guideWindow?.show()
         NSLog("Tiler: guide window shown")
+    }
+
+    /// Release tooling: renders the app's own windows into PNGs for the README.
+    /// Snapshotting our own views needs no screen-recording permission and makes
+    /// screenshots reproducible on every release.
+    private func renderShots(to directory: String) {
+        showGuide()
+        showSettings()
+        showCalibration()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self else { return }
+            let dir = URL(fileURLWithPath: directory)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let shots: [(String, NSWindow?)] = [
+                ("guide", NSApp.windows.first { $0.title == "About Tiler" }),
+                ("settings", NSApp.windows.first { $0.title == "Tiler Settings" }),
+                ("calibration", self.calibrationWindow),
+            ]
+            for (name, window) in shots {
+                guard let view = window?.contentView,
+                      let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+                    NSLog("Tiler: render-shots: no view for %@", name)
+                    continue
+                }
+                view.cacheDisplay(in: view.bounds, to: rep)
+                if let png = rep.representation(using: .png, properties: [:]) {
+                    try? png.write(to: dir.appendingPathComponent("\(name).png"))
+                    NSLog("Tiler: render-shots wrote %@.png", name)
+                }
+            }
+            NSApp.terminate(nil)
+        }
     }
 
     private func openAccessibilitySettings() {

@@ -30,4 +30,8 @@
       removed from troubleshooting (header gear is the single entry); permanent
       green permission banner removed — the card appears only while the permission
       is missing (guide now 880×720).
-- [ ] 1.7 Owner confirms; archive.
+- [x] 1.7 Release prep: menu labels without ellipses (spec updated), version 0.2.0,
+      product README (screenshots pending from owner — self-render produced no text,
+      SwiftUI offscreen limitation; --render-shots tooling kept), TCC saga moved to
+      docs/tcc-enrollment.md, release zip built.
+- [ ] 1.8 Owner: 3 window screenshots + gh device auth → GitHub release; archive.
