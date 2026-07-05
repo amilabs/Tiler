@@ -50,12 +50,24 @@ public enum GestureDirection: String, Codable, Sendable, Equatable {
 }
 
 /// The single output of a confirmed gesture. Swipe-down and Cmd+up produce no action.
+/// `thirdWidth` = ⇧ held at confirmation: left/right tile to thirds instead of halves.
 public struct GestureAction: Codable, Sendable, Equatable {
     public var direction: GestureDirection
     public var nextDisplay: Bool
+    public var thirdWidth: Bool
 
-    public init(direction: GestureDirection, nextDisplay: Bool) {
+    public init(direction: GestureDirection, nextDisplay: Bool, thirdWidth: Bool = false) {
         self.direction = direction
         self.nextDisplay = nextDisplay
+        self.thirdWidth = thirdWidth
+    }
+
+    // Custom decode: golden fixtures recorded before thirdWidth existed must keep
+    // decoding (missing key defaults to false).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        direction = try container.decode(GestureDirection.self, forKey: .direction)
+        nextDisplay = try container.decode(Bool.self, forKey: .nextDisplay)
+        thirdWidth = try container.decodeIfPresent(Bool.self, forKey: .thirdWidth) ?? false
     }
 }

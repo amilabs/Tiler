@@ -14,28 +14,29 @@ struct Sim {
         t = startTime
     }
 
-    mutating func feed(_ contacts: [Contact], cmd: Bool = false) {
-        if let a = recognizer.process(TouchFrame(timestamp: t, contacts: contacts), cmdHeld: cmd) {
+    mutating func feed(_ contacts: [Contact], cmd: Bool = false, shift: Bool = false) {
+        if let a = recognizer.process(TouchFrame(timestamp: t, contacts: contacts),
+                                      cmdHeld: cmd, shiftHeld: shift) {
             actions.append(a)
         }
         t += dt
     }
 
-    mutating func hold(_ contacts: [Contact], frames: Int, cmd: Bool = false) {
-        for _ in 0..<frames { feed(contacts, cmd: cmd) }
+    mutating func hold(_ contacts: [Contact], frames: Int, cmd: Bool = false, shift: Bool = false) {
+        for _ in 0..<frames { feed(contacts, cmd: cmd, shift: shift) }
     }
 
     /// Move `n` fingers' centroid from `start` by `delta` over `frames` frames.
     /// `extra` contacts (palm, stale…) are appended to every frame.
     mutating func move(_ n: Int, from start: (x: Double, y: Double),
                        by delta: (dx: Double, dy: Double), frames: Int,
-                       cmd: Bool = false, size: Double = 0.5,
+                       cmd: Bool = false, shift: Bool = false, size: Double = 0.5,
                        idBase: Int32 = 1, extra: [Contact] = []) {
         for i in 1...frames {
             let f = Double(i) / Double(frames)
             let contacts = fingers(n, at: start.x + delta.dx * f, start.y + delta.dy * f,
                                    size: size, idBase: idBase)
-            feed(contacts + extra, cmd: cmd)
+            feed(contacts + extra, cmd: cmd, shift: shift)
         }
     }
 
@@ -47,9 +48,10 @@ struct Sim {
 
     /// Canonical valid 3-finger swipe: arm stationary, move, lift.
     /// delta of ±0.15 with 18 move frames comfortably exceeds all confirm thresholds.
-    mutating func performValidSwipe(_ delta: (dx: Double, dy: Double), cmd: Bool = false) {
-        hold(fingers(3, at: 0.5, 0.5), frames: 5, cmd: cmd)
-        move(3, from: (0.5, 0.5), by: delta, frames: 18, cmd: cmd)
+    mutating func performValidSwipe(_ delta: (dx: Double, dy: Double),
+                                    cmd: Bool = false, shift: Bool = false) {
+        hold(fingers(3, at: 0.5, 0.5), frames: 5, cmd: cmd, shift: shift)
+        move(3, from: (0.5, 0.5), by: delta, frames: 18, cmd: cmd, shift: shift)
         liftAll()
     }
 }

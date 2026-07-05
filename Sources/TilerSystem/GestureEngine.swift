@@ -52,8 +52,10 @@ public final class GestureEngine: @unchecked Sendable {
         tap?(frame)
 
         recorder?.append(frame)
-        let cmdHeld = CGEventSource.flagsState(.hidSystemState).contains(.maskCommand)
-        if let action = recognizer.process(frame, cmdHeld: cmdHeld) {
+        let flags = CGEventSource.flagsState(.hidSystemState)
+        if let action = recognizer.process(frame,
+                                           cmdHeld: flags.contains(.maskCommand),
+                                           shiftHeld: flags.contains(.maskShift)) {
             onAction(action)
         }
     }

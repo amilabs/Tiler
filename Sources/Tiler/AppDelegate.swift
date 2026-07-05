@@ -219,9 +219,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
         let command: TilingCommand
         switch action.direction {
-        case .left: command = .leftHalf(nextDisplay: action.nextDisplay)
-        case .right: command = .rightHalf(nextDisplay: action.nextDisplay)
-        case .up: command = .maximize
+        case .left:
+            command = action.thirdWidth
+                ? .leftThird(nextDisplay: action.nextDisplay)
+                : .leftHalf(nextDisplay: action.nextDisplay)
+        case .right:
+            command = action.thirdWidth
+                ? .rightThird(nextDisplay: action.nextDisplay)
+                : .rightHalf(nextDisplay: action.nextDisplay)
+        case .up:
+            command = .maximize
         }
         execute(command)
     }
@@ -254,7 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
-        menu.addItem(makeItem("Tiler", #selector(showGuideAction)))
+        menu.addItem(makeItem("Help", #selector(showGuideAction)))
         let settingsItem = makeItem("Settings", #selector(showSettingsAction))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)

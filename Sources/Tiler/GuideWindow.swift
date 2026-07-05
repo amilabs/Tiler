@@ -42,6 +42,7 @@ enum GuideContent {
         let id = UUID()
         let direction: GestureDirection
         let cmd: Bool
+        var shift: Bool = false
         let action: String
     }
 
@@ -74,18 +75,21 @@ enum GuideContent {
         HotkeyRow(keys: ["⌃", "⇧", "↓"], action: "Restore the window's previous frame"),
         HotkeyRow(keys: ["⌘", "⌃", "⇧", "←"], action: "Left half on the next display"),
         HotkeyRow(keys: ["⌘", "⌃", "⇧", "→"], action: "Right half on the next display"),
+        HotkeyRow(keys: ["⌃", "A"], action: "Lock the screen"),
     ]
 
     static let gestures: [GestureRow] = [
         GestureRow(direction: .left, cmd: false, action: "Left half"),
         GestureRow(direction: .right, cmd: false, action: "Right half"),
         GestureRow(direction: .up, cmd: false, action: "Maximize"),
+        GestureRow(direction: .left, cmd: false, shift: true, action: "Left third"),
+        GestureRow(direction: .right, cmd: false, shift: true, action: "Right third"),
         GestureRow(direction: .left, cmd: true, action: "Left half on the next display"),
         GestureRow(direction: .right, cmd: true, action: "Right half on the next display"),
     ]
 
     static let gestureFootnote =
-        "Exactly three fingers, one confident stroke. Two- and four-finger movements and swipe-down do nothing — by design."
+        "Exactly three fingers, one confident stroke. ⇧ and ⌘ combine (⇧⌘ = third on the next display). Two- and four-finger movements and swipe-down do nothing — by design."
 
     /// Honesty marker: the only configuration this build was actually verified on.
     static let verifiedOn = "verified on macOS 26.5 only"
@@ -146,7 +150,9 @@ struct GuideView: View {
                             ForEach(GuideContent.gestures) { row in
                                 GridRow {
                                     HStack(spacing: 6) {
-                                        if row.cmd { keycaps(["⌘"]) }
+                                        if row.cmd || row.shift {
+                                            keycaps((row.cmd ? ["⌘"] : []) + (row.shift ? ["⇧"] : []))
+                                        }
                                         HoverDemo(direction: row.direction)
                                     }
                                     .gridColumnAlignment(.trailing)

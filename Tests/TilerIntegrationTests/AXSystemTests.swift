@@ -148,6 +148,26 @@ struct AXSystemTests {
                 x: vf.minX + vf.width / 2, y: vf.minY, width: vf.width / 2, height: vf.height)), "rightHalf")
         }
 
+        @Test func leftAndRightThirds() async throws {
+            let target = try await AXSystemTests.launchTextEdit(activate: false)
+            defer { target.terminate() }
+            let actions = WindowActions()
+
+            actions.perform(.leftThird(nextDisplay: false), app: target.axApp, window: target.window)
+            try await Task.sleep(for: .milliseconds(300))
+            var frame = actions.frame(of: target.window)
+            var vf = AXSystemTests.visibleFrame(around: frame ?? .zero)
+            AXSystemTests.expectClose(frame, AXSystemTests.axRect(fromCocoa: CGRect(
+                x: vf.minX, y: vf.minY, width: vf.width / 3, height: vf.height)), "leftThird")
+
+            actions.perform(.rightThird(nextDisplay: false), app: target.axApp, window: target.window)
+            try await Task.sleep(for: .milliseconds(300))
+            frame = actions.frame(of: target.window)
+            vf = AXSystemTests.visibleFrame(around: frame ?? .zero)
+            AXSystemTests.expectClose(frame, AXSystemTests.axRect(fromCocoa: CGRect(
+                x: vf.minX + vf.width * 2 / 3, y: vf.minY, width: vf.width / 3, height: vf.height)), "rightThird")
+        }
+
         @Test func centerThirdIsFullHeightCenteredThirdWidth() async throws {
             let target = try await AXSystemTests.launchTextEdit(activate: false)
             defer { target.terminate() }

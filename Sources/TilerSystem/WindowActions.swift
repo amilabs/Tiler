@@ -6,9 +6,12 @@ import TilerCore
 public enum TilingCommand: Equatable, Sendable {
     case leftHalf(nextDisplay: Bool)
     case rightHalf(nextDisplay: Bool)
+    case leftThird(nextDisplay: Bool)
+    case rightThird(nextDisplay: Bool)
     case maximize
     case centerThird
     case restore
+    case lockScreen
 }
 
 /// AX window manipulation layer (specs/window-actions/spec.md).
@@ -34,6 +37,10 @@ public final class WindowActions {
     /// can feed PermissionMonitor.noteActionFailed().
     @discardableResult
     public func perform(_ command: TilingCommand) -> Bool {
+        if command == .lockScreen {
+            lockScreen()
+            return true
+        }
         guard let (app, window) = frontmostFocusedWindow() else {
             NSLog("Tiler: no focused window for \(command) — ignoring")
             return false
@@ -45,6 +52,10 @@ public final class WindowActions {
     /// the window by pid instead of relying on frontmost focus).
     @discardableResult
     public func perform(_ command: TilingCommand, app: AXUIElement, window: AXUIElement) -> Bool {
+        if command == .lockScreen {
+            lockScreen()
+            return true
+        }
         trimStoresIfNeeded()
         guard let currentAX = frame(of: window) else {
             NSLog("Tiler: cannot read window frame — ignoring \(command)")
@@ -93,6 +104,12 @@ public final class WindowActions {
                           width: vf.width / 2, height: vf.height)
         }
 
+        func third(of screen: NSScreen, left: Bool) -> CGRect {
+            let vf = screen.visibleFrame
+            return CGRect(x: left ? vf.minX : vf.minX + vf.width * 2 / 3, y: vf.minY,
+                          width: vf.width / 3, height: vf.height)
+        }
+
         switch command {
         case .maximize:
             return current.visibleFrame
@@ -103,7 +120,11 @@ public final class WindowActions {
             return half(of: nextDisplay ? next(after: current, in: screens) : current, left: true)
         case .rightHalf(let nextDisplay):
             return half(of: nextDisplay ? next(after: current, in: screens) : current, left: false)
-        case .restore:
+        case .leftThird(let nextDisplay):
+            return third(of: nextDisplay ? next(after: current, in: screens) : current, left: true)
+        case .rightThird(let nextDisplay):
+            return third(of: nextDisplay ? next(after: current, in: screens) : current, left: false)
+        case .restore, .lockScreen:
             return nil
         }
     }
@@ -232,6 +253,28 @@ public final class WindowActions {
 
     private func setBoolAttribute(_ element: AXUIElement, _ attribute: String, _ value: Bool) {
         AXUIElementSetAttributeValue(element, attribute as CFString, value ? kCFBooleanTrue : kCFBooleanFalse)
+    }
+
+    /// System screen lock (⌃A hotkey): private login framework, same effect as
+    /// the system Lock Screen; CGSession suspend as fallback. No AX involved.
+    private func lockScreen() {
+        typealias LockFn = @convention(c) () -> Int32
+        if let handle = dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_NOW),
+           let sym = dlsym(handle, "SACLockScreenImmediate") {
+            _ = unsafeBitCast(sym, to: LockFn.self)()
+            NSLog("Tiler: screen locked (SACLockScreenImmediate)")
+            return
+        }
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath:
+            "/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession")
+        task.arguments = ["-suspend"]
+        do {
+            try task.run()
+            NSLog("Tiler: screen locked (CGSession fallback)")
+        } catch {
+            NSLog("Tiler: lock screen failed: \(error)")
+        }
     }
 
     /// Drop entries for windows that no longer answer AX queries (closed windows).

@@ -11,7 +11,7 @@ public final class HotkeyController {
     public var handler: ((TilingCommand) -> Void)?
 
     private enum Key: UInt32, CaseIterable {
-        case left = 1, right, up, down, cmdLeft, cmdRight
+        case left = 1, right, up, down, cmdLeft, cmdRight, lockScreen
 
         var keyCode: UInt32 {
             switch self {
@@ -19,6 +19,7 @@ public final class HotkeyController {
             case .right, .cmdRight: UInt32(kVK_RightArrow)
             case .up: UInt32(kVK_UpArrow)
             case .down: UInt32(kVK_DownArrow)
+            case .lockScreen: UInt32(kVK_ANSI_A)
             }
         }
 
@@ -26,6 +27,7 @@ public final class HotkeyController {
             switch self {
             case .left, .right, .up, .down: UInt32(controlKey | shiftKey)
             case .cmdLeft, .cmdRight: UInt32(cmdKey | controlKey | shiftKey)
+            case .lockScreen: UInt32(controlKey)
             }
         }
     }
@@ -108,6 +110,8 @@ public final class HotkeyController {
             emit(.leftHalf(nextDisplay: true))
         case .cmdRight:
             emit(.rightHalf(nextDisplay: true))
+        case .lockScreen:
+            emit(.lockScreen)
         case .up:
             let now = ProcessInfo.processInfo.systemUptime
             if let decision = resolver.registerPress(at: now) {

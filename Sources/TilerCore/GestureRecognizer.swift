@@ -60,9 +60,10 @@ public final class GestureRecognizer {
         pendingTunables = nil
     }
 
-    /// Process one frame. `cmdHeld` is the Cmd-modifier snapshot at frame time.
+    /// Process one frame. `cmdHeld`/`shiftHeld` are modifier snapshots at frame time.
     /// Returns an action only at the exact moment a gesture is confirmed.
-    public func process(_ frame: TouchFrame, cmdHeld: Bool = false) -> GestureAction? {
+    public func process(_ frame: TouchFrame, cmdHeld: Bool = false,
+                        shiftHeld: Bool = false) -> GestureAction? {
         let t = frame.timestamp
 
         // Stream silence implies zero contacts for the whole gap: if the gap covers
@@ -96,7 +97,8 @@ public final class GestureRecognizer {
             processIdle(active: active, palmPresent: palmPresent, at: t)
             return nil
         case .tracking:
-            return processTracking(active: active, palmPresent: palmPresent, at: t, cmdHeld: cmdHeld)
+            return processTracking(active: active, palmPresent: palmPresent, at: t,
+                                   cmdHeld: cmdHeld, shiftHeld: shiftHeld)
         }
     }
 
@@ -153,7 +155,7 @@ public final class GestureRecognizer {
     }
 
     private func processTracking(active: [Contact], palmPresent: Bool,
-                                 at t: Double, cmdHeld: Bool) -> GestureAction? {
+                                 at t: Double, cmdHeld: Bool, shiftHeld: Bool) -> GestureAction? {
         let keys = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
         guard !palmPresent, active.count == 3, keys == trackedFingers else {
             lockoutNow()
@@ -215,11 +217,12 @@ public final class GestureRecognizer {
         case .down:
             return nil // deliberately not implemented
         case .up:
+            // ⇧ is meaningless for maximize and is ignored (spec).
             return cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false)
         case .left:
-            return GestureAction(direction: .left, nextDisplay: cmdHeld)
+            return GestureAction(direction: .left, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         case .right:
-            return GestureAction(direction: .right, nextDisplay: cmdHeld)
+            return GestureAction(direction: .right, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         }
     }
 
