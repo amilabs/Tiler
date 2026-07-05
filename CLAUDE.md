@@ -28,5 +28,6 @@ back to `main` and push when a phase completes.
 - Owner communicates in Russian; repo artifacts are in English.
 
 **Environment:** macOS 26.5 / Xcode 26.6 / Swift 6.3; push via SSH to
-`git@github.com:amilabs/Tiler.git` (`gh` CLI not authenticated); Node.js absent —
+`git@github.com:amilabs/Tiler.git`; `gh` CLI authenticated (alexnskcody) since
+2026-07-05 — releases via `gh release`; Node.js absent —
 OpenSpec structure is maintained manually, no CLI.
