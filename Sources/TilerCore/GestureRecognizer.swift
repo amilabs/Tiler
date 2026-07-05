@@ -217,8 +217,9 @@ public final class GestureRecognizer {
         case .down:
             return nil // deliberately not implemented
         case .up:
-            // ⇧ is meaningless for maximize and is ignored (spec).
-            return cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false)
+            // ⇧+up = center-third (the double-press ↑ analog); ⌘+up stays silent.
+            return cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false,
+                                                 thirdWidth: shiftHeld)
         case .left:
             return GestureAction(direction: .left, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         case .right:

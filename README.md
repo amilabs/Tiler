@@ -24,7 +24,7 @@ your displays.
 | ⌘⌃⇧← / ⌘⌃⇧→ | halves on the next display |
 | ⌃A | lock the screen |
 | 3-finger swipe ← / → / ↑ | left half / right half / maximize |
-| ⇧ + 3-finger swipe ← / → | left / right third |
+| ⇧ + 3-finger swipe ← / → / ↑ | left third / right third / centered third |
 | ⌘ + 3-finger swipe ← / → | halves on the next display (⇧ combines: thirds) |
 
 Swipe-down, two- and four-finger movements do nothing. The full reference lives

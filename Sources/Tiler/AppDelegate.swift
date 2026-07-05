@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.2.1"
+    static let version = "0.2.2"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -228,7 +228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 ? .rightThird(nextDisplay: action.nextDisplay)
                 : .rightHalf(nextDisplay: action.nextDisplay)
         case .up:
-            command = .maximize
+            command = action.thirdWidth ? .centerThird : .maximize
         }
         execute(command)
     }

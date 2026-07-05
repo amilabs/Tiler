@@ -84,6 +84,7 @@ enum GuideContent {
         GestureRow(direction: .up, cmd: false, action: "Maximize"),
         GestureRow(direction: .left, cmd: false, shift: true, action: "Left third"),
         GestureRow(direction: .right, cmd: false, shift: true, action: "Right third"),
+        GestureRow(direction: .up, cmd: false, shift: true, action: "Full height, centered, ⅓ width"),
         GestureRow(direction: .left, cmd: true, action: "Left half on the next display"),
         GestureRow(direction: .right, cmd: true, action: "Right half on the next display"),
     ]

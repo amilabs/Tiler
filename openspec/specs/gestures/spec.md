@@ -109,8 +109,9 @@ apply live, but never mid-gesture (taken up from the next clean idle state).
 On confirmation the recognizer SHALL emit exactly one action, snapshotting ⌘ and ⇧
 at confirmation time: left → left half, right → right half, up → maximize. With ⇧
 held, left/right emit third-width actions instead of halves. With ⌘ held, left/right
-target the next display (⇧ and ⌘ combine). ⌘ with up SHALL emit nothing; ⇧ with up
-is ignored (plain maximize).
+target the next display (⇧ and ⌘ combine). With ⇧ held, up emits a third-width up
+action (center-third — the double-press ↑ analog). ⌘ with up SHALL emit nothing,
+regardless of ⇧.
 
 ##### Scenario: Cmd-held three-finger swipe right
 - WHEN a valid 3-finger right swipe confirms while Cmd is physically held
@@ -119,6 +120,10 @@ is ignored (plain maximize).
 ##### Scenario: Shift-held right swipe
 - WHEN a valid 3-finger right swipe confirms while ⇧ is physically held
 - THEN the window tiles to the right third of the current screen
+
+##### Scenario: Shift-held up swipe
+- WHEN a valid 3-finger up swipe confirms while ⇧ is physically held
+- THEN the window goes to full height, horizontally centered, ⅓ of the screen width
 
 ##### Scenario: Shift+Cmd left swipe
 - WHEN a valid left swipe confirms with both ⇧ and ⌘ held

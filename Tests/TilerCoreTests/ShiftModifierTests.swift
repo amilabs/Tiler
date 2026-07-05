@@ -30,10 +30,16 @@ import Testing
         #expect(sim.actions == [GestureAction(direction: .right, nextDisplay: false, thirdWidth: false)])
     }
 
-    @Test func shiftWithUpIsIgnoredPlainMaximize() {
+    @Test func shiftUpSwipeEmitsThirdWidthCenterThird() {
         var sim = Sim()
         sim.performValidSwipe((dx: 0, dy: 0.15), shift: true)
-        #expect(sim.actions == [GestureAction(direction: .up, nextDisplay: false, thirdWidth: false)])
+        #expect(sim.actions == [GestureAction(direction: .up, nextDisplay: false, thirdWidth: true)])
+    }
+
+    @Test func cmdUpStillEmitsNothingEvenWithShift() {
+        var sim = Sim()
+        sim.performValidSwipe((dx: 0, dy: 0.15), cmd: true, shift: true)
+        #expect(sim.actions.isEmpty)
     }
 
     // Old golden fixtures predate thirdWidth: decoding must default it to false.
