@@ -104,15 +104,25 @@ apply live, but never mid-gesture (taken up from the next clean idle state).
 - WHEN 3 fingers swipe down with any parameters
 - THEN no action fires (by design; not a failure)
 
-#### Requirement: Direction mapping and Cmd modifier
+#### Requirement: Direction mapping and modifiers
 
-On confirmation the recognizer SHALL emit exactly one action: left → left half,
-right → right half, up → maximize. If Cmd is held at confirmation time for left/right,
-the action SHALL target the next display instead. Cmd with up SHALL emit nothing.
+On confirmation the recognizer SHALL emit exactly one action, snapshotting ⌘ and ⇧
+at confirmation time: left → left half, right → right half, up → maximize. With ⇧
+held, left/right emit third-width actions instead of halves. With ⌘ held, left/right
+target the next display (⇧ and ⌘ combine). ⌘ with up SHALL emit nothing; ⇧ with up
+is ignored (plain maximize).
 
 ##### Scenario: Cmd-held three-finger swipe right
 - WHEN a valid 3-finger right swipe confirms while Cmd is physically held
 - THEN the right-half action targets the next display
+
+##### Scenario: Shift-held right swipe
+- WHEN a valid 3-finger right swipe confirms while ⇧ is physically held
+- THEN the window tiles to the right third of the current screen
+
+##### Scenario: Shift+Cmd left swipe
+- WHEN a valid left swipe confirms with both ⇧ and ⌘ held
+- THEN the window tiles to the left third of the next display
 
 #### Requirement: One action per physical gesture (lockout)
 

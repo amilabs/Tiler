@@ -16,6 +16,16 @@ Tiler SHALL register the following global hotkeys via Carbon `RegisterEventHotKe
 | Ctrl+Shift+↓ | restore the window's pre-Tiler frame |
 | Cmd+Ctrl+Shift+← | left half on the next display |
 | Cmd+Ctrl+Shift+→ | right half on the next display |
+| Ctrl+A | lock the screen |
+
+Known trade-off, accepted by the owner: Ctrl+A shadows the "beginning-of-line"
+shortcut system-wide while Tiler hotkeys are enabled (the Settings toggle releases
+it together with the rest).
+
+##### Scenario: Lock screen
+- WHEN Ctrl+A is pressed while Tiler hotkeys are enabled
+- THEN the session locks via the system lock; unlocking returns with Tiler running
+  normally
 
 ##### Scenario: Hotkey fires with permission granted
 - WHEN Accessibility permission is granted and Ctrl+Shift+← is pressed

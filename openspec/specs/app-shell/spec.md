@@ -5,9 +5,10 @@
 #### Requirement: Menu-bar-only application
 
 Tiler SHALL run as an `LSUIElement` app with an `NSStatusItem` (no Dock icon, no main
-window). The menu SHALL contain exactly TWO items: **Tiler…** (single entry point,
-opening the unified About & Guide window) and **Quit**. Settings are reached from
-within the unified window (prominent header button + troubleshooting link). The
+window). The menu SHALL contain exactly: **Help** (opens the unified About & Guide
+window), **Settings** (⌘,; with a visible ⚠︎ marker while Accessibility is missing),
+and **Quit** — labels without ellipses. Settings is also reachable from the unified
+window's header button. The
 status item SHALL show a distinct alert appearance (with explanatory tooltip) when
 Accessibility is missing OR conflicting system gestures are detected; the conflict
 check re-runs at launch and on every menu open.

@@ -15,9 +15,14 @@ with the window's frame. Geometry SHALL be computed against the screen's `visibl
 
 #### Requirement: Tiling geometries
 
-Left/right half SHALL fill exactly half of the visible frame. Maximize SHALL fill the
+Left/right half SHALL fill exactly half of the visible frame. Left/right THIRD
+(⇧-variants) SHALL fill exactly the leftmost/rightmost third. Maximize SHALL fill the
 whole visible frame (not native fullscreen). Center-third SHALL be full visible-frame
 height, width = 1/3 of the visible frame, horizontally centered.
+
+##### Scenario: Right third
+- WHEN the right-third action targets a window
+- THEN its frame equals the rightmost third of the screen's visible frame
 
 ##### Scenario: Maximize respects menu bar and Dock
 - WHEN a window is maximized
@@ -68,3 +73,9 @@ mis-positioning in Chrome/Electron apps).
 
 Every AX call SHALL check `AXError` and degrade to a logged no-op. No AX failure may
 crash Tiler or corrupt the restore history.
+
+#### Requirement: Lock-screen command
+
+A lockScreen command SHALL lock the user session using the system lock (private
+`SACLockScreenImmediate`, falling back to `CGSession -suspend`); it requires no
+Accessibility permission and never crashes on failure.
