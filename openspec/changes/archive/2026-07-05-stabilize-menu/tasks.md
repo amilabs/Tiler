@@ -34,4 +34,9 @@
       product README (screenshots pending from owner — self-render produced no text,
       SwiftUI offscreen limitation; --render-shots tooling kept), TCC saga moved to
       docs/tcc-enrollment.md, release zip built.
-- [ ] 1.8 Owner: 3 window screenshots + gh device auth → GitHub release; archive.
+- [x] 1.8 GitHub release v0.2.0 published (gh device flow; token now in keyring).
+      README screenshots solved via SwiftUI ImageRenderer self-render (--render-shots
+      from the built bundle): real UI, reproducible per release; Link and ProgressView
+      don't rasterize under ImageRenderer — replaced with render-safe equivalents
+      (styled Text link, capsule ProgressBar). List-backed Settings form can't render
+      offscreen — README ships guide + calibration shots. Archived.

@@ -97,6 +97,24 @@ final class CalibrationModel: ObservableObject {
     }
 }
 
+/// Capsule progress bar: same look as ProgressView, but rasterizes correctly
+/// under ImageRenderer (release screenshots) and renders deterministically.
+struct ProgressBar: View {
+    let value: Double
+    var tint: Color = .accentColor
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.secondary.opacity(0.22))
+                Capsule().fill(tint)
+                    .frame(width: max(6, geo.size.width * min(1, max(0, value))))
+            }
+        }
+        .frame(height: 6)
+    }
+}
+
 /// Calibration dialog: animated gesture demo, live attempt feedback, accuracy.
 struct CalibrationView: View {
     @ObservedObject var model: CalibrationModel
@@ -128,8 +146,8 @@ struct CalibrationView: View {
                 .padding(.horizontal, 9)
                 .background(Color.secondary.opacity(0.12), in: Capsule())
         }
-        ProgressView(value: Double(model.stepNumber - 1) + model.stepFraction,
-                     total: Double(model.stepCount))
+        ProgressBar(value: (Double(model.stepNumber - 1) + model.stepFraction)
+            / Double(max(1, model.stepCount)))
         GestureDemoView(direction: prompt.gesture)
             .frame(height: 110)
         Text("Swipe with exactly three fingers, \(prompt.attemptsRequired) times.")
@@ -152,8 +170,8 @@ struct CalibrationView: View {
                 .font(.caption)
                 .foregroundStyle(.orange)
         }
-        ProgressView(value: model.accuracySoFar)
-            .tint(model.accuracySoFar > 0.7 ? .green : .orange)
+        ProgressBar(value: model.accuracySoFar,
+                    tint: model.accuracySoFar > 0.7 ? .green : .orange)
         Text("Accuracy \(Int(model.accuracySoFar * 100)) %")
             .font(.caption)
             .foregroundStyle(.secondary)

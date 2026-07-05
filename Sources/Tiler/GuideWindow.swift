@@ -288,7 +288,13 @@ struct GuideView: View {
             Text("·").foregroundStyle(.tertiary)
             Text(GuideContent.verifiedOn)
             Text("·").foregroundStyle(.tertiary)
-            Link("github.com/amilabs/Tiler", destination: URL(string: "https://github.com/amilabs/Tiler")!)
+            // Not SwiftUI.Link: it fails to rasterize under ImageRenderer
+            // (release screenshots) — a styled Text with onTapGesture is identical.
+            Text("github.com/amilabs/Tiler")
+                .foregroundStyle(Color.accentColor)
+                .onTapGesture {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/amilabs/Tiler")!)
+                }
         }
         .font(.caption)
         .foregroundStyle(.secondary)

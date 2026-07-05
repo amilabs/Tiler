@@ -62,5 +62,7 @@ Archived: `2026-07-04-add-tiler-mvp` (MVP), `2026-07-04-add-shell-and-calibratio
 (v0.2: icon/About/Settings, startup flow, per-user calibration, dominance retunes),
 `2026-07-04-add-onboarding-guide` (Guide window, cheat sheet, conflict alerting,
 startup flow v2), `2026-07-05-unify-about-guide` (single-entry unified window,
-marketing About, calibration progress, cross-display fix, tabbed Settings).
-Specs in `openspec/specs/` are current truth.
+marketing About, calibration progress, cross-display fix, tabbed Settings),
+`2026-07-05-stabilize-menu` (final menu, CPU-budget fix + honest measurement,
+no-scroll layout, release 0.2.0 tooling). Specs in `openspec/specs/` are current
+truth. Released: v0.2.0 (GitHub release with zip).

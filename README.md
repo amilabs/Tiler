@@ -39,8 +39,7 @@ Swipe-down, two- and four-finger movements do nothing — by design. The full
 reference with animated demos lives in the app: menu bar → **Tiler**.
 
 <p align="center">
-  <img src="docs/screenshots/settings.png" width="420" alt="Settings — toggles, permission status, calibration">
-  <img src="docs/screenshots/calibration.png" width="300" alt="Guided gesture calibration with live accuracy">
+  <img src="docs/screenshots/calibration.png" width="340" alt="Guided gesture calibration with live accuracy">
 </p>
 
 ## Install

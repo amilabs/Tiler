@@ -302,34 +302,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSLog("Tiler: guide window shown")
     }
 
-    /// Release tooling: renders the app's own windows into PNGs for the README.
-    /// Snapshotting our own views needs no screen-recording permission and makes
-    /// screenshots reproducible on every release.
+    /// Release tooling: renders the app's UI into PNGs for the README via SwiftUI
+    /// ImageRenderer (no screen-recording permission, text rasterizes correctly,
+    /// reproducible on every release). Window-chrome-less; a window-background
+    /// wrapper keeps them looking like real screenshots.
     private func renderShots(to directory: String) {
-        showGuide()
-        showSettings()
-        showCalibration()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self else { return }
-            let dir = URL(fileURLWithPath: directory)
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            let shots: [(String, NSWindow?)] = [
-                ("guide", NSApp.windows.first { $0.title == "About Tiler" }),
-                ("settings", NSApp.windows.first { $0.title == "Tiler Settings" }),
-                ("calibration", self.calibrationWindow),
-            ]
-            for (name, window) in shots {
-                guard let view = window?.contentView,
-                      let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
-                    NSLog("Tiler: render-shots: no view for %@", name)
-                    continue
-                }
-                view.cacheDisplay(in: view.bounds, to: rep)
-                if let png = rep.representation(using: .png, properties: [:]) {
-                    try? png.write(to: dir.appendingPathComponent("\(name).png"))
-                    NSLog("Tiler: render-shots wrote %@.png", name)
-                }
+        guard let engine else { return }
+        // Deterministic light appearance for the README regardless of system theme.
+        NSApp.appearance = NSAppearance(named: .aqua)
+        let dir = URL(fileURLWithPath: directory)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        func write<V: View>(_ name: String, _ view: V) {
+            let wrapped = view
+                .background(Color(nsColor: .windowBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            let renderer = ImageRenderer(content: wrapped)
+            renderer.scale = 2
+            guard let image = renderer.nsImage,
+                  let tiff = image.tiffRepresentation,
+                  let rep = NSBitmapImageRep(data: tiff),
+                  let png = rep.representation(using: .png, properties: [:]) else {
+                NSLog("Tiler: render-shots failed for %@", name)
+                return
             }
+            try? png.write(to: dir.appendingPathComponent("\(name).png"))
+            NSLog("Tiler: render-shots wrote %@.png", name)
+        }
+
+        let guideModel = GuideModel(accessibilityGranted: true)
+        write("guide", GuideView(model: guideModel))
+        let settingsModel = SettingsModel(store: settings, accessibilityGranted: true)
+        write("settings", SettingsView(model: settingsModel))
+        let calibrationModel = CalibrationModel(engine: engine) { _ in }
+        write("calibration", CalibrationView(model: calibrationModel))
+        calibrationModel.finish(apply: false)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             NSApp.terminate(nil)
         }
     }
