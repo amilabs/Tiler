@@ -24,4 +24,10 @@
       macOS 26.5 only"; README spells out that all acceptance claims refer to that
       configuration and porting is untested; spec requires the note until another
       configuration passes acceptance.
-- [ ] 1.6 Owner confirms; archive.
+- [x] 1.6 Owner UI review fixes: Settings window collapse fixed (List-backed Form
+      inside TabView reports no intrinsic height — explicit 460×320 frame; permission
+      row and toggles visible again, measured 484×376); duplicate Settings button
+      removed from troubleshooting (header gear is the single entry); permanent
+      green permission banner removed — the card appears only while the permission
+      is missing (guide now 880×720).
+- [ ] 1.7 Owner confirms; archive.

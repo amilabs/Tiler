@@ -225,17 +225,10 @@ struct GuideView: View {
 
     // MARK: - Permission & troubleshooting
 
+    /// Shown only while there IS a problem — a permanent green banner is noise.
     @ViewBuilder
     private var permissionCard: some View {
-        if model.accessibilityGranted {
-            Label("Accessibility is granted — Tiler can move your windows.",
-                  systemImage: "checkmark.circle.fill")
-                .font(.callout)
-                .foregroundStyle(.green)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
-        } else {
+        if !model.accessibilityGranted {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Tiler needs the Accessibility permission",
                       systemImage: "exclamationmark.triangle.fill")
@@ -280,8 +273,6 @@ struct GuideView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     Button("Calibrate…") { model.onCalibrate?() }
-                    Spacer()
-                    Button("Settings…") { model.onOpenSettings?() }
                 }
             }
         }

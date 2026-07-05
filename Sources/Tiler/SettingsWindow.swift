@@ -72,15 +72,16 @@ struct SettingsView: View {
     @ObservedObject var model: SettingsModel
 
     var body: some View {
+        // Explicit height is mandatory: Form is List-backed and reports no
+        // intrinsic height, so a bare TabView collapses to an empty strip.
         TabView {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
             gesturesTab
                 .tabItem { Label("Gestures", systemImage: "hand.point.up.left") }
         }
-        .frame(width: 460)
-        .padding(.top, 4)
-        .scenePadding()
+        .frame(width: 460, height: 320)
+        .padding(12)
     }
 
     private var generalTab: some View {
