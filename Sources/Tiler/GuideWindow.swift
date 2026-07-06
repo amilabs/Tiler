@@ -35,6 +35,7 @@ enum GuideContent {
     struct HotkeyRow: Identifiable {
         let id = UUID()
         let keys: [String]
+        let glyph: SnapGlyph.Kind
         let action: String
     }
 
@@ -43,6 +44,7 @@ enum GuideContent {
         let direction: GestureDirection
         let cmd: Bool
         var shift: Bool = false
+        let glyph: SnapGlyph.Kind
         let action: String
     }
 
@@ -68,25 +70,25 @@ enum GuideContent {
     ]
 
     static let hotkeys: [HotkeyRow] = [
-        HotkeyRow(keys: ["⌃", "⇧", "←"], action: "Left half of the current screen"),
-        HotkeyRow(keys: ["⌃", "⇧", "→"], action: "Right half of the current screen"),
-        HotkeyRow(keys: ["⌃", "⇧", "↑"], action: "Maximize (after a 0.3 s pause)"),
-        HotkeyRow(keys: ["⌃", "⇧", "↑", "↑"], action: "Full height, centered, ⅓ width — double press"),
-        HotkeyRow(keys: ["⌃", "⇧", "↓"], action: "Restore the window's previous frame"),
-        HotkeyRow(keys: ["⌘", "⌃", "⇧", "←"], action: "Left half on the next display"),
-        HotkeyRow(keys: ["⌘", "⌃", "⇧", "→"], action: "Right half on the next display"),
-        HotkeyRow(keys: ["⌃", "A"], action: "Lock the screen"),
+        HotkeyRow(keys: ["⌃", "⇧", "←"], glyph: .leftHalf, action: "Left half of the current screen"),
+        HotkeyRow(keys: ["⌃", "⇧", "→"], glyph: .rightHalf, action: "Right half of the current screen"),
+        HotkeyRow(keys: ["⌃", "⇧", "↑"], glyph: .maximize, action: "Maximize (after a 0.3 s pause)"),
+        HotkeyRow(keys: ["⌃", "⇧", "↑", "↑"], glyph: .centerThird, action: "Full height, centered, ⅓ width — double press"),
+        HotkeyRow(keys: ["⌃", "⇧", "↓"], glyph: .restore, action: "Restore the window's previous frame"),
+        HotkeyRow(keys: ["⌘", "⌃", "⇧", "←"], glyph: .leftHalfNext, action: "Left half on the next display"),
+        HotkeyRow(keys: ["⌘", "⌃", "⇧", "→"], glyph: .rightHalfNext, action: "Right half on the next display"),
+        HotkeyRow(keys: ["⌃", "A"], glyph: .lock, action: "Lock the screen"),
     ]
 
     static let gestures: [GestureRow] = [
-        GestureRow(direction: .left, cmd: false, action: "Left half"),
-        GestureRow(direction: .right, cmd: false, action: "Right half"),
-        GestureRow(direction: .up, cmd: false, action: "Maximize"),
-        GestureRow(direction: .left, cmd: false, shift: true, action: "Left third"),
-        GestureRow(direction: .right, cmd: false, shift: true, action: "Right third"),
-        GestureRow(direction: .up, cmd: false, shift: true, action: "Full height, centered, ⅓ width"),
-        GestureRow(direction: .left, cmd: true, action: "Left half on the next display"),
-        GestureRow(direction: .right, cmd: true, action: "Right half on the next display"),
+        GestureRow(direction: .left, cmd: false, glyph: .leftHalf, action: "Left half"),
+        GestureRow(direction: .right, cmd: false, glyph: .rightHalf, action: "Right half"),
+        GestureRow(direction: .up, cmd: false, glyph: .maximize, action: "Maximize"),
+        GestureRow(direction: .left, cmd: false, shift: true, glyph: .leftThird, action: "Left third"),
+        GestureRow(direction: .right, cmd: false, shift: true, glyph: .rightThird, action: "Right third"),
+        GestureRow(direction: .up, cmd: false, shift: true, glyph: .centerThird, action: "Full height, centered, ⅓ width"),
+        GestureRow(direction: .left, cmd: true, glyph: .leftHalfNext, action: "Left half on the next display"),
+        GestureRow(direction: .right, cmd: true, glyph: .rightHalfNext, action: "Right half on the next display"),
     ]
 
     static let gestureFootnote =
@@ -138,6 +140,7 @@ struct GuideView: View {
                         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
                             ForEach(GuideContent.hotkeys) { row in
                                 GridRow {
+                                    SnapGlyph(kind: row.glyph)
                                     keycaps(row.keys)
                                         .gridColumnAlignment(.trailing)
                                     Text(row.action)
@@ -154,6 +157,7 @@ struct GuideView: View {
                         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 9) {
                             ForEach(GuideContent.gestures) { row in
                                 GridRow {
+                                    SnapGlyph(kind: row.glyph)
                                     HStack(spacing: 6) {
                                         if row.cmd || row.shift {
                                             keycaps((row.cmd ? ["⌘"] : []) + (row.shift ? ["⇧"] : []))
