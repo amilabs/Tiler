@@ -28,8 +28,9 @@ GESTURES:
 
 SETTINGS & CALIBRATION:
  [ ] Menu → About: version, build time, GitHub link
- [ ] Settings: gestures toggle stops swipes; hotkeys toggle releases the combos
-     (Ctrl+Shift+arrows reach other apps) and re-enabling restores them, no relaunch
+ [ ] Settings: gestures toggle stops swipes; window-hotkeys toggle releases the
+     arrow combos (default OFF); the lock-screen toggle releases Ctrl+A — each
+     independently, no relaunch
  [ ] Settings → Calibrate: demo animation, live attempt feedback, Apply persists
      across relaunch; Reset to defaults returns stock behavior
  [ ] During calibration windows do NOT move; after Apply gestures work immediately

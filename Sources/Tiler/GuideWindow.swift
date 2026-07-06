@@ -145,6 +145,10 @@ struct GuideView: View {
                                 }
                             }
                         }
+                        Text("Window tiling hotkeys are off by default — enable them in Settings.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
                     }
                     section("Trackpad gestures") {
                         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 9) {
@@ -367,17 +371,28 @@ struct HeroDemoView: View {
     }
 }
 
-/// Static direction pose that comes alive under the pointer.
+/// Static direction pose that comes alive under the pointer. The animation
+/// self-stops after a few loops even if the cursor stays parked on the tile —
+/// the idle-CPU budget applies to every no-finger state, parked cursor included.
 struct HoverDemo: View {
     let direction: GestureDirection
     @State private var hovered = false
+    @State private var hoverToken = 0
 
     var body: some View {
         GestureDemoView(direction: direction, animated: hovered)
             .frame(width: 76, height: 34)
             .background(Color.secondary.opacity(0.08),
                         in: RoundedRectangle(cornerRadius: 8))
-            .onHover { hovered = $0 }
+            .onHover { inside in
+                hovered = inside
+                guard inside else { return }
+                hoverToken += 1
+                let token = hoverToken
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {
+                    if token == hoverToken { hovered = false }
+                }
+            }
     }
 }
 

@@ -7,7 +7,8 @@ import TilerCore
 public final class SettingsStore {
     private enum Key {
         static let gestures = "gesturesEnabled"
-        static let hotkeys = "hotkeysEnabled"
+        static let windowHotkeys = "windowHotkeysEnabled"
+        static let utilityHotkeys = "utilityHotkeysEnabled"
         static let tunables = "tunablesOverride"
     }
 
@@ -23,10 +24,21 @@ public final class SettingsStore {
         }
     }
 
-    public var hotkeysEnabled: Bool {
+    /// Window-tiling hotkeys (⌃⇧ / ⌘⌃⇧ arrows). OFF by default: the owner drives
+    /// windows by gestures; the legacy single hotkeysEnabled key was dropped.
+    public var windowHotkeysEnabled: Bool {
         didSet {
-            guard hotkeysEnabled != oldValue else { return }
-            defaults.set(hotkeysEnabled, forKey: Key.hotkeys)
+            guard windowHotkeysEnabled != oldValue else { return }
+            defaults.set(windowHotkeysEnabled, forKey: Key.windowHotkeys)
+            onChange?(self)
+        }
+    }
+
+    /// Utility hotkeys (⌃A lock screen). ON by default.
+    public var utilityHotkeysEnabled: Bool {
+        didSet {
+            guard utilityHotkeysEnabled != oldValue else { return }
+            defaults.set(utilityHotkeysEnabled, forKey: Key.utilityHotkeys)
             onChange?(self)
         }
     }
@@ -61,7 +73,8 @@ public final class SettingsStore {
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         gesturesEnabled = defaults.object(forKey: Key.gestures) as? Bool ?? true
-        hotkeysEnabled = defaults.object(forKey: Key.hotkeys) as? Bool ?? true
+        windowHotkeysEnabled = defaults.object(forKey: Key.windowHotkeys) as? Bool ?? false
+        utilityHotkeysEnabled = defaults.object(forKey: Key.utilityHotkeys) as? Bool ?? true
         hasSeenGuide = defaults.object(forKey: "hasSeenGuide") as? Bool ?? false
         if let data = defaults.data(forKey: Key.tunables) {
             tunablesOverride = try? JSONDecoder().decode(Tunables.self, from: data)

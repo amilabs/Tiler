@@ -72,11 +72,14 @@ final class CalibrationModel: ObservableObject {
                 self.stepAccuracy = nil
                 self.prompt = self.session.currentStep
                 self.stepNumber = self.session.stepNumber
+                // Audible cue: the next gesture prompt is up (calibration spec).
+                NSSound(named: "Glass")?.play()
             }
         case .sessionCompleted(let result):
             self.result = result
             self.prompt = nil
             engine.setFrameTap(nil)
+            NSSound(named: "Hero")?.play()
         }
     }
 

@@ -42,7 +42,7 @@ echo "== 1. Launch health"
 PID=$!
 sleep 4
 kill -0 "$PID" 2>/dev/null; say_result $? "process alive after launch"
-grep -q "hotkeys registered" "$LOG"; say_result $? "hotkeys registered"
+grep -q "hotkeys configured" "$LOG"; say_result $? "hotkeys configured"
 grep -q "touch stream started" "$LOG"; say_result $? "touch stream started"
 if grep -q "accessibility missing" "$LOG"; then
     echo "INFO: running WITHOUT Accessibility — alive-without-permission path exercised"
@@ -84,7 +84,7 @@ pgrep -f "$BIN" > /dev/null && say_result 1 "no orphan after kill -9" || say_res
 PID=$!
 sleep 3
 kill -0 "$PID" 2>/dev/null; say_result $? "clean relaunch after kill -9"
-grep -q "hotkeys registered" "$LOG"; say_result $? "hotkeys re-registered after relaunch"
+grep -q "hotkeys configured" "$LOG"; say_result $? "hotkeys re-configured after relaunch"
 kill "$PID" 2>/dev/null
 
 echo ""

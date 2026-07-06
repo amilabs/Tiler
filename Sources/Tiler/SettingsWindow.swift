@@ -9,8 +9,11 @@ final class SettingsModel: ObservableObject {
     @Published var gesturesEnabled: Bool {
         didSet { store.gesturesEnabled = gesturesEnabled }
     }
-    @Published var hotkeysEnabled: Bool {
-        didSet { store.hotkeysEnabled = hotkeysEnabled }
+    @Published var windowHotkeysEnabled: Bool {
+        didSet { store.windowHotkeysEnabled = windowHotkeysEnabled }
+    }
+    @Published var utilityHotkeysEnabled: Bool {
+        didSet { store.utilityHotkeysEnabled = utilityHotkeysEnabled }
     }
     @Published var accessibilityGranted: Bool
     @Published var launchAtLogin: Bool {
@@ -26,7 +29,8 @@ final class SettingsModel: ObservableObject {
     init(store: SettingsStore, accessibilityGranted: Bool) {
         self.store = store
         gesturesEnabled = store.gesturesEnabled
-        hotkeysEnabled = store.hotkeysEnabled
+        windowHotkeysEnabled = store.windowHotkeysEnabled
+        utilityHotkeysEnabled = store.utilityHotkeysEnabled
         self.accessibilityGranted = accessibilityGranted
         launchAtLogin = SMAppService.mainApp.status == .enabled
         isCalibrated = store.tunablesOverride != nil
@@ -89,7 +93,8 @@ struct SettingsView: View {
             Section { permissionRow }
             Section("Control") {
                 Toggle("Enable trackpad gestures", isOn: $model.gesturesEnabled)
-                Toggle("Enable hotkeys", isOn: $model.hotkeysEnabled)
+                Toggle("Window tiling hotkeys (⌃⇧ arrows)", isOn: $model.windowHotkeysEnabled)
+                Toggle("Lock screen hotkey (⌃A)", isOn: $model.utilityHotkeysEnabled)
                 Toggle("Launch at login", isOn: $model.launchAtLogin)
             }
         }

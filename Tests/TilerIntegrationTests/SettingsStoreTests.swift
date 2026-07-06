@@ -14,36 +14,34 @@ import TilerCore
         return defaults
     }
 
-    @Test func defaultsAreEnabled() {
+    @Test func defaultsSplitByGroup() {
         let store = SettingsStore(defaults: freshDefaults())
         #expect(store.gesturesEnabled)
-        #expect(store.hotkeysEnabled)
+        #expect(!store.windowHotkeysEnabled, "window tiling hotkeys are OFF by default")
+        #expect(store.utilityHotkeysEnabled, "utility hotkeys (lock screen) are ON by default")
     }
 
     @Test func togglesPersistAcrossInstances() {
         let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         store.gesturesEnabled = false
-        store.hotkeysEnabled = false
+        store.windowHotkeysEnabled = true
+        store.utilityHotkeysEnabled = false
 
         let reloaded = SettingsStore(defaults: defaults)
         #expect(!reloaded.gesturesEnabled)
-        #expect(!reloaded.hotkeysEnabled)
-
-        reloaded.hotkeysEnabled = true
-        let third = SettingsStore(defaults: defaults)
-        #expect(!third.gesturesEnabled)
-        #expect(third.hotkeysEnabled)
+        #expect(reloaded.windowHotkeysEnabled)
+        #expect(!reloaded.utilityHotkeysEnabled)
     }
 
     @Test func changesNotifyObserver() {
         let store = SettingsStore(defaults: freshDefaults())
         var events: [String] = []
-        store.onChange = { events.append("\($0.gesturesEnabled)/\($0.hotkeysEnabled)") }
-        store.gesturesEnabled = false
-        store.hotkeysEnabled = false
-        store.hotkeysEnabled = true
-        #expect(events == ["false/true", "false/false", "false/true"])
+        store.onChange = { events.append("\($0.windowHotkeysEnabled)/\($0.utilityHotkeysEnabled)") }
+        store.windowHotkeysEnabled = true
+        store.utilityHotkeysEnabled = false
+        store.utilityHotkeysEnabled = true
+        #expect(events == ["true/true", "true/false", "true/true"])
     }
 
     @Test func settingSameValueDoesNotNotify() {

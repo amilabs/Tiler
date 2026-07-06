@@ -284,9 +284,22 @@ struct AXSystemTests {
             try? kill.run()
             kill.waitUntilExit()
 
+            // Window hotkeys are OFF by default (split-hotkey-groups): enable them
+            // for the instance under test, then restore the user's value — the
+            // launched process has already read its settings by then.
+            let domain = UserDefaults(suiteName: "pro.amilabs.tilerx")!
+            let prior = domain.object(forKey: "windowHotkeysEnabled")
+            domain.set(true, forKey: "windowHotkeysEnabled")
+
             let process = Process()
             process.executableURL = Self.tilerBinary
             try process.run()
+            usleep(900_000)
+            if let prior {
+                domain.set(prior, forKey: "windowHotkeysEnabled")
+            } else {
+                domain.removeObject(forKey: "windowHotkeysEnabled")
+            }
             return process
         }
 

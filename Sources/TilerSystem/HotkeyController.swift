@@ -10,8 +10,17 @@ import TilerCore
 public final class HotkeyController {
     public var handler: ((TilingCommand) -> Void)?
 
+    public enum Group: CaseIterable, Sendable {
+        case windowTiling
+        case utility
+    }
+
     private enum Key: UInt32, CaseIterable {
         case left = 1, right, up, down, cmdLeft, cmdRight, lockScreen
+
+        var group: Group {
+            self == .lockScreen ? .utility : .windowTiling
+        }
 
         var keyCode: UInt32 {
             switch self {
@@ -34,7 +43,7 @@ public final class HotkeyController {
 
     private let signature: OSType = 0x54494C52 // 'TILR'
     private var resolver: DoublePressResolver
-    private var registered: [EventHotKeyRef?] = []
+    private var registered: [Group: [EventHotKeyRef]] = [:]
     private var eventHandler: EventHandlerRef?
     private var expiryTimer: DispatchSourceTimer?
 
@@ -42,36 +51,44 @@ public final class HotkeyController {
         resolver = DoublePressResolver(window: tunables.doublePressWindow)
     }
 
-    public private(set) var isRegistered = false
-
-    /// Registers all bindings (idempotent). Failures are logged per key; the app
-    /// stays alive.
-    public func registerAll() {
-        guard !isRegistered else { return }
-        isRegistered = true
-        installEventHandlerIfNeeded()
-        for key in Key.allCases {
-            var ref: EventHotKeyRef?
-            let hotkeyID = EventHotKeyID(signature: signature, id: key.rawValue)
-            let status = RegisterEventHotKey(key.keyCode, key.modifiers, hotkeyID,
-                                             GetApplicationEventTarget(), 0, &ref)
-            if status != noErr {
-                NSLog("Tiler: RegisterEventHotKey failed for \(key) (status \(status))")
-            }
-            registered.append(ref)
-        }
-        NSLog("Tiler: hotkeys registered")
+    public func isRegistered(_ group: Group) -> Bool {
+        !(registered[group] ?? []).isEmpty
     }
 
-    /// Releases the key combos back to the system (settings toggle; idempotent).
-    public func unregisterAll() {
-        guard isRegistered else { return }
-        isRegistered = false
-        cancelExpiryTimer()
-        for ref in registered {
-            if let ref { UnregisterEventHotKey(ref) }
+    /// Brings both groups to the desired state (idempotent per group). Disabled
+    /// groups release their combos back to the system without relaunch.
+    public func apply(windowTiling: Bool, utility: Bool) {
+        setGroup(.windowTiling, enabled: windowTiling)
+        setGroup(.utility, enabled: utility)
+        NSLog("Tiler: hotkeys configured (window: %@, utility: %@)",
+              windowTiling ? "on" : "off", utility ? "on" : "off")
+    }
+
+    private func setGroup(_ group: Group, enabled: Bool) {
+        if enabled {
+            guard !isRegistered(group) else { return }
+            installEventHandlerIfNeeded()
+            var refs: [EventHotKeyRef] = []
+            for key in Key.allCases where key.group == group {
+                var ref: EventHotKeyRef?
+                let hotkeyID = EventHotKeyID(signature: signature, id: key.rawValue)
+                let status = RegisterEventHotKey(key.keyCode, key.modifiers, hotkeyID,
+                                                 GetApplicationEventTarget(), 0, &ref)
+                if status != noErr {
+                    NSLog("Tiler: RegisterEventHotKey failed for \(key) (status \(status))")
+                } else if let ref {
+                    refs.append(ref)
+                }
+            }
+            registered[group] = refs
+        } else {
+            guard isRegistered(group) else { return }
+            if group == .windowTiling { cancelExpiryTimer() }
+            for ref in registered[group] ?? [] {
+                UnregisterEventHotKey(ref)
+            }
+            registered[group] = []
         }
-        registered = []
     }
 
     private func installEventHandlerIfNeeded() {

@@ -160,25 +160,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.handler = { [weak self] command in
             self?.execute(command)
         }
-        if settings.hotkeysEnabled {
-            controller.registerAll()
-        }
+        controller.apply(windowTiling: settings.windowHotkeysEnabled,
+                         utility: settings.utilityHotkeysEnabled)
         hotkeys = controller
     }
 
     private func setUpSettingsWiring() {
         settings.onChange = { [weak self] store in
             guard let self else { return }
-            if store.hotkeysEnabled {
-                self.hotkeys?.registerAll()
-            } else {
-                self.hotkeys?.unregisterAll()
-            }
+            self.hotkeys?.apply(windowTiling: store.windowHotkeysEnabled,
+                                utility: store.utilityHotkeysEnabled)
             self.engine?.stageTunables(store.effectiveTunables)
-            NSLog("Tiler: settings — gestures %@, hotkeys %@, calibrated %@",
-                  store.gesturesEnabled ? "on" : "off",
-                  store.hotkeysEnabled ? "on" : "off",
-                  store.tunablesOverride == nil ? "no" : "yes")
         }
     }
 
