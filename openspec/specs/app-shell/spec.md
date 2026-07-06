@@ -41,7 +41,9 @@ and the GitHub link.
 
 #### Requirement: Cheat-sheet placement glyphs
 
-Every hotkey and gesture row SHALL lead with a static placement glyph: a screen
+The cheat sheet SHALL present Trackpad gestures before Hotkeys (gestures are the
+primary interaction). Each row SHALL read left-to-right: input (keycaps / gesture
+demo), action text, then a static placement glyph in the trailing column: a screen
 outline with the target region drawn as a small window (title bar + dots); tiling
 positions carry no arrow (the filled window shows placement); restore is a bold
 counter-clockwise revert arrow encircling a centered window; next-display shows the

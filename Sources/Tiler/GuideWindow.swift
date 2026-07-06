@@ -136,41 +136,43 @@ struct GuideView: View {
                 }
                 .frame(width: 340, alignment: .topLeading)
                 VStack(alignment: .leading, spacing: 14) {
-                    section("Hotkeys") {
-                        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
-                            ForEach(GuideContent.hotkeys) { row in
-                                GridRow {
-                                    SnapGlyph(kind: row.glyph)
-                                    keycaps(row.keys)
-                                        .gridColumnAlignment(.trailing)
-                                    Text(row.action)
-                                        .font(.callout)
-                                }
-                            }
-                        }
-                        Text("Window tiling hotkeys are off by default — enable them in Settings.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 2)
-                    }
                     section("Trackpad gestures") {
                         Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 9) {
                             ForEach(GuideContent.gestures) { row in
                                 GridRow {
-                                    SnapGlyph(kind: row.glyph)
                                     HStack(spacing: 6) {
                                         if row.cmd || row.shift {
                                             keycaps((row.cmd ? ["⌘"] : []) + (row.shift ? ["⇧"] : []))
                                         }
                                         HoverDemo(direction: row.direction)
                                     }
-                                    .gridColumnAlignment(.trailing)
                                     Text(row.action)
                                         .font(.callout)
+                                        .gridColumnAlignment(.leading)
+                                    SnapGlyph(kind: row.glyph)
+                                        .gridColumnAlignment(.trailing)
                                 }
                             }
                         }
                         Text(GuideContent.gestureFootnote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 2)
+                    }
+                    section("Hotkeys") {
+                        Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 7) {
+                            ForEach(GuideContent.hotkeys) { row in
+                                GridRow {
+                                    keycaps(row.keys)
+                                    Text(row.action)
+                                        .font(.callout)
+                                        .gridColumnAlignment(.leading)
+                                    SnapGlyph(kind: row.glyph)
+                                        .gridColumnAlignment(.trailing)
+                                }
+                            }
+                        }
+                        Text("Window tiling hotkeys are off by default — enable them in Settings.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.top, 2)
