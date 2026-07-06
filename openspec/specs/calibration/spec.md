@@ -15,6 +15,11 @@ per-attempt success/failure, running accuracy, and overall progress.
 - THEN an animation demonstrates the motion, each physical attempt is immediately
   marked recognized/unrecognized, and a running accuracy indicator updates
 
+##### Scenario: Audible step cue
+- WHEN a calibration step completes and the next gesture prompt appears, and when the
+  whole session completes
+- THEN Tiler plays a short system sound to signal the transition
+
 #### Requirement: Calibration output is per-user tunables, safely clamped
 
 Completing calibration SHALL produce personal `Tunables` overrides (at minimum the

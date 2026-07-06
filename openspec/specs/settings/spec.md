@@ -5,15 +5,16 @@
 #### Requirement: Settings window
 
 Tiler SHALL provide a Settings window (opened from the unified window) with a Gestures
-enable/disable toggle, a Hotkeys enable/disable toggle, the Accessibility permission
-status, and a Calibration entry point. All toggles SHALL persist across relaunches and
-apply immediately (no restart). The window SHALL be organized so its content fits
-without vertical scrolling on ordinary displays (tabbed: General / Gestures).
+enable/disable toggle, two independent hotkey toggles — "Window tiling hotkeys" (default
+off) and "Lock screen hotkey ⌃A" (default on) — the Accessibility permission status, and
+a Calibration entry point. All toggles SHALL persist across relaunches and apply
+immediately (no restart). The window SHALL be organized so its content fits without
+vertical scrolling on ordinary displays (tabbed: General / Gestures).
 
-##### Scenario: Disabling hotkeys
-- WHEN the user turns the Hotkeys toggle off
-- THEN pressing any Tiler hotkey does nothing until re-enabled, and the setting
-  survives an app relaunch
+##### Scenario: Disabling the window-tiling hotkeys
+- WHEN the user turns the Window tiling hotkeys toggle off
+- THEN pressing any ⌃⇧ arrow does nothing (they reach other apps) until re-enabled,
+  while ⌃A still locks the screen; the setting survives an app relaunch
 
 ##### Scenario: Disabling gestures
 - WHEN the user turns the Gestures toggle off

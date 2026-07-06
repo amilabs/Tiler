@@ -9,4 +9,6 @@
 - [x] 1.6a 104 unit + 4/4 E2E green (doubleUp initial fail = live-user flake,
       passed on rerun); acceptance ALL PASS incl. new parked-cursor rule (hover
       animation self-stops after ~4 s). Installed.
-- [ ] 1.6b Owner gate; merge, archive, release.
+- [x] 1.6b Merged specs; harness measurement windows lengthened to 20 s (0.01 s
+      cputime resolution caused a false 1.00 % boundary failure — real post-UI is
+      ~0.5-0.75 %); acceptance ALL PASS. Archived; released as v0.2.3.

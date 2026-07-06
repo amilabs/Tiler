@@ -60,11 +60,17 @@ or disable systemwide input if Tiler hangs or crashes.
 Hotkeys SHALL be registered at launch regardless of AX permission state. Without
 permission, a hotkey press SHALL be a safe no-op (with the warning state visible in the
 menu bar) and SHALL NOT crash or unregister the hotkey.
-Hotkeys SHALL be globally toggleable from Settings: when disabled, Tiler unregisters
-its Carbon hotkeys (the combos reach other apps normally) and re-registers on enable,
-persisting the choice across relaunches.
 
-##### Scenario: Toggle releases the key combos
-- WHEN hotkeys are disabled in Settings
-- THEN Ctrl+Shift+arrows behave as if Tiler were not running, and re-enabling restores
-  Tiler's handling without relaunch
+Bindings are in two independently toggleable groups: **window tiling** (all ⌃⇧ / ⌘⌃⇧
+arrow bindings) and **utility** (⌃A lock screen). Each Settings toggle
+registers/unregisters only its own group's Carbon hotkeys without relaunch and persists
+across restarts. Defaults: window tiling **OFF**, utility **ON**.
+
+##### Scenario: Window hotkeys off by default
+- WHEN Tiler runs with fresh settings
+- THEN ⌃⇧-arrow combos reach other applications normally while ⌃A still locks the screen
+
+##### Scenario: Independent toggles
+- WHEN the window group is enabled and the utility group disabled (or vice versa)
+- THEN only the enabled group acts; the disabled group's combos behave as if Tiler
+  were not running, and toggling either applies without relaunch

@@ -22,6 +22,9 @@ cputime_s() {
     ps -o cputime= -p "$1" | tr -d ' ' | awk -F: '{ if (NF==3) print $1*3600+$2*60+$3; else print $1*60+$2 }'
 }
 
+# $2 = seconds. Use >= 20 s: ps cputime has 0.01 s resolution, so a single tick
+# over a short window swings the reading by ~0.1 %/s-of-window and produces false
+# boundary failures at the 1 % budget. Longer windows give real resolution.
 measure_util() { # $1 = pid, $2 = seconds; echoes percent, returns 0 if < 1%
     local c1 c2 pct
     c1=$(cputime_s "$1"); [[ -z "$c1" ]] && { echo "gone"; return 1; }
@@ -61,14 +64,14 @@ pkill -f "$BIN" 2>/dev/null; sleep 0.5
 "$BIN" --show-guide > /dev/null 2>&1 &
 PID=$!
 sleep 5
-PCT=$(measure_util "$PID" 10); OPEN_OK=$?
+PCT=$(measure_util "$PID" 20); OPEN_OK=$?
 echo "  open-window utilization: ${PCT}%"
 say_result $OPEN_OK "idle CPU < 1% with the window open"
 pkill -f "$BIN" 2>/dev/null; sleep 0.5
 "$BIN" --exercise-ui > /dev/null 2>&1 &
 PID=$!
 sleep 8   # window opens, closes at 2 s, settle
-PCT=$(measure_util "$PID" 10); UI_OK=$?
+PCT=$(measure_util "$PID" 20); UI_OK=$?
 echo "  post-UI utilization: ${PCT}%"
 say_result $UI_OK "idle CPU < 1% after opening and closing the UI"
 kill "$PID" 2>/dev/null; sleep 0.5

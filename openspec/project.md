@@ -66,5 +66,6 @@ marketing About, calibration progress, cross-display fix, tabbed Settings),
 `2026-07-05-stabilize-menu` (final menu, CPU-budget fix + honest measurement,
 no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧-thirds gestures, ⌃A lock screen, Help label), `2026-07-05-add-shift-up-third`
-(⇧+up → center-third). Specs in `openspec/specs/` are current truth.
-Released: v0.2.2 (GitHub release with zip).
+(⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
+hotkey toggles, window group OFF by default; calibration step sound). Specs in
+`openspec/specs/` are current truth. Released: v0.2.3 (GitHub release with zip).

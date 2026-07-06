@@ -37,6 +37,10 @@ in the app: menu bar → **Tiler**.
 3. Open it and grant the **Accessibility** permission when asked — that's the one
    thing Tiler needs to move windows.
 
+Window-tiling hotkeys (⌃⇧ arrows) are **off by default** — turn them on in
+**Settings → General** if you want them alongside the gestures. The ⌃A lock-screen
+hotkey is on by default.
+
 Requires macOS 26 or later (verified on macOS 26.5, Apple Silicon).
 
 ## If gestures don't work well
