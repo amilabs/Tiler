@@ -39,6 +39,19 @@ and the GitHub link.
 - WHEN the app is rebuilt and the unified window is opened
 - THEN the displayed build timestamp matches the new build, not a stale constant
 
+#### Requirement: Cheat-sheet placement glyphs
+
+Every hotkey and gesture row SHALL lead with a static placement glyph: a screen
+outline with the target region drawn as a small window (title bar + dots); tiling
+positions carry no arrow (the filled window shows placement); restore is a bold
+counter-clockwise revert arrow encircling a centered window; next-display shows the
+target screen in front with the source tucked behind as a dim dashed outline; ⌃A is
+a padlock. Glyphs are non-animated (no idle CPU; render in release screenshots).
+
+##### Scenario: Placement is visible at a glance
+- WHEN the unified window is open
+- THEN each action shows a diagram of where the window will land, not text alone
+
 ##### Scenario: Story and reference in one place
 - WHEN the unified window is open
 - THEN the user can read what the app is for AND see every binding/gesture without

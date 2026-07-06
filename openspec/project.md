@@ -67,5 +67,6 @@ marketing About, calibration progress, cross-display fix, tabbed Settings),
 no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧-thirds gestures, ⌃A lock screen, Help label), `2026-07-05-add-shift-up-third`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
-hotkey toggles, window group OFF by default; calibration step sound). Specs in
-`openspec/specs/` are current truth. Released: v0.2.3 (GitHub release with zip).
+hotkey toggles, window group OFF by default; calibration step sound),
+`2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
+`openspec/specs/` are current truth. Released: v0.2.4 (GitHub release with zip).
