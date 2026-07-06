@@ -323,14 +323,18 @@ struct GuideView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? AppDelegate.version
     }
 
-    /// Build stamp is ISO8601 UTC in Info.plist; shown in the user's local time.
+    /// Build stamp is ISO8601 UTC in Info.plist; shown in the user's local time with
+    /// a locale-neutral numeric format (dd.MM.yyyy, HH:mm) — no localized month names.
     private var buildDate: String {
         guard let raw = Bundle.main.infoDictionary?["TilerBuildDate"] as? String else {
             return "from source (swift run)"
         }
         let parser = ISO8601DateFormatter()
         guard let date = parser.date(from: raw) else { return raw }
-        return date.formatted(date: .abbreviated, time: .shortened)
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.dateFormat = "dd.MM.yyyy, HH:mm"
+        return df.string(from: date)
     }
 
     // MARK: - Bits

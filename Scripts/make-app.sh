@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 
 IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
 BUNDLE_ID="pro.amilabs.tilerx"
-VERSION="0.2.5"
+VERSION="0.2.6"
 BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 APP="build/Tiler.app"
 

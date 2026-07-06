@@ -69,4 +69,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.2.5 (GitHub release with zip).
+`openspec/specs/` are current truth. Released: v0.2.6 (GitHub release with zip).
