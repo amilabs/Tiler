@@ -14,26 +14,46 @@ struct PowerMenuMockView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 28) {
             VStack(alignment: .leading, spacing: 10) {
-                sectionTitle("“Keep Awake” submenu")
-                menuPanel
+                sectionTitle("Main menu — active session (prominent top row)")
+                mainMenuPanel
             }
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionTitle("Status-item indicator (active session)")
-                    indicatorVariants
-                }
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionTitle("Header line — state wordings")
-                    headerWordings
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("“Prevent Sleep” submenu")
+                menuPanel
             }
         }
         .padding(24)
-        .frame(width: 640)
+        .frame(width: 580)
     }
 
     private func sectionTitle(_ s: String) -> some View {
         Text(s).font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+    }
+
+    // The main status-item menu while a session runs: the bold red-cup row on top.
+    private var mainMenuPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(nsColor: .systemRed))
+                Text("Prevent Sleep — 27 min left")
+                    .font(.system(size: 13, weight: .bold))
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 4)
+            divider
+            row("Help")
+            row("Settings")
+            divider
+            row("Prevent Sleep  ▸")
+            divider
+            row("Quit Tiler")
+        }
+        .padding(.vertical, 6)
+        .frame(width: 250, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(white: 0.98)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.12)))
     }
 
     // A macOS-menu-like panel.
@@ -44,7 +64,7 @@ struct PowerMenuMockView: View {
             row("On (until stopped)")
             ForEach(durations, id: \.self) { row($0) }
             divider
-            row("Keep awake with lid closed  ⚠", role: .checkbox)
+            row("Prevent sleep with lid closed  ⚠", role: .checkbox)
             divider
             row("Stop", role: .strong)
         }

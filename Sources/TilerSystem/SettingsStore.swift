@@ -14,6 +14,7 @@ public final class SettingsStore {
         static let batteryFloorPercent = "batteryFloorPercent"
         static let deepSleepOnBattery = "deepSleepOnBattery"
         static let powerSnapshot = "powerSnapshot"
+        static let powerDebugLogging = "powerDebugLogging"
     }
 
     public var onChange: ((SettingsStore) -> Void)?
@@ -119,6 +120,15 @@ public final class SettingsStore {
         }
     }
 
+    /// Opt-in diagnostic power-event logging (owner-driven multi-day runs).
+    /// Bookkeeping only: no onChange (the UI drives the log adapter directly).
+    public var powerDebugLogging: Bool {
+        didSet {
+            guard powerDebugLogging != oldValue else { return }
+            defaults.set(powerDebugLogging, forKey: Key.powerDebugLogging)
+        }
+    }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         gesturesEnabled = defaults.object(forKey: Key.gestures) as? Bool ?? true
@@ -134,5 +144,6 @@ public final class SettingsStore {
         if let data = defaults.data(forKey: Key.powerSnapshot) {
             powerSnapshot = try? JSONDecoder().decode([String: String].self, from: data)
         }
+        powerDebugLogging = defaults.object(forKey: Key.powerDebugLogging) as? Bool ?? false
     }
 }

@@ -143,4 +143,15 @@ import TilerCore
         store.deepSleepOnBattery = false    // already false
         #expect(count == 0)
     }
+
+    @Test func debugLoggingDefaultsFalsePersistsAndDoesNotNotify() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        var notified = 0
+        store.onChange = { _ in notified += 1 }
+        #expect(!store.powerDebugLogging)
+        store.powerDebugLogging = true
+        #expect(SettingsStore(defaults: defaults).powerDebugLogging)
+        #expect(notified == 0, "diagnostic flag must not re-trigger engine wiring")
+    }
 }

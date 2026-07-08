@@ -122,3 +122,18 @@
       Do not proceed to 4.3 until the owner confirms; any failure = fix first.
 - [ ] 4.3 Merge spec deltas into `openspec/specs/`, archive change, bump
       `AppDelegate.version`, release v0.3.0 (`gh release`).
+
+## 5. Gate-4.2 refinements (owner feedback, 2026-07-08)
+- [x] 5.1 Prominent active-state row at the top of the main menu (bold, red-cup mark,
+      state + remaining time) shown only while a session runs; live 1 s countdown for
+      timed sessions while the menu is open (`menuWillOpen`/`menuDidClose`).
+      Spec: app-shell "Menu Power section" updated. Mock re-rendered + owner-confirmed.
+- [x] 5.2 Opt-in "Debug logging" (Settings → Power → Diagnostics) → event-driven,
+      deduped, size-capped (~512 KB rotate, ≤~1 MB) log at
+      `~/Library/Logs/Tiler/power-debug.log`; "Reveal Log" button. `PowerDebugLog`
+      + `plog` at every power event; SettingsStore `powerDebugLogging` (+ test).
+      Verified end-to-end (launch/start/acquire lines written). Spec: power
+      "Diagnostic logging" + settings Power tab updated.
+      → Extended acceptance plan (supersedes one-shot hands-on): owner enables
+      logging, runs timed/floor/clamshell/Deep-Sleep over days, then the log is
+      reviewed for anomalies. Gate 4.2 stays open until that review.

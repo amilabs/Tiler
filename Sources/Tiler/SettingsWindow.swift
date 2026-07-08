@@ -40,6 +40,15 @@ final class SettingsModel: ObservableObject {
     var onDeepSleepToggle: ((Bool) -> Void)?
     private var isReflectingDeepSleep = false
 
+    @Published var debugLogging: Bool {
+        didSet {
+            store.powerDebugLogging = debugLogging
+            onDebugLoggingToggle?(debugLogging)
+        }
+    }
+    var onDebugLoggingToggle: ((Bool) -> Void)?
+    var onRevealDebugLog: (() -> Void)?
+
     var onCalibrate: (() -> Void)?
 
     private let store: SettingsStore
@@ -55,6 +64,7 @@ final class SettingsModel: ObservableObject {
         keepDisplayAwake = store.keepDisplayAwake
         batteryFloorPercent = store.batteryFloorPercent
         deepSleepOnBattery = store.deepSleepOnBattery
+        debugLogging = store.powerDebugLogging
         refreshConflicts()
     }
 
@@ -137,6 +147,16 @@ struct SettingsView: View {
                      + "an administrator password.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            Section("Diagnostics") {
+                Toggle("Debug logging", isOn: $model.debugLogging)
+                HStack {
+                    Text("Records power events to a log file. Low overhead — safe to leave on for days.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reveal Log") { model.onRevealDebugLog?() }
+                }
             }
         }
         .formStyle(.grouped)

@@ -4,9 +4,11 @@
 
 #### Requirement: Keep Awake session
 
-Tiler SHALL hold the system awake on user command from the menu bar: indefinitely or
-for a fixed duration of 10 min, 30 min, 1 h, 2 h, 5 h, 10 h, or 24 h, implemented with
-macOS power assertions (no elevated privileges). By default the display MAY sleep
+The feature is labelled **"Prevent Sleep"** in all user-facing UI (owner, gate 2.1);
+the internal power-assertion names remain `Tiler Keep Awake …` (acceptance greps and
+this spec's scenarios rely on them). Tiler SHALL hold the system awake on user command
+from the menu bar: indefinitely or for a fixed duration of 10 min, 30 min, 1 h, 2 h,
+5 h, 10 h, or 24 h, implemented with macOS power assertions (no elevated privileges). By default the display MAY sleep
 while the system stays awake. Starting a session while one is active SHALL replace it
 (single assertion set, new deadline). Stopping or expiry SHALL release assertions
 immediately. Assertions SHALL NOT outlive the app process (crash safety).
@@ -133,3 +135,18 @@ with neither, system defaults apply. Help SHALL document this order.
 - WHEN Deep Sleep is on and a lid-closed session is active
 - THEN closing the lid keeps the Mac awake; after the session ends, the next
   battery sleep hibernates
+
+#### Requirement: Diagnostic logging
+
+Settings → Power SHALL offer an opt-in "Debug logging" toggle (default off) that
+records discrete power events (session start/stop/expiry/floor-stop, assertion
+acquire/release, clamshell arm/disarm, Deep Sleep enable/disable, source flips, and
+launch reconciliation) to `~/Library/Logs/Tiler/power-debug.log`. Logging SHALL be
+event-driven only (no polling), deduped for noisy sources, and bounded on disk
+(rotate past ~512 KB to a single backup, ≤ ~1 MB total) so it is safe to leave on for
+days without material CPU or disk cost. A "Reveal Log" affordance SHALL open the file
+in Finder.
+
+##### Scenario: Logging a session over a multi-day run
+- WHEN debug logging is on and the user runs timed and lid-closed sessions over days
+- THEN the log holds one concise timestamped line per event and never exceeds ~1 MB

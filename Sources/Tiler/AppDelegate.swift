@@ -39,9 +39,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var powerHeaderItem: NSMenuItem?
     private weak var powerStopItem: NSMenuItem?
     private weak var powerClamshellItem: NSMenuItem?
+    private weak var powerTopItem: NSMenuItem?         // prominent active-state row at the menu top
+    private weak var powerTopSeparator: NSMenuItem?
+    private var menuTick: DispatchSourceTimer?          // live countdown, only while the menu is open
     // Status indicator is re-rendered only when the active state or appearance changes.
     private var lastIndicatorActive: Bool?
     private var lastIndicatorAppearance: NSAppearance.Name?
+    private var powerLog: PowerDebugLog?
+    private var lastLoggedPower: String?
+    private var lastOnBattery = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -182,6 +188,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         refreshConflictAlert()
         refreshPowerMenu()
+        startMenuTick()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        stopMenuTick()
     }
 
     /// Startup flow v2 (add-onboarding-guide): first launch ever, launch without
@@ -219,6 +230,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Power (add-power-control)
 
     private func setUpPower() {
+        powerLog = PowerDebugLog(enabled: settings.powerDebugLogging)
         powerPolicy = PowerPolicy(displayAwake: settings.keepDisplayAwake,
                                   floorPercent: settings.batteryFloorPercent)
         awake = AwakeController()
@@ -232,8 +244,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let profile = PowerProfileController(store: settings,
                                              adminRun: { try AdminShell.runPrivileged($0) })
-        settings.deepSleepOnBattery = profile.isDeepSleepActive()   // reality wins over stored intent
+        let deepSleepActive = profile.isDeepSleepActive()
+        settings.deepSleepOnBattery = deepSleepActive               // reality wins over stored intent
         powerProfile = profile
+
+        let power = PowerSourceMonitor.read()
+        lastOnBattery = power.onBattery
+        plog("launch — deepSleep=\(deepSleepActive) power=\(power.percent.map(String.init) ?? "-")% "
+             + "\(power.onBattery ? "battery" : "AC") floor=\(settings.batteryFloorPercent)")
     }
 
     /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
@@ -242,19 +260,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let profile = powerProfile else { return }
         do {
             if wanted { try profile.enable() } else { try profile.disable() }
-            NSLog("Tiler: deep sleep %@", wanted ? "enabled" : "disabled")
+            plog("deepSleep \(wanted ? "enabled" : "disabled")")
         } catch {
-            NSLog("Tiler: deep sleep toggle failed/cancelled: %@", "\(error)")
+            plog("deepSleep toggle failed/cancelled: \(error)")
             settingsModel?.reflectDeepSleep(profile.isDeepSleepActive())
         }
+    }
+
+    /// NSLog (ephemeral) + the opt-in debug file (owner's multi-day diagnostics).
+    private func plog(_ line: String) {
+        NSLog("Tiler: %@", line)
+        powerLog?.log(line)
     }
 
     /// Feed a command through the FSM and perform its effects, then reconcile the
     /// tick timer and the status glyph.
     func powerApply(_ command: PowerCommand) {
+        logCommand(command)
         for effect in powerPolicy.handle(command, now: Date()) { perform(effect) }
         refreshPowerTick()
         updateStatusGlyph()
+    }
+
+    /// Concise, deduped event lines for the debug log (ticks are never logged; power
+    /// readings only on a source flip or, while a session runs, a changed value).
+    private func logCommand(_ command: PowerCommand) {
+        switch command {
+        case let .start(clamshell, duration):
+            let d = duration.map { "\(Int($0 / 60))m" } ?? "indefinite"
+            plog("start clamshell=\(clamshell) duration=\(d) floor=\(settings.batteryFloorPercent) display=\(settings.keepDisplayAwake)")
+        case .stop:
+            plog("stop (user)")
+        case let .power(status):
+            let key = "\(status.percent.map(String.init) ?? "-")% \(status.onBattery ? "battery" : "AC")"
+            let flipped = status.onBattery != lastOnBattery
+            lastOnBattery = status.onBattery
+            if flipped || (powerPolicy.isActive && key != lastLoggedPower) {
+                lastLoggedPower = key
+                plog("power \(key)")
+            }
+        case let .setDisplayAwake(value): plog("setDisplayAwake=\(value)")
+        case let .setFloor(value): plog("setFloor=\(value)")
+        case .clamshellArmFailed: plog("clamshellArmFailed")
+        case .tick: break                 // never logged (noise)
+        }
     }
 
     private func perform(_ effect: PowerEffect) {
@@ -262,22 +311,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .acquire(spec):
             powerNotifier.requestAuthOnce()   // lazy, once, on first session start
             awake?.apply(spec)
+            plog("acquire display=\(spec.displayAwake) system=\(spec.systemSleepBlock)")
         case let .release(reason):
             awake?.apply(nil)
-            NSLog("Tiler: keep-awake released (%@)", reason.rawValue)
+            plog("release \(reason.rawValue)")
         case let .armClamshell(deadline):
+            plog("clamshell arm deadline=\(deadline.map { ISO8601DateFormatter().string(from: $0) } ?? "none")")
             do {
                 try governor?.arm(deadline: deadline)
             } catch {
                 // Any arm failure (incl. a cancelled auth dialog) must not leave a
                 // half-armed session: tear it back down through the FSM.
-                NSLog("Tiler: clamshell arm failed: %@", "\(error)")
+                plog("clamshell arm FAILED: \(error)")
                 powerApply(.clamshellArmFailed)
             }
         case .disarmClamshell:
             governor?.disarm()
+            plog("clamshell disarm")
         case let .notifyFloorStop(percent):
             powerNotifier.floorStop(percent: percent)
+            plog("floorStop \(percent)%")
         }
     }
 
@@ -318,21 +371,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         sender.state = pendingClamshell ? .on : .off
     }
 
-    /// Refresh header/Stop/checkbox from the FSM (called on menu open).
+    /// Refresh the top indicator, submenu header, Stop, and checkbox from the FSM
+    /// (called on menu open and, for a timed session, every second while open).
     private func refreshPowerMenu() {
-        let now = Date()
-        let header: String
-        if !powerPolicy.isActive {
-            header = "Off"
-        } else if let remaining = powerPolicy.remaining(now: now) {
-            header = "On — \(formatRemaining(remaining)) left"
-                + (powerPolicy.clamshell ? " · lid-closed ⚠" : "")
-        } else {
-            header = powerPolicy.clamshell ? "On — lid-closed ⚠" : "On (until stopped)"
-        }
-        powerHeaderItem?.title = header
-        powerStopItem?.isEnabled = powerPolicy.isActive
+        let active = powerPolicy.isActive
+        let state = powerStateText(now: Date())
+        powerHeaderItem?.title = active ? "On — \(state)" : "Off"
+        powerStopItem?.isEnabled = active
         powerClamshellItem?.state = pendingClamshell ? .on : .off
+
+        powerTopItem?.isHidden = !active
+        powerTopSeparator?.isHidden = !active
+        if active {
+            powerTopItem?.attributedTitle = boldMenuTitle("Prevent Sleep — \(state)")
+        }
+    }
+
+    /// "27 min left · lid-closed ⚠" / "until stopped" etc.
+    private func powerStateText(now: Date) -> String {
+        guard powerPolicy.isActive else { return "Off" }
+        let lid = powerPolicy.clamshell ? " · lid-closed ⚠" : ""
+        if let remaining = powerPolicy.remaining(now: now) {
+            return "\(formatRemaining(remaining)) left\(lid)"
+        }
+        return "until stopped\(lid)"
+    }
+
+    private func boldMenuTitle(_ s: String) -> NSAttributedString {
+        NSAttributedString(string: s, attributes: [
+            .font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize),
+        ])
+    }
+
+    /// Live countdown while the menu is open (timed sessions only); stopped on close.
+    private func startMenuTick() {
+        stopMenuTick()
+        guard powerPolicy.isActive, powerPolicy.deadline != nil else { return }
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.refreshPowerMenu() } }
+        timer.resume()
+        menuTick = timer
+    }
+
+    private func stopMenuTick() {
+        menuTick?.cancel()
+        menuTick = nil
     }
 
     /// "27 min" under 2 h; "2 h 5 min" (or "3 h") from 2 h up.
@@ -419,6 +503,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
+        menu.autoenablesItems = false     // we manage the top indicator + Stop enabled state
+
+        // Prominent active-state row at the very top (hidden while inactive). Bold, with
+        // the red cup mark and a live countdown; refreshed in menuWillOpen / while open.
+        let topItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        topItem.isHidden = true
+        let cupConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+            .applying(.init(paletteColors: [.systemRed]))
+        topItem.image = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(cupConfig)
+        menu.addItem(topItem)
+        powerTopItem = topItem
+        let topSeparator = NSMenuItem.separator()
+        topSeparator.isHidden = true
+        menu.addItem(topSeparator)
+        powerTopSeparator = topSeparator
+
         menu.addItem(makeItem("Help", #selector(showGuideAction)))
         let settingsItem = makeItem("Settings", #selector(showSettingsAction))
         settingsItem.keyEquivalent = ","
@@ -604,6 +705,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             settingsModel?.onDeepSleepToggle = { [weak self] wanted in
                 self?.applyDeepSleep(wanted)
+            }
+            settingsModel?.onDebugLoggingToggle = { [weak self] on in
+                self?.powerLog?.setEnabled(on)
+            }
+            settingsModel?.onRevealDebugLog = { [weak self] in
+                guard let url = self?.powerLog?.url else { return }
+                NSWorkspace.shared.activateFileViewerSelecting([url])
             }
         }
         settingsModel?.refreshConflicts()
