@@ -49,6 +49,17 @@ session start / unset on every session end via admin auth (model A), relaunch
 reconciliation (clear the flag when no session is active), and the same battery
 floor. Gate 0.3 picks the final lid-closed offering from the spike evidence.
 
+Spike, phase `battery` (owner hands-on, 2026-07-08 16:26): **SLEPT** — lid closed
+124 s, single heartbeat gap of 118.2 s; `pmset -g log` shows the wake only at
+lid-open ("Wake from Deep Idle … due to … lid", 49% battery). Also observed: with
+the plain `PreventSystemSleep` assertion held *on battery*, the system-wide status
+row stays `PreventSystemSleep 0` — powerd tracks the assertion but it is not in
+effect on battery, matching the AC-only semantics (the `ac` phase must show that
+row at 1). Phases `ac` and `fallback` pending (first `fallback` attempt aborted:
+the flag was never set — the owner's daily user has no sudo; admin user is `ami`,
+so privileged steps go through the macOS admin auth dialog — which incidentally is
+exactly the model-A mechanism, so the rerun doubles as its validation).
+
 Safety: lid-closed awake in a bag = heat. UI copy carries ⚠ and Help explains; the
 clamshell option deliberately resets to OFF for every new session (opt-in friction).
 

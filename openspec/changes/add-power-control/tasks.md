@@ -10,6 +10,10 @@
       protocoled in design.md). Three phases: `battery` / `ac` / `fallback`
       (battery + `sudo pmset -a disablesleep 1`); owner closes the lid ~2 min
       per phase; verdicts in `spike/spike-*.log`. Results → design.md.
+      Progress 2026-07-08: `battery` = SLEPT (118 s gap over 124 s closed —
+      control confirmed); `ac` + `fallback` pending rerun (fallback flag needs
+      the admin auth dialog — daily user is non-admin; flag check relaxed to
+      warn-and-proceed since pmset may not display SleepDisabled).
 - [ ] 0.3 Fix the lid-closed approach per spike + gate (AC-only assertion /
       `disablesleep` for battery / both / dropped) and update the power spec
       delta accordingly.

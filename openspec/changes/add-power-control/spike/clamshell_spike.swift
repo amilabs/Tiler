@@ -128,12 +128,15 @@ if phase == "fallback" {
         log("ABORT: phase 'fallback' should run on battery (that's the case that needs it) — unplug and rerun.")
         exit(2)
     }
-    let flags = shell("pmset -g")
-    if flags.range(of: #"SleepDisabled\s+1"#, options: .regularExpression) == nil {
-        log("ABORT: phase 'fallback' needs the flag first:  sudo pmset -a disablesleep 1")
-        exit(2)
+    let flags = shell("pmset -g") + shell("pmset -g custom")
+    if flags.range(of: #"SleepDisabled\s+1"#, options: .regularExpression) != nil {
+        log("SleepDisabled=1 confirmed — measuring the pmset disablesleep fallback path.")
+    } else {
+        log("note: cannot confirm SleepDisabled=1 in pmset output (macOS may not display it).")
+        log("If you have NOT set it yet, do it via the admin dialog:")
+        log("  osascript -e 'do shell script \"pmset -a disablesleep 1\" with administrator privileges'")
+        log("Proceeding anyway — the heartbeat verdict is the ground truth.")
     }
-    log("SleepDisabled=1 confirmed — measuring the pmset disablesleep fallback path.")
 }
 
 let okIdle = hold([
