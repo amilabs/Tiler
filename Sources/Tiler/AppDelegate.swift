@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var powerTick: DispatchSourceTimer?
     private let powerNotifier = PowerNotifier()
     private var governor: DisableSleepGovernor?
+    private var powerProfile: PowerProfileController?
     /// Lid-closed opt-in for the NEXT start; resets to false after every start
     /// (deliberate per-session friction).
     private var pendingClamshell = false
@@ -228,6 +229,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let gov = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
         gov.reconcileAtLaunch()      // clear a stale SleepDisabled flag from a prior session
         governor = gov
+
+        let profile = PowerProfileController(store: settings,
+                                             adminRun: { try AdminShell.runPrivileged($0) })
+        settings.deepSleepOnBattery = profile.isDeepSleepActive()   // reality wins over stored intent
+        powerProfile = profile
+    }
+
+    /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
+    /// cancelled/failed authorization, re-read the real state and revert the toggle.
+    private func applyDeepSleep(_ wanted: Bool) {
+        guard let profile = powerProfile else { return }
+        do {
+            if wanted { try profile.enable() } else { try profile.disable() }
+            NSLog("Tiler: deep sleep %@", wanted ? "enabled" : "disabled")
+        } catch {
+            NSLog("Tiler: deep sleep toggle failed/cancelled: %@", "\(error)")
+            settingsModel?.reflectDeepSleep(profile.isDeepSleepActive())
+        }
     }
 
     /// Feed a command through the FSM and perform its effects, then reconcile the
@@ -582,6 +601,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             )
             settingsModel?.onCalibrate = { [weak self] in
                 self?.showCalibration()
+            }
+            settingsModel?.onDeepSleepToggle = { [weak self] wanted in
+                self?.applyDeepSleep(wanted)
             }
         }
         settingsModel?.refreshConflicts()

@@ -85,13 +85,22 @@
       render verified. Non-AX tests green.
 
 ## 3. Deep Sleep profile
-- [ ] 3.1 `PowerProfileController`: `pmset -g custom` snapshot/parse (parser in
+- [x] 3.1 `PowerProfileController`: `pmset -g custom` snapshot/parse (parser in
       TilerCore, TDD with a captured fixture); battery-side apply
       (`hibernatemode 25`, `powernap 0`, `tcpkeepalive 0`, `proximitywake 0`
       where present) and verbatim restore via `AdminShell` (from 1.5);
       launch reconciliation with actual pmset state.
-- [ ] 3.2 Failure paths: auth cancel reverts toggle; post-write re-read; missing
+      → DONE 2026-07-08: `PmsetCustomParser` (5 tests, real fixture; multi-word
+      keys, section boundary) + `PowerProfileController` (5 command tests; apply
+      w/ and w/o proximitywake, restore verbatim/defaults). AppDelegate wires
+      enable/disable via `onDeepSleepToggle` and launch reconciliation
+      (`settings.deepSleepOnBattery = profile.isDeepSleepActive()`). Launch smoke
+      OK, pmset profile untouched (no live enable — deferred to gate 4.2).
+- [x] 3.2 Failure paths: auth cancel reverts toggle; post-write re-read; missing
       snapshot → Apple portable defaults.
+      → Wired in 3.1: `applyDeepSleep` catches AdminShellError, re-reads
+      `isDeepSleepActive()`, calls `reflectDeepSleep(actual)`; empty snapshot →
+      portable defaults (unit-tested). Hands-on cancel verification at gate 4.2.
 
 ## 4. Verification & release
 - [ ] 4.1 Full `swift build && swift test` + acceptance additions: assertion
