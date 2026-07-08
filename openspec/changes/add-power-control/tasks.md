@@ -113,5 +113,12 @@
 - [ ] 4.2 [USER GATE — hands-on acceptance] timed expiry, floor stop, lid-closed
       awake session, Deep Sleep hibernate + wake (~10–20 s) + verbatim restore;
       overnight drain sanity note.
+      → 2026-07-08 PREPARED, AWAITING OWNER HANDS-ON: signed .app built
+      (`make-app.sh`) + installed to ~/Applications/Tiler.app (`install.sh`),
+      launched; installed release binary verified holding/releasing the idle
+      assertion incl. kill -9. Checklist posted (timed+countdown, floor, clamshell
+      `ami` dialog + `pmset -g` SleepDisabled 0 within ~15 s + force-quit ≤60 s,
+      Deep Sleep 25/0/0 + verbatim restore). Version still 0.2.6 (bump at 4.3).
+      Do not proceed to 4.3 until the owner confirms; any failure = fix first.
 - [ ] 4.3 Merge spec deltas into `openspec/specs/`, archive change, bump
       `AppDelegate.version`, release v0.3.0 (`gh release`).
