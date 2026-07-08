@@ -133,32 +133,38 @@ struct PowerIndicatorMockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Индикатор активной сессии — раунд 4 (чашка справа-снизу, разные размеры)")
+            Text("Индикатор — раунд 5: глиф чашки поплотнее (размер A, правый нижний угол)")
                 .font(.system(size: 13, weight: .semibold))
-            Text("столбцы: светлый бар · тёмный бар")
+            Text("для каждого: крупно (форма) · в баре светлый · в баре тёмный")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
 
-            row("Сейчас — неактивно") { pinch(.primary) }
+            cupRow("Сейчас — неактивно") { _ in EmptyView() }
             Divider()
-            group("Чашка поверх руки — правый нижний угол")
-            row("A · чашка +⅓ (11pt)") { cupOnHand(size: 11, dx: 4, dy: 4) }
-            row("B · крупнее (13pt)") { cupOnHand(size: 13, dx: 5, dy: 5) }
-            row("C · ещё крупнее (15pt)") { cupOnHand(size: 15, dx: 5, dy: 6) }
+            cupRow("1 · cup.and.saucer.fill (текущий, «дырявый»)") { symbolCup("cup.and.saucer.fill", $0) }
+            cupRow("2 · mug.fill (плотный)") { symbolCup("mug.fill", $0) }
+            cupRow("3 · cup.and.saucer.fill белым на красном диске") { cupOnDisc($0) }
+            cupRow("4 · кастомная сплошная чашка") { SolidCup().fill(red).frame(width: $0, height: $0) }
         }
         .padding(24)
-        .frame(width: 540)
+        .frame(width: 560)
         .background(.white)
     }
 
-    private func group(_ s: String) -> some View {
-        Text(s).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-    }
-
-    private func row<G: View>(_ label: String, @ViewBuilder _ glyph: () -> G) -> some View {
+    // A row: the cup mark shown large (shape), then composited over the hand in a
+    // light and a dark bar. `cup` builds the mark at a given point size.
+    private func cupRow<C: View>(_ label: String, @ViewBuilder cup: @escaping (CGFloat) -> C) -> some View {
         HStack(spacing: 14) {
             Text(label).font(.system(size: 12)).frame(width: 250, alignment: .leading)
-            bar(dark: false, glyph)
-            bar(dark: true, glyph)
+            cup(26).frame(width: 34, height: 34)                 // zoom: shape only
+            bar(dark: false) { handWithCup(cup) }
+            bar(dark: true) { handWithCup(cup) }
+        }
+    }
+
+    private func handWithCup<C: View>(_ cup: (CGFloat) -> C) -> some View {
+        ZStack {
+            pinch(.primary, size: 16)
+            cup(11).offset(x: 4, y: 4)                            // size A, bottom-right
         }
     }
 
@@ -178,15 +184,43 @@ struct PowerIndicatorMockView: View {
             .foregroundStyle(color)
     }
 
-    // Monochrome hand + red cup pushed onto it (bottom-right), cup ~⅓ larger than a badge.
-    private func cupOnHand(size: CGFloat, dx: CGFloat, dy: CGFloat) -> some View {
+    private func symbolCup(_ name: String, _ size: CGFloat) -> some View {
+        Image(systemName: name).font(.system(size: size)).foregroundStyle(red)
+    }
+
+    // Solid red disc with a white cup silhouette knocked out — no hand shows through.
+    private func cupOnDisc(_ size: CGFloat) -> some View {
         ZStack {
-            pinch(.primary, size: 16)
+            Circle().fill(red).frame(width: size * 1.25, height: size * 1.25)
             Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: size))
-                .foregroundStyle(red)
-                .offset(x: dx, y: dy)
+                .font(.system(size: size * 0.72))
+                .foregroundStyle(.white)
         }
+    }
+}
+
+/// A fully opaque coffee-cup silhouette (tapered body + solid handle bump) — minimal
+/// transparent area so it stays a clean red mark over the dark hand glyph.
+struct SolidCup: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        // Tapered body (slightly wider at the rim), rounded corners.
+        let bodyW = r.width * 0.62
+        let top = r.minY + r.height * 0.16
+        let bot = r.maxY - r.height * 0.10
+        let leftTop = r.minX, rightTop = r.minX + bodyW
+        let inset = bodyW * 0.12
+        p.move(to: CGPoint(x: leftTop, y: top))
+        p.addLine(to: CGPoint(x: rightTop, y: top))
+        p.addLine(to: CGPoint(x: rightTop - inset, y: bot))
+        p.addQuadCurve(to: CGPoint(x: leftTop + inset, y: bot),
+                       control: CGPoint(x: r.minX + bodyW / 2, y: r.maxY))
+        p.closeSubpath()
+        // Solid handle bump on the right.
+        let hSize = r.width * 0.36
+        p.addEllipse(in: CGRect(x: rightTop - hSize * 0.35, y: r.midY - hSize / 2,
+                                width: hSize, height: hSize))
+        return p
     }
 }
 
