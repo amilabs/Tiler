@@ -103,8 +103,13 @@
       portable defaults (unit-tested). Hands-on cancel verification at gate 4.2.
 
 ## 4. Verification & release
-- [ ] 4.1 Full `swift build && swift test` + acceptance additions: assertion
+- [x] 4.1 Full `swift build && swift test` + acceptance additions: assertion
       present/absent/kill -9 crash-safety greps.
+      → DONE 2026-07-08: `Scripts/power-acceptance.sh` → POWER ACCEPTANCE: ALL
+      PASS (idle assertion present; released on SIGTERM and SIGKILL). Full
+      `swift test` = 155/155 across 23 suites (incl. AX window E2E). Bundled
+      `Scripts/run-acceptance.sh` (needs the signed .app) runs at 4.3 release;
+      my changes don't touch its launch-health/idle-CPU/crash paths.
 - [ ] 4.2 [USER GATE — hands-on acceptance] timed expiry, floor stop, lid-closed
       awake session, Deep Sleep hibernate + wake (~10–20 s) + verbatim restore;
       overnight drain sanity note.
