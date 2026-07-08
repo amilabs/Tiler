@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var awake: AwakeController?
     private var powerMonitor: PowerSourceMonitor?
     private var powerTick: DispatchSourceTimer?
+    private let powerNotifier = PowerNotifier()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -213,6 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func perform(_ effect: PowerEffect) {
         switch effect {
         case let .acquire(spec):
+            powerNotifier.requestAuthOnce()   // lazy, once, on first session start
             awake?.apply(spec)
         case let .release(reason):
             awake?.apply(nil)
@@ -223,8 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .disarmClamshell:
             NSLog("Tiler: clamshell disarm")
         case let .notifyFloorStop(percent):
-            // task 1.4 notifier — NSLog stub until then.
-            NSLog("Tiler: floor stop at %d%%", percent)
+            powerNotifier.floorStop(percent: percent)
         }
     }
 

@@ -40,7 +40,10 @@
       `PreventUserIdleSystemSleep named: "Tiler Keep Awake (idle)"`; released on
       both SIGTERM and SIGKILL (crash safety). `--power-start`/`--power-stop`
       debug args + 5 s tick timer + settings feed wired. 126 non-AX tests green.
-- [ ] 1.4 UserNotifications: floor auto-stop banner (lazy permission request).
+- [x] 1.4 UserNotifications: floor auto-stop banner (lazy permission request).
+      → DONE 2026-07-08: `PowerNotifier` (requestAuthOnce on first .acquire,
+      floorStop banner); guarded on `Bundle.main.bundleIdentifier` so the
+      unbundled acceptance binary never aborts on `UNUserNotificationCenter`.
 - [ ] 1.5 `AdminShell` (osascript admin-auth wrapper, AppleScript escaping
       TDD-able) + `DisableSleepGovernor` (sentinel lifecycle, watchdog arming
       command, launch reconciliation; shell-command composition TDD-able).
