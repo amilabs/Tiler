@@ -31,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var powerMonitor: PowerSourceMonitor?
     private var powerTick: DispatchSourceTimer?
     private let powerNotifier = PowerNotifier()
+    private var governor: DisableSleepGovernor?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -201,6 +202,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         monitor.onChange = { [weak self] status in self?.powerApply(.power(status)) }
         monitor.start()
         powerMonitor = monitor
+        let gov = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
+        gov.reconcileAtLaunch()      // clear a stale SleepDisabled flag from a prior session
+        governor = gov
     }
 
     /// Feed a command through the FSM and perform its effects, then reconcile the
@@ -220,10 +224,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             awake?.apply(nil)
             NSLog("Tiler: keep-awake released (%@)", reason.rawValue)
         case let .armClamshell(deadline):
-            // task 1.5 governor — NSLog stub until then.
-            NSLog("Tiler: clamshell arm (deadline %@)", deadline?.description ?? "none")
+            do {
+                try governor?.arm(deadline: deadline)
+            } catch {
+                // Any arm failure (incl. a cancelled auth dialog) must not leave a
+                // half-armed session: tear it back down through the FSM.
+                NSLog("Tiler: clamshell arm failed: %@", "\(error)")
+                powerApply(.clamshellArmFailed)
+            }
         case .disarmClamshell:
-            NSLog("Tiler: clamshell disarm")
+            governor?.disarm()
         case let .notifyFloorStop(percent):
             powerNotifier.floorStop(percent: percent)
         }

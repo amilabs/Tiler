@@ -44,9 +44,15 @@
       → DONE 2026-07-08: `PowerNotifier` (requestAuthOnce on first .acquire,
       floorStop banner); guarded on `Bundle.main.bundleIdentifier` so the
       unbundled acceptance binary never aborts on `UNUserNotificationCenter`.
-- [ ] 1.5 `AdminShell` (osascript admin-auth wrapper, AppleScript escaping
+- [x] 1.5 `AdminShell` (osascript admin-auth wrapper, AppleScript escaping
       TDD-able) + `DisableSleepGovernor` (sentinel lifecycle, watchdog arming
       command, launch reconciliation; shell-command composition TDD-able).
+      → DONE 2026-07-08: 7 pure tests (appleScriptLiteral escaping incl. raw
+      newline; armCommand exact bytes for indefinite/timed + 45/15 constants).
+      Watchdog LOOP verified in scratchpad (fast constants): restores on
+      sentinel delete / stale (in-a-bag crash) / deadline-passed; stays awake
+      while fresh. AppDelegate wires arm/disarm + launch reconciliation;
+      arm-failure → `.clamshellArmFailed` teardown. SleepDisabled untouched (0).
 
 ## 2. UI (mockups first — owner rule)
 - [ ] 2.1 [USER GATE] Rendered mockups via `--render-shots`: menu Power section,
