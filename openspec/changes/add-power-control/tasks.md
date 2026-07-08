@@ -10,18 +10,20 @@
       protocoled in design.md). Three phases: `battery` / `ac` / `fallback`
       (battery + `sudo pmset -a disablesleep 1`); owner closes the lid ~2 min
       per phase; verdicts in `spike/spike-*.log`. Results → design.md.
-      Progress 2026-07-08: `battery` = SLEPT (118 s gap over 124 s closed —
-      control confirmed); `ac` + `fallback` pending rerun (fallback flag needs
-      the admin auth dialog — daily user is non-admin; flag check relaxed to
-      warn-and-proceed since pmset may not display SleepDisabled).
-- [ ] 0.3 Fix the lid-closed approach per spike + gate (AC-only assertion /
-      `disablesleep` for battery / both / dropped) and update the power spec
-      delta accordingly.
-- [ ] 0.4 Detailed implementation brief for the implementing session
-      (`implementation-brief.md` in this change folder): spike results, API
-      gotchas (CFSTR key macros not imported into Swift, privilege matrix),
-      file-by-file plan, test plan, gate protocol. Owner: implementation runs
-      in a fresh session on Opus; escalate to Fable if it gets stuck.
+      → DONE 2026-07-08: battery = SLEPT (118.2 s gap / 124 s closed; CoffeeTea
+      assertions also present — a fortiori), fallback = STAYED AWAKE (399 s,
+      max gap 2.0 s), ac = STAYED AWAKE (253 s, max gap 2.0 s; effective-row
+      cross-check PreventSystemSleep 0-on-battery/1-on-AC). Flag restored
+      (SleepDisabled 0 verified). Full table + caveats in design.md.
+- [x] 0.3 Lid-closed approach fixed per spike (2026-07-08): `disablesleep` +
+      single-prompt root watchdog (sentinel file) uniformly; public assertions
+      held alongside; auth cancel = no session; launch reconciliation. Power
+      spec delta updated.
+- [x] 0.4 Detailed implementation brief for the implementing session —
+      `implementation-brief.md` (2026-07-08): global constraints, exact
+      interfaces per task (mirrors phases 1–4 below), TDD cycles with code,
+      acceptance script, gate protocol, escalation note. Owner: implementation
+      runs in a fresh session on Opus; escalate to Fable if it gets stuck.
 
 ## 1. Core (TDD, no root)
 - [ ] 1.1 `PowerPolicy` FSM in TilerCore (TDD): indefinite/timed sessions, expiry,
@@ -31,6 +33,9 @@
 - [ ] 1.3 `AwakeController` (assertion lifecycle incl. display hold + clamshell spec)
       + `PowerSourceMonitor` (IOPS events); AppDelegate wiring; NSLog state lines.
 - [ ] 1.4 UserNotifications: floor auto-stop banner (lazy permission request).
+- [ ] 1.5 `AdminShell` (osascript admin-auth wrapper, AppleScript escaping
+      TDD-able) + `DisableSleepGovernor` (sentinel lifecycle, watchdog arming
+      command, launch reconciliation; shell-command composition TDD-able).
 
 ## 2. UI (mockups first — owner rule)
 - [ ] 2.1 [USER GATE] Rendered mockups via `--render-shots`: menu Power section,
@@ -43,9 +48,10 @@
       caveat, precedence note).
 
 ## 3. Deep Sleep profile
-- [ ] 3.1 `PowerProfileController`: `pmset -g custom` snapshot/parse; battery-side
-      apply (`hibernatemode 25`, `powernap 0`, `tcpkeepalive 0`, `proximitywake 0`
-      where present) and verbatim restore via `AdminShell` (path per gate 0.1);
+- [ ] 3.1 `PowerProfileController`: `pmset -g custom` snapshot/parse (parser in
+      TilerCore, TDD with a captured fixture); battery-side apply
+      (`hibernatemode 25`, `powernap 0`, `tcpkeepalive 0`, `proximitywake 0`
+      where present) and verbatim restore via `AdminShell` (from 1.5);
       launch reconciliation with actual pmset state.
 - [ ] 3.2 Failure paths: auth cancel reverts toggle; post-write re-read; missing
       snapshot → Apple portable defaults.

@@ -52,25 +52,47 @@ action. Floor evaluation SHALL be event-driven (power-source change notification
 - WHEN AC is attached after a floor stop
 - THEN no session starts until the user starts one
 
-#### Requirement: Lid-closed keep-awake (feasibility-gated)
+#### Requirement: Lid-closed keep-awake
 
-The Keep Awake menu SHALL offer a per-session "Keep awake with lid closed" ⚠ option.
-While enabled, the session SHALL also prevent lid-close sleep (system-sleep assertion
-applying on battery power too); the built-in display sleeps folded. The option SHALL
-reset to off for every new session (deliberate opt-in friction) and its UI copy SHALL
-warn about heat (never run closed in a bag). The battery floor applies unchanged.
-If the macOS 26 spike (task 0.2) shows public assertions cannot hold a closed-lid
-wake, this requirement is renegotiated at gate 0.3 (fallback: admin-authorized
-`pmset disablesleep` with mandatory clear on session end and launch reconciliation;
-or AC-only; or dropped).
+The Keep Awake menu SHALL offer a per-session "Keep awake with lid closed" ⚠ option
+(mechanism spike-verified 2026-07-08). Starting such a session SHALL run exactly ONE
+admin-authorized command that sets `pmset -a disablesleep 1` and arms a root
+watchdog; the app SHALL refresh a sentinel file (every ~10 s) while the session
+lives, and the watchdog SHALL restore `disablesleep 0` without further prompts once
+the sentinel is stale or absent — covering normal stop, timer expiry, battery-floor
+stop, app crash, and quit — or once a timed session's deadline (+ grace) passes.
+The session SHALL additionally hold the public assertions (idle; plus plain
+`PreventSystemSleep`, which alone suffices on AC). Cancelling the auth dialog SHALL
+leave no session running. The option SHALL reset to off for every new session
+(deliberate opt-in friction) and its UI copy SHALL warn about heat (never run
+closed in a bag). The battery floor applies unchanged. At launch, Tiler SHALL
+reconcile a leftover `SleepDisabled 1` with no live session by alerting with a
+one-click (admin-authorized) restore.
 
 ##### Scenario: Lid closed during clamshell session
 - WHEN the lid closes during a session with the option enabled
 - THEN the system keeps running (verified hands-on at gate 4.2)
 
-##### Scenario: Clamshell session ends
-- WHEN such a session ends for any reason (Stop, expiry, floor)
-- THEN normal lid-close sleep behavior returns
+##### Scenario: Clamshell session ends without a second prompt
+- WHEN such a session ends for any reason (Stop, expiry, floor stop)
+- THEN `pmset -g` shows SleepDisabled 0 within the watchdog grace (~15 s) with no
+  additional authorization dialog, and normal lid-close sleep behavior returns
+
+##### Scenario: Floor stop while the lid is closed
+- WHEN the battery floor stops a clamshell session while the lid is closed
+- THEN the watchdog restores normal sleep and the Mac goes to sleep unattended
+
+##### Scenario: App killed mid-clamshell-session
+- WHEN the app is force-quit during a clamshell session
+- THEN the sentinel goes stale and `pmset -g` shows SleepDisabled 0 within ~60 s
+
+##### Scenario: Authorization cancelled
+- WHEN the user cancels the admin dialog at clamshell session start
+- THEN no session starts and the menu shows the inactive state
+
+##### Scenario: Stale flag reconciliation
+- WHEN Tiler launches while SleepDisabled is 1 and no session marker exists
+- THEN an alert explains the state and offers a one-click restore
 
 #### Requirement: Deep Sleep profile (battery)
 

@@ -57,9 +57,11 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 ## Active changes
 
 - `add-power-control` — caffeinator-class power control: Keep Awake sessions
-  (indefinite/timed), battery floor, lid-closed keep-awake (spike-gated), Deep Sleep
-  battery profile (hibernatemode 25). Proposed 2026-07-08; blocked on gates 0.1/0.2
-  in its `tasks.md` (owner approval + 5-min clamshell spike).
+  (indefinite/timed), battery floor, lid-closed keep-awake (`disablesleep` +
+  sentinel watchdog, spike-verified), Deep Sleep battery profile (hibernatemode 25).
+  Phase 0 complete 2026-07-08 (design approved, spike done, decisions protocoled);
+  **implementation-ready**: execute `implementation-brief.md` in the change folder
+  task-by-task (written for a fresh session), gates 2.1 and 4.2 remain.
 
 Archived: `2026-07-04-add-tiler-mvp` (MVP), `2026-07-04-add-shell-and-calibration`
 (v0.2: icon/About/Settings, startup flow, per-user calibration, dominance retunes),

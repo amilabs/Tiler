@@ -49,16 +49,38 @@ session start / unset on every session end via admin auth (model A), relaunch
 reconciliation (clear the flag when no session is active), and the same battery
 floor. Gate 0.3 picks the final lid-closed offering from the spike evidence.
 
-Spike, phase `battery` (owner hands-on, 2026-07-08 16:26): **SLEPT** — lid closed
-124 s, single heartbeat gap of 118.2 s; `pmset -g log` shows the wake only at
-lid-open ("Wake from Deep Idle … due to … lid", 49% battery). Also observed: with
-the plain `PreventSystemSleep` assertion held *on battery*, the system-wide status
-row stays `PreventSystemSleep 0` — powerd tracks the assertion but it is not in
-effect on battery, matching the AC-only semantics (the `ac` phase must show that
-row at 1). Phases `ac` and `fallback` pending (first `fallback` attempt aborted:
-the flag was never set — the owner's daily user has no sudo; admin user is `ami`,
-so privileged steps go through the macOS admin auth dialog — which incidentally is
-exactly the model-A mechanism, so the rerun doubles as its validation).
+Spike results (owner hands-on, 2026-07-08, logs `spike/spike-*.log`):
+
+| Phase | Path | Lid closed | Max heartbeat gap | Verdict |
+|---|---|---|---|---|
+| battery | user assertions only (CoffeeTea also live: extra idle+display assertions) | 124 s | 118.2 s | **SLEPT** |
+| fallback | battery + `pmset -a disablesleep 1` (set via the admin dialog) | 399 s | 2.0 s | **STAYED AWAKE** |
+| ac | plain `PreventSystemSleep` assertion, no root | 253 s | 2.0 s | **STAYED AWAKE** |
+
+Cross-checks: `pmset -g log` shows a lid-open wake ("Wake from Deep Idle … lid")
+only for the battery phase; the system-wide effective row `PreventSystemSleep`
+reads 0 on battery vs 1 on AC with the same held assertion — independent
+confirmation of the AC-only semantics. Honest caveats: the battery phase ran with
+CoffeeTea's assertions also present (a fortiori — even more user assertions did not
+hold the lid), and the ac phase may have overlapped a still-set SleepDisabled flag
+(restore timing unproven); the effective-row probe covers the semantic claim, and
+the shipped mechanism does not depend on the AC-assertion leg anyway. The admin
+dialog with the `ami` credentials was exercised by the owner during `fallback` —
+the model-A UX is validated hands-on.
+
+**Gate 0.3 decision:** the lid-closed session option ships on the `disablesleep`
+path uniformly — it works on battery and survives mid-session plug/unplug — with
+the public assertions held alongside. One admin prompt per clamshell session start
+arms both the flag and a root **watchdog**: the app refreshes a sentinel file every
+10 s while the session lives; the watchdog polls it and restores `disablesleep 0`
+promptlessly once the sentinel goes stale/absent (normal end, floor stop, crash,
+quit) or past a timed session's deadline + grace. This closes the critical model-A
+failure mode: a battery-floor auto-stop with the lid closed (Mac in a bag) must not
+wait for a second auth dialog nobody can answer. Auth cancel ⇒ the session does not
+start. Launch reconciliation: `SleepDisabled 1` with no live session ⇒ alert with a
+one-click restore. (`pmset -g custom` does not list SleepDisabled — the flag looks
+runtime-only, so a reboot also self-heals.) No separate prompt-free AC-assertion
+branch in v0.3 (YAGNI; revisit only if the prompt annoys).
 
 Safety: lid-closed awake in a bag = heat. UI copy carries ⚠ and Help explains; the
 clamshell option deliberately resets to OFF for every new session (opt-in friction).
@@ -125,8 +147,12 @@ battery AND percent ≤ floor → stop (reason: batteryFloor) + notification.
   battery injected — unit tests cover expiry, floor crossing on battery vs AC,
   no-auto-restart after floor stop, session replacement.
 - **TilerSystem**:
-  - `AwakeController` — owns assertion IDs; translates `spec` (system/display/
-    clamshell) into create/release calls; NSLog state lines for harness greps.
+  - `AwakeController` — owns assertion IDs; translates `spec` (idle / +display /
+    +plain PreventSystemSleep for clamshell) into create/release calls; NSLog
+    state lines for harness greps.
+  - `DisableSleepGovernor` — the clamshell root path: sentinel-file lifecycle,
+    single-prompt arming of `disablesleep 1` + inline root watchdog (via
+    `AdminShell`), launch reconciliation of a stale flag.
   - `PowerSourceMonitor` — IOPS wrapper → `(percent, onBattery)` callbacks.
   - `PowerProfileController` — `pmset -g custom` snapshot/parse, battery-side
     apply/restore, launch reconciliation; executes via `AdminShell` (osascript
@@ -164,9 +190,8 @@ battery AND percent ≤ floor → stop (reason: batteryFloor) + notification.
 ## Open questions → gates
 
 1. Privilege model A vs B — **decided A** (owner, 2026-07-08, gate 0.1).
-2. Clamshell spike outcome (battery/ac/fallback phases) → shipped lid-closed
-   matrix: AC-only assertion, `disablesleep` for battery, both, or none —
-   gate 0.2 → 0.3.
+2. Clamshell matrix — **resolved 2026-07-08** (spike + gate 0.3, see the decision
+   above): `disablesleep` + root watchdog uniformly, assertions alongside.
 3. UI naming/layout/glyph sign-off from rendered mockups — gate 2.1.
 
 ## Sources
