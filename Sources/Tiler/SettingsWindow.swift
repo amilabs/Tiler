@@ -22,6 +22,24 @@ final class SettingsModel: ObservableObject {
     @Published var conflicts: [SystemConflict] = []
     @Published var isCalibrated: Bool
 
+    // Power (add-power-control)
+    @Published var keepDisplayAwake: Bool {
+        didSet { store.keepDisplayAwake = keepDisplayAwake }
+    }
+    @Published var batteryFloorPercent: Int {
+        didSet { store.batteryFloorPercent = batteryFloorPercent }
+    }
+    @Published var deepSleepOnBattery: Bool {
+        didSet {
+            store.deepSleepOnBattery = deepSleepOnBattery
+            // Suppressed while reflecting the actual pmset state back (revert-on-cancel).
+            if !isReflectingDeepSleep { onDeepSleepToggle?(deepSleepOnBattery) }
+        }
+    }
+    /// Drives the admin-authorized profile apply/restore (wired in task 3.1).
+    var onDeepSleepToggle: ((Bool) -> Void)?
+    private var isReflectingDeepSleep = false
+
     var onCalibrate: (() -> Void)?
 
     private let store: SettingsStore
@@ -34,7 +52,18 @@ final class SettingsModel: ObservableObject {
         self.accessibilityGranted = accessibilityGranted
         launchAtLogin = SMAppService.mainApp.status == .enabled
         isCalibrated = store.tunablesOverride != nil
+        keepDisplayAwake = store.keepDisplayAwake
+        batteryFloorPercent = store.batteryFloorPercent
+        deepSleepOnBattery = store.deepSleepOnBattery
         refreshConflicts()
+    }
+
+    /// Set the toggle to the actual system state without re-triggering the profile
+    /// write (used to revert on a cancelled/failed authorization).
+    func reflectDeepSleep(_ actual: Bool) {
+        isReflectingDeepSleep = true
+        deepSleepOnBattery = actual
+        isReflectingDeepSleep = false
     }
 
     func startCalibration() {
@@ -83,9 +112,34 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             gesturesTab
                 .tabItem { Label("Gestures", systemImage: "hand.point.up.left") }
+            powerTab
+                .tabItem { Label("Power", systemImage: "bolt") }
         }
         .frame(width: 460, height: 320)
         .padding(12)
+    }
+
+    private var powerTab: some View {
+        Form {
+            Section("Prevent Sleep") {
+                Toggle("Keep display awake too", isOn: $model.keepDisplayAwake)
+                Picker("Stop when battery below", selection: $model.batteryFloorPercent) {
+                    Text("Off").tag(0)
+                    Text("30%").tag(30)
+                    Text("20%").tag(20)
+                    Text("10%").tag(10)
+                }
+            }
+            Section("Deep Sleep") {
+                Toggle("Deep Sleep on lid close (battery)", isOn: $model.deepSleepOnBattery)
+                Text("Sleep on battery writes memory to disk and powers it off — "
+                     + "near-zero drain, wake takes 10–20 s. Changing this asks for "
+                     + "an administrator password.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
     }
 
     private var generalTab: some View {

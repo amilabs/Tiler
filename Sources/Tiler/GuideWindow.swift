@@ -132,6 +132,7 @@ struct GuideView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     valueSection
                     troubleshooting
+                    powerGuide
                     Spacer(minLength: 0)
                 }
                 .frame(width: 340, alignment: .topLeading)
@@ -291,6 +292,42 @@ struct GuideView: View {
                         .foregroundStyle(.secondary)
                     Button("Calibrate…") { model.onCalibrate?() }
                 }
+            }
+        }
+    }
+
+    // MARK: - Power
+
+    private var powerGuide: some View {
+        section("Prevent Sleep & Deep Sleep") {
+            VStack(alignment: .leading, spacing: 7) {
+                powerRow("bolt.fill", "Prevent Sleep",
+                         "Keep the Mac awake — indefinitely or 10 min to 24 h. The display may still sleep unless you turn on “Keep display awake” in Settings.")
+                powerRow("battery.25percent", "Battery floor",
+                         "On battery a session auto-stops at your floor (default 20%) with a notification. No auto-restart on recharge.")
+                powerRow("exclamationmark.triangle.fill", "Lid closed ⚠",
+                         "“Prevent sleep with lid closed” needs an admin password and keeps the Mac awake folded — it gets hot, so never in a bag.")
+                powerRow("moon.zzz.fill", "Deep Sleep",
+                         "A battery-side hibernate profile: near-zero drain, but wake takes 10–20 s. Toggling needs an admin password.")
+                Text("Precedence: active session ≻ Deep Sleep profile ≻ system defaults.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func powerRow(_ symbol: String, _ title: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.callout.weight(.medium))
+                Text(text)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

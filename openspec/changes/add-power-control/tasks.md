@@ -75,8 +75,14 @@
       pick), re-rendered only on active/appearance change. Notifier banner +
       tooltip renamed. Launch+active-session smoke: menu builds, indicator
       renders, assertion held. Non-AX tests green.
-- [ ] 2.3 Settings Power tab + Guide/Help Power section (heat warning, wake-time
+- [x] 2.3 Settings Power tab + Guide/Help Power section (heat warning, wake-time
       caveat, precedence note).
+      → DONE 2026-07-08: SettingsModel gained keepDisplayAwake/batteryFloorPercent/
+      deepSleepOnBattery (+ onDeepSleepToggle/reflectDeepSleep for revert-on-cancel);
+      third "Power" tab (Prevent Sleep + Deep Sleep sections). Guide gained a
+      "Prevent Sleep & Deep Sleep" block (durations, floor, lid-closed heat ⚠,
+      wake caveat, precedence). --show-settings/--show-guide construct; guide
+      render verified. Non-AX tests green.
 
 ## 3. Deep Sleep profile
 - [ ] 3.1 `PowerProfileController`: `pmset -g custom` snapshot/parse (parser in
