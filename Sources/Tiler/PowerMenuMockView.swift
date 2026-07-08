@@ -133,22 +133,17 @@ struct PowerIndicatorMockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Индикатор активной сессии — раунд 3 (иконка нецветная + красный оверлей)")
+            Text("Индикатор активной сессии — раунд 4 (чашка справа-снизу, разные размеры)")
                 .font(.system(size: 13, weight: .semibold))
             Text("столбцы: светлый бар · тёмный бар")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
 
             row("Сейчас — неактивно") { pinch(.primary) }
             Divider()
-            group("Чашка поверх руки")
-            row("A · чашка +⅓, сдвиг влево-вверх") { cupOnHand(size: 11, dx: -4, dy: -4) }
-            row("B · чашка крупнее/выше-левее") { cupOnHand(size: 13, dx: -5, dy: -6) }
-            Divider()
-            group("Таймер отсчёта поверх иконки")
-            row("C · красные цифры на ладони") { digitsOver }
-            row("D · иконка + цифры справа") { digitsRight }
-            row("E · песочные часы поверх") { hourglassOver }
-            row("F · песочные часы + цифры") { hourglassRight }
+            group("Чашка поверх руки — правый нижний угол")
+            row("A · чашка +⅓ (11pt)") { cupOnHand(size: 11, dx: 4, dy: 4) }
+            row("B · крупнее (13pt)") { cupOnHand(size: 13, dx: 5, dy: 5) }
+            row("C · ещё крупнее (15pt)") { cupOnHand(size: 15, dx: 5, dy: 6) }
         }
         .padding(24)
         .frame(width: 540)
@@ -183,7 +178,7 @@ struct PowerIndicatorMockView: View {
             .foregroundStyle(color)
     }
 
-    // Monochrome hand + red cup pushed onto it (up-left), cup ~⅓ larger than the badge.
+    // Monochrome hand + red cup pushed onto it (bottom-right), cup ~⅓ larger than a badge.
     private func cupOnHand(size: CGFloat, dx: CGFloat, dy: CGFloat) -> some View {
         ZStack {
             pinch(.primary, size: 16)
@@ -191,41 +186,6 @@ struct PowerIndicatorMockView: View {
                 .font(.system(size: size))
                 .foregroundStyle(red)
                 .offset(x: dx, y: dy)
-        }
-    }
-
-    private var digitsOver: some View {
-        ZStack {
-            pinch(.primary, size: 16)
-            Text("27")
-                .font(.system(size: 8, weight: .heavy, design: .rounded))
-                .foregroundStyle(red)
-                .offset(y: 3)
-        }
-    }
-
-    private var digitsRight: some View {
-        HStack(spacing: 2) {
-            pinch(.primary, size: 15)
-            Text("27m").font(.system(size: 11, weight: .semibold)).foregroundStyle(red)
-        }
-    }
-
-    private var hourglassOver: some View {
-        ZStack {
-            pinch(.primary, size: 16)
-            Image(systemName: "hourglass")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(red)
-                .offset(x: 4, y: 3)
-        }
-    }
-
-    private var hourglassRight: some View {
-        HStack(spacing: 2) {
-            pinch(.primary, size: 15)
-            Image(systemName: "hourglass").font(.system(size: 11)).foregroundStyle(red)
-            Text("27m").font(.system(size: 11, weight: .semibold)).foregroundStyle(red)
         }
     }
 }
