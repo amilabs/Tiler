@@ -416,6 +416,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Power UI mockups (add-power-control gate 2.1) — need no live engine.
         write("power-menu", PowerMenuMockView())
         write("power-settings", PowerSettingsMockView())
+        write("power-indicator", PowerIndicatorMockView())
         // Calibration preview needs the live gesture engine; skip it when there is no
         // trackpad (headless render still produces the window/power shots).
         if let engine {

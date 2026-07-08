@@ -122,6 +122,87 @@ struct PowerMenuMockView: View {
     }
 }
 
+// MARK: - Status-item indicator variants (owner feedback: recolor/encircle, no 2nd icon)
+
+/// Owner direction (gate 2.1, round 2): don't add a second icon — when Keep Awake is
+/// active, recolor the existing status glyph red, optionally encircling the (shrunk)
+/// icon with a contour coffee-cup / ring. Several variants on both light and dark
+/// menu bars (legibility matters).
+struct PowerIndicatorMockView: View {
+    private let red = Color(nsColor: .systemRed)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Индикатор активной сессии — варианты (иконка hand.pinch.fill)")
+                .font(.system(size: 13, weight: .semibold))
+            Text("столбцы: светлый бар · тёмный бар")
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+
+            row("Сейчас — неактивно (шаблон)") { pinch(.primary) }
+            Divider()
+            row("1 · Красная заливка") { pinch(red) }
+            row("2 · Красная, крупнее+жирнее") { pinch(red, size: 17, weight: .bold) }
+            row("3 · Иконка в контурном кольце") { ringed }
+            row("4 · Контур чашки вокруг иконки") { cupAround }
+            row("5 · Иконка + мини-бейдж чашки") { badged }
+        }
+        .padding(24)
+        .frame(width: 520)
+        .background(.white)
+    }
+
+    private func row<G: View>(_ label: String, @ViewBuilder _ glyph: () -> G) -> some View {
+        HStack(spacing: 14) {
+            Text(label).font(.system(size: 12)).frame(width: 250, alignment: .leading)
+            bar(dark: false, glyph)
+            bar(dark: true, glyph)
+        }
+    }
+
+    private func bar<G: View>(dark: Bool, @ViewBuilder _ glyph: () -> G) -> some View {
+        HStack { Spacer(); glyph() }
+            .padding(.horizontal, 12)
+            .frame(width: 96, height: 28)
+            .background(RoundedRectangle(cornerRadius: 6)
+                .fill(dark ? Color(white: 0.16) : Color(white: 0.95)))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.black.opacity(0.08)))
+            .environment(\.colorScheme, dark ? .dark : .light)
+    }
+
+    private func pinch(_ color: Color, size: CGFloat = 15, weight: Font.Weight = .regular) -> some View {
+        Image(systemName: "hand.pinch.fill")
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(color)
+    }
+
+    private var ringed: some View {
+        ZStack {
+            Circle().strokeBorder(red, lineWidth: 1.6).frame(width: 22, height: 22)
+            pinch(red, size: 11)
+        }
+    }
+
+    private var cupAround: some View {
+        ZStack {
+            Image(systemName: "cup.and.saucer")
+                .font(.system(size: 22))
+                .foregroundStyle(red)
+            pinch(red, size: 9)
+                .offset(y: -1)
+        }
+    }
+
+    private var badged: some View {
+        pinch(red)
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: 8))
+                    .foregroundStyle(red)
+                    .offset(x: 5, y: 3)
+            }
+    }
+}
+
 // MARK: - Settings → Power tab (hand-drawn reconstruction for the mock)
 
 /// NOTE: the shipping tab (task 2.3) is a real grouped `Form` inside SettingsView's
