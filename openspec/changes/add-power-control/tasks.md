@@ -1,15 +1,23 @@
 # Tasks — add-power-control
 
 ## 0. Approvals & feasibility (blocking)
-- [ ] 0.1 [USER GATE] Proposal + design approved; privilege model chosen
-      (A: admin prompt per Deep Sleep toggle — recommended; B: one-time root
-      helper daemon); clamshell `disablesleep` fallback pre-approved / rejected.
-- [ ] 0.2 [USER GATE — ~5 min hands-on] Clamshell spike on the owner's machine:
-      scripted assertion holder (debug flag `--spike-clamshell`), owner closes the
-      lid twice (battery / AC), script logs sleep-vs-awake via wall-clock gap +
-      `pmset -g log`. Results protocoled in design.md.
-- [ ] 0.3 Fix the lid-closed approach per spike + gate (assertion / fallback /
-      AC-only / dropped) and update spec delta accordingly.
+- [x] 0.1 [USER GATE] Proposal + design approved; privilege model chosen.
+      → APPROVED 2026-07-08: design OK, model A (admin prompt per toggle);
+      `disablesleep` fallback decision moved to gate 0.3 (after spike evidence).
+- [ ] 0.2 [USER GATE — ~8 min hands-on] Clamshell spike on the owner's machine:
+      `spike/clamshell_spike.swift` (standalone script — supersedes the planned
+      app debug flag; selftest PASS 2026-07-08, privilege probes already
+      protocoled in design.md). Three phases: `battery` / `ac` / `fallback`
+      (battery + `sudo pmset -a disablesleep 1`); owner closes the lid ~2 min
+      per phase; verdicts in `spike/spike-*.log`. Results → design.md.
+- [ ] 0.3 Fix the lid-closed approach per spike + gate (AC-only assertion /
+      `disablesleep` for battery / both / dropped) and update the power spec
+      delta accordingly.
+- [ ] 0.4 Detailed implementation brief for the implementing session
+      (`implementation-brief.md` in this change folder): spike results, API
+      gotchas (CFSTR key macros not imported into Swift, privilege matrix),
+      file-by-file plan, test plan, gate protocol. Owner: implementation runs
+      in a fresh session on Opus; escalate to Fable if it gets stuck.
 
 ## 1. Core (TDD, no root)
 - [ ] 1.1 `PowerPolicy` FSM in TilerCore (TDD): indefinite/timed sessions, expiry,

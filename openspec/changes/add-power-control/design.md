@@ -32,15 +32,22 @@ burn-in). Their "Power Protect" add-on exists because unplugging AC mid-clamshel
 Apple Silicon can end the session unexpectedly — our battery floor + explicit session
 model covers the same risk class.
 
-Unknown: whether macOS 26 still honors `PreventSystemSleep(+LimitedPower)` across a
-lid close on battery — Apple has tightened clamshell behavior over the years, and the
-press coverage is contradictory. **Decision: hands-on spike (task 0.2) before any UI
-work.** Fallback if assertions lose: `sudo pmset -a disablesleep 1` (documented in
-`man pmset`; blocks all sleep incl. clamshell, incl. on battery; root-only). The
-fallback is dangerous global state (persists until unset), so it would ship only with:
-set on session start / unset on every session end, relaunch reconciliation (clear the
-flag if no session is active), and the same battery floor. Gate 0.1 decides whether
-the fallback is acceptable at all.
+Measured (spike probes, macOS 26.5, 2026-07-08 — `spike/clamshell_spike.swift`):
+the base assertion *types* stay public — `PreventUserIdleSystemSleep` and plain
+`PreventSystemSleep` hold from a user process (parity with `caffeinate -s`) — but the
+extender *properties* `AppliesToLimitedPower` and `AppliesOnLidClose` now return
+`kIOReturnNotPrivileged` (0xe00002c1). macOS 26 therefore caps the no-root path at
+the documented `PreventSystemSleep` semantics (honored on AC): lid-closed-awake on AC
+*may* work without root; on battery it needs a root path. (A root process could hold
+the privileged properties directly — relevant only if model B is ever revisited.)
+Hands-on spike (task 0.2, three phases) decides the shipped matrix: `battery`
+(user assertions only — control, expected SLEPT), `ac` (plain PreventSystemSleep —
+the no-root hope), `fallback` (battery + `sudo pmset -a disablesleep 1`, documented
+in `man pmset`: blocks all sleep incl. clamshell on battery). The fallback is
+dangerous global state (persists until unset), so it would ship only with: set on
+session start / unset on every session end via admin auth (model A), relaunch
+reconciliation (clear the flag when no session is active), and the same battery
+floor. Gate 0.3 picks the final lid-closed offering from the spike evidence.
 
 Safety: lid-closed awake in a bag = heat. UI copy carries ⚠ and Help explains; the
 clamshell option deliberately resets to OFF for every new session (opt-in friction).
@@ -77,7 +84,7 @@ clamshell option deliberately resets to OFF for every new session (opt-in fricti
 
 Recommendation: **A** now; revisit B only if the clamshell spike forces the
 `disablesleep` fallback into the product (auto-restore argument) or the owner
-objects to prompts. [Gate 0.1]
+objects to prompts. [Gate 0.1] → **Decided: A** (owner, 2026-07-08).
 
 ### Battery monitoring
 
@@ -145,9 +152,10 @@ battery AND percent ≤ floor → stop (reason: batteryFloor) + notification.
 
 ## Open questions → gates
 
-1. Privilege model A vs B (recommend A) — gate 0.1.
-2. Clamshell spike outcome; if assertions fail on macOS 26: accept `disablesleep`
-   fallback, restrict lid-closed mode to AC, or drop it — gate 0.2 → 0.3.
+1. Privilege model A vs B — **decided A** (owner, 2026-07-08, gate 0.1).
+2. Clamshell spike outcome (battery/ac/fallback phases) → shipped lid-closed
+   matrix: AC-only assertion, `disablesleep` for battery, both, or none —
+   gate 0.2 → 0.3.
 3. UI naming/layout/glyph sign-off from rendered mockups — gate 2.1.
 
 ## Sources
