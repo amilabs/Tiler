@@ -26,8 +26,10 @@
       runs in a fresh session on Opus; escalate to Fable if it gets stuck.
 
 ## 1. Core (TDD, no root)
-- [ ] 1.1 `PowerPolicy` FSM in TilerCore (TDD): indefinite/timed sessions, expiry,
+- [x] 1.1 `PowerPolicy` FSM in TilerCore (TDD): indefinite/timed sessions, expiry,
       replacement, battery floor on-battery-only, stop reasons, no auto-restart.
+      → DONE 2026-07-08: `Sources/TilerCore/PowerPolicy.swift` + 25 tests
+      (`PowerPolicyTests`), all green; every semantics bullet covered.
 - [ ] 1.2 SettingsStore: `keepDisplayAwake` / `batteryFloorPercent` /
       `deepSleepOnBattery` / `powerSnapshot` + integration tests.
 - [ ] 1.3 `AwakeController` (assertion lifecycle incl. display hold + clamshell spec)
