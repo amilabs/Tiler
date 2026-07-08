@@ -192,7 +192,14 @@ battery AND percent ≤ floor → stop (reason: batteryFloor) + notification.
 1. Privilege model A vs B — **decided A** (owner, 2026-07-08, gate 0.1).
 2. Clamshell matrix — **resolved 2026-07-08** (spike + gate 0.3, see the decision
    above): `disablesleep` + root watchdog uniformly, assertions alongside.
-3. UI naming/layout/glyph sign-off from rendered mockups — gate 2.1.
+3. UI naming/layout/glyph — **resolved 2026-07-08 (gate 2.1, owner)**: the feature is
+   labelled **"Prevent Sleep"** in all user-facing UI (menu submenu, Settings section,
+   lid-closed item, Guide, floor-stop banner); internal assertion names stay
+   `Tiler Keep Awake …` (acceptance greps depend on them). Status indicator for an
+   active session = the monochrome `hand.pinch.fill` glyph with a solid **red disc +
+   white `cup.and.saucer.fill` silhouette** badge at its bottom-right (size ~A, static
+   — no live countdown), coexisting with the ⚠ marker. Menu wording and Power-tab
+   layout approved as mocked (`PowerMenuMockView`).
 
 ## Sources
 

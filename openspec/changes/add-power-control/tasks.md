@@ -55,13 +55,17 @@
       arm-failure → `.clamshellArmFailed` teardown. SleepDisabled untouched (0).
 
 ## 2. UI (mockups first — owner rule)
-- [ ] 2.1 [USER GATE] Rendered mockups via `--render-shots`: menu Power section,
+- [x] 2.1 [USER GATE] Rendered mockups via `--render-shots`: menu Power section,
       Settings Power tab, status-glyph active state → owner sign-off on
       naming/layout/glyph before wiring.
-      → 2026-07-08 mockups rendered (`PowerMenuMockView`,
-      `power-menu.png`/`power-settings.png`), posted to owner. AWAITING SIGN-OFF
-      (naming/layout + status-indicator variant A vs B). Do not wire 2.2/2.3
-      until the owner picks; record picks here + in design.md then check this box.
+      → SIGNED OFF 2026-07-08 (5 mockup rounds). Owner picks:
+      (1) label the feature **"Prevent Sleep"** in all UI (internal assertion
+      names keep "Tiler Keep Awake …" for greps);
+      (2) status indicator = monochrome `hand.pinch.fill` + a solid **red disc
+      with a white `cup.and.saucer.fill` silhouette** at the bottom-right (static,
+      no live countdown), coexists with ⚠;
+      (3) menu wording + Power-tab layout approved as mocked.
+      Recorded in design.md. `PowerMenuMockView` is throwaway render tooling.
 - [ ] 2.2 Menu: Keep Awake submenu (durations, lid-closed ⚠ option resetting per
       session, Stop, remaining-time header) refreshed in `menuWillOpen`; status item
       session state.
