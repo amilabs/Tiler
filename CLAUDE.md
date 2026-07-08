@@ -2,7 +2,9 @@
 
 **Start here every session:**
 1. Read `openspec/project.md` (context, environment, workflow rules).
-2. Check the active change listed in `openspec/project.md`. Currently there is none:
+2. Check the active change listed in `openspec/project.md`. Currently:
+   `add-power-control` (Keep Awake / Deep Sleep power control) — proposed 2026-07-08,
+   blocked on the [USER GATE] items in its tasks.md; do not implement past a gate.
    v0.1 (MVP) and v0.2 (shell + calibration) are archived under
    `openspec/changes/archive/` with full design history; `openspec/specs/` is the
    current merged truth (scenarios = required tests). The owner's verbatim original
