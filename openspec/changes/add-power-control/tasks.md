@@ -34,8 +34,12 @@
       `deepSleepOnBattery` / `powerSnapshot` + integration tests.
       → DONE 2026-07-08: 4 keys added (didSet/onChange; powerSnapshot is
       bookkeeping-only, no onChange), 5 round-trip/notify tests green.
-- [ ] 1.3 `AwakeController` (assertion lifecycle incl. display hold + clamshell spec)
+- [x] 1.3 `AwakeController` (assertion lifecycle incl. display hold + clamshell spec)
       + `PowerSourceMonitor` (IOPS events); AppDelegate wiring; NSLog state lines.
+      → DONE 2026-07-08: manual check — `--power-start 10m` shows
+      `PreventUserIdleSystemSleep named: "Tiler Keep Awake (idle)"`; released on
+      both SIGTERM and SIGKILL (crash safety). `--power-start`/`--power-stop`
+      debug args + 5 s tick timer + settings feed wired. 126 non-AX tests green.
 - [ ] 1.4 UserNotifications: floor auto-stop banner (lazy permission request).
 - [ ] 1.5 `AdminShell` (osascript admin-auth wrapper, AppleScript escaping
       TDD-able) + `DisableSleepGovernor` (sentinel lifecycle, watchdog arming

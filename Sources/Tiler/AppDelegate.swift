@@ -25,6 +25,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var calibrationModel: CalibrationModel?
     private var calibrationActive = false
 
+    // MARK: - Power (add-power-control)
+    private var powerPolicy = PowerPolicy(displayAwake: false, floorPercent: 20)
+    private var awake: AwakeController?
+    private var powerMonitor: PowerSourceMonitor?
+    private var powerTick: DispatchSourceTimer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
         setUpPermissionMonitor()
@@ -32,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setUpSettingsWiring()
         startTouchPipeline()
         runStartupPermissionFlow()
+        setUpPower()
         handleDebugWindowArgs()
     }
 
@@ -45,6 +52,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let i = args.firstIndex(of: "--render-shots"), args.indices.contains(i + 1) {
             renderShots(to: args[i + 1])
         }
+        // Power acceptance hooks: `--power-start 30m|2h|inf`, `--power-stop`.
+        if let i = args.firstIndex(of: "--power-start"), args.indices.contains(i + 1) {
+            let d: TimeInterval? = args[i + 1] == "inf" ? nil
+                : Double(args[i + 1].dropLast()).map { args[i + 1].hasSuffix("h") ? $0 * 3600 : $0 * 60 }
+            powerApply(.start(clamshell: false, duration: d))
+        }
+        if args.contains("--power-stop") { powerApply(.stop) }
         // Harness: open the animated window, close it after 2 s — post-close idle
         // CPU must be back under budget (the retained-animations regression).
         if args.contains("--exercise-ui") {
@@ -171,6 +185,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self.hotkeys?.apply(windowTiling: store.windowHotkeysEnabled,
                                 utility: store.utilityHotkeysEnabled)
             self.engine?.stageTunables(store.effectiveTunables)
+            self.powerApply(.setDisplayAwake(store.keepDisplayAwake))
+            self.powerApply(.setFloor(store.batteryFloorPercent))
+        }
+    }
+
+    // MARK: - Power (add-power-control)
+
+    private func setUpPower() {
+        powerPolicy = PowerPolicy(displayAwake: settings.keepDisplayAwake,
+                                  floorPercent: settings.batteryFloorPercent)
+        awake = AwakeController()
+        let monitor = PowerSourceMonitor()
+        monitor.onChange = { [weak self] status in self?.powerApply(.power(status)) }
+        monitor.start()
+        powerMonitor = monitor
+    }
+
+    /// Feed a command through the FSM and perform its effects, then reconcile the
+    /// tick timer and the status glyph.
+    func powerApply(_ command: PowerCommand) {
+        for effect in powerPolicy.handle(command, now: Date()) { perform(effect) }
+        refreshPowerTick()
+        updateStatusGlyph()
+    }
+
+    private func perform(_ effect: PowerEffect) {
+        switch effect {
+        case let .acquire(spec):
+            awake?.apply(spec)
+        case let .release(reason):
+            awake?.apply(nil)
+            NSLog("Tiler: keep-awake released (%@)", reason.rawValue)
+        case let .armClamshell(deadline):
+            // task 1.5 governor — NSLog stub until then.
+            NSLog("Tiler: clamshell arm (deadline %@)", deadline?.description ?? "none")
+        case .disarmClamshell:
+            NSLog("Tiler: clamshell disarm")
+        case let .notifyFloorStop(percent):
+            // task 1.4 notifier — NSLog stub until then.
+            NSLog("Tiler: floor stop at %d%%", percent)
+        }
+    }
+
+    /// A 5 s tick drives timed-session expiry; alive only while a session runs.
+    private func refreshPowerTick() {
+        if powerPolicy.isActive, powerTick == nil {
+            let timer = DispatchSource.makeTimerSource(queue: .main)
+            timer.schedule(deadline: .now() + 5, repeating: 5)
+            timer.setEventHandler { [weak self] in
+                MainActor.assumeIsolated { self?.powerApply(.tick) }
+            }
+            timer.resume()
+            powerTick = timer
+        } else if !powerPolicy.isActive, let timer = powerTick {
+            timer.cancel()
+            powerTick = nil
         }
     }
 
