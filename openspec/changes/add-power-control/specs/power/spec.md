@@ -142,7 +142,8 @@ Settings → Power SHALL offer an opt-in "Debug logging" toggle (default off) th
 records power events to `~/Library/Logs/Tiler/power-debug.log`: discrete events
 (session start/stop/expiry/floor-stop, assertion acquire/release with held summary,
 clamshell arm/disarm, Deep Sleep enable/disable, deduped source changes, launch
-reconciliation), system sleep/wake and screen sleep/wake with the current lid state,
+reconciliation), system sleep/wake, screen sleep/wake, and screen lock/unlock (incl.
+the ⌃A hotkey, via distributed notifications) with the current lid state,
 and — while a session runs — a ~15 s liveness heartbeat (elapsed, power, lid, held
 assertions) so a real sleep shows as a heartbeat gap. Logging SHALL be event/heartbeat
 driven (no busy polling) and bounded on disk (rotate through 3 backups past ~5 MB each,

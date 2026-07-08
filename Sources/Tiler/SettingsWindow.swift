@@ -125,7 +125,9 @@ struct SettingsView: View {
             powerTab
                 .tabItem { Label("Power", systemImage: "bolt") }
         }
-        .frame(width: 460, height: 320)
+        // Sized so the tallest tab (Power: three sections incl. Diagnostics) fits
+        // without the Form's internal scroll (no-scroll rule).
+        .frame(width: 460, height: 450)
         .padding(12)
     }
 

@@ -10,8 +10,10 @@ per-session lid-closed ⚠ option, Stop) whose header line shows the active stat
 remaining time. While a session is active the main menu SHALL ALSO show a prominent
 row at its very top (bold, with the red cup mark) stating the feature and the
 remaining time / lid-closed state (owner request 2026-07-08); the row is hidden when
-inactive and clicking it SHALL stop the session. The submenu SHALL mark the running
-start choice (until-stopped or the chosen duration) with a checkmark. Menu state SHALL
+inactive and clicking it SHALL stop the session after a confirmation dialog (so an
+accidental click can't silently re-enable sleep); the explicit submenu "Stop" acts
+without a prompt. The submenu SHALL mark the running start choice (until-stopped or
+the chosen duration) with a checkmark. Menu state SHALL
 refresh when the menu opens (existing `menuWillOpen` path); for a timed session the top
 row and header SHALL tick live (once per second) while the menu is open, but no ticking
 is required while the menu is closed.

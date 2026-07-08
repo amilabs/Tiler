@@ -145,5 +145,10 @@
       held summary on acquire, richer launch line; size cap raised to ~5 MB × 3 backups
       (~20 MB). Verified: launch/heartbeat lines carry lid state. Spec power updated.
 - [x] 5.5 About/Guide window: content wrapped in a scroll view capped at 640 h (fits
-      laptops) — render-shots still draws it full-height for the README; reference
-      sections carded for visual separation.
+      laptops) with an always-visible scrollbar — render-shots still draws it
+      full-height for the README; reference sections carded for visual separation.
+- [x] 5.6 Round-3 owner feedback: (a) Settings window was too short for the Power tab's
+      three sections (Form scrolled internally, non-obvious) → height 320→450 so it
+      fits without scroll; (b) top-row click now shows a Stop/Cancel confirm (submenu
+      Stop stays direct); (c) log now captures screen lock/unlock (distributed
+      notifications, incl. ⌃A) with lid state. Specs app-shell/power updated.

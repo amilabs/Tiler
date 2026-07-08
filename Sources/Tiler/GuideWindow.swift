@@ -122,8 +122,8 @@ final class GuideModel: ObservableObject {
 struct GuideView: View {
     @ObservedObject var model: GuideModel
 
-    /// The window wraps this in a scroll view + capped height (fits laptop screens);
-    /// render-shots draws it full-height (default) for the README.
+    /// The window wraps this in a compact scroll view (fits laptop screens) with an
+    /// always-visible scrollbar; render-shots draws it full-height for the README.
     var scrollable = false
 
     // Two-column layout: story on the left, the full reference on the right,
@@ -131,6 +131,7 @@ struct GuideView: View {
     var body: some View {
         if scrollable {
             ScrollView { content.padding(26).frame(width: 880) }
+                .scrollIndicators(.visible)
                 .frame(width: 880, height: 640)
         } else {
             content.padding(26).frame(width: 880).fixedSize(horizontal: false, vertical: true)

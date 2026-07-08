@@ -275,13 +275,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ]
         for (name, tag) in events {
             nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    self.plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
-                        + "active=\(self.powerPolicy.isActive) held=\(self.awake?.heldSummary ?? "?")")
-                }
+                MainActor.assumeIsolated { self?.logSystemEvent(tag) }
             }
         }
+        // Screen lock/unlock arrives as distributed notifications (incl. the ⌃A hotkey).
+        let dnc = DistributedNotificationCenter.default()
+        for (name, tag) in [("com.apple.screenIsLocked", "screen locked"),
+                            ("com.apple.screenIsUnlocked", "screen unlocked")] {
+            dnc.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.logSystemEvent(tag) }
+            }
+        }
+    }
+
+    private func logSystemEvent(_ tag: String) {
+        plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
+            + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
     }
 
     /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
@@ -424,6 +433,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func powerStopAction() {
         powerApply(.stop)
+    }
+
+    /// Top-row click needs a confirm so an accidental click can't silently re-enable
+    /// sleep (owner request). The explicit submenu "Stop" acts without a prompt.
+    @objc private func confirmStopFromTopRow() {
+        guard powerPolicy.isActive else { return }
+        let alert = NSAlert()
+        alert.messageText = "Stop Prevent Sleep?"
+        alert.informativeText = "The Mac will be allowed to sleep again."
+        alert.addButton(withTitle: "Stop")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            powerApply(.stop)
+        }
     }
 
     @objc private func toggleClamshell(_ sender: NSMenuItem) {
@@ -572,8 +595,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.autoenablesItems = false     // we manage the top indicator + Stop enabled state
 
         // Prominent active-state row at the very top (hidden while inactive). Bold, with
-        // the red cup mark and a live countdown; clicking it stops the session.
-        let topItem = makeItem("", #selector(powerStopAction))
+        // the red cup mark and a live countdown; clicking it stops the session after a
+        // confirmation (guards against an accidental click silently re-enabling sleep).
+        let topItem = makeItem("", #selector(confirmStopFromTopRow))
         topItem.toolTip = "Click to stop Prevent Sleep"
         topItem.isHidden = true
         let cupConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
