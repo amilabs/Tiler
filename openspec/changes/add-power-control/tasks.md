@@ -66,9 +66,15 @@
       no live countdown), coexists with ⚠;
       (3) menu wording + Power-tab layout approved as mocked.
       Recorded in design.md. `PowerMenuMockView` is throwaway render tooling.
-- [ ] 2.2 Menu: Keep Awake submenu (durations, lid-closed ⚠ option resetting per
+- [x] 2.2 Menu: Keep Awake submenu (durations, lid-closed ⚠ option resetting per
       session, Stop, remaining-time header) refreshed in `menuWillOpen`; status item
       session state.
+      → DONE 2026-07-08: "Prevent Sleep" submenu (header/indefinite/7 durations/
+      clamshell checkbox/Stop), `pendingClamshell` resets per start; status
+      indicator = red disc + white cup badge on the hand while active (gate 2.1
+      pick), re-rendered only on active/appearance change. Notifier banner +
+      tooltip renamed. Launch+active-session smoke: menu builds, indicator
+      renders, assertion held. Non-AX tests green.
 - [ ] 2.3 Settings Power tab + Guide/Help Power section (heat warning, wake-time
       caveat, precedence note).
 

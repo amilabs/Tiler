@@ -36,7 +36,7 @@ import UserNotifications
             return
         }
         let content = UNMutableNotificationContent()
-        content.title = "Keep Awake stopped"
+        content.title = "Prevent Sleep stopped"
         content.body = "Battery at \(percent)% — reached the floor."
         content.sound = .default
         let request = UNNotificationRequest(identifier: "tiler.floorStop.\(UUID().uuidString)",

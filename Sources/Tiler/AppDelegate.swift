@@ -32,6 +32,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var powerTick: DispatchSourceTimer?
     private let powerNotifier = PowerNotifier()
     private var governor: DisableSleepGovernor?
+    /// Lid-closed opt-in for the NEXT start; resets to false after every start
+    /// (deliberate per-session friction).
+    private var pendingClamshell = false
+    private weak var powerHeaderItem: NSMenuItem?
+    private weak var powerStopItem: NSMenuItem?
+    private weak var powerClamshellItem: NSMenuItem?
+    // Status indicator is re-rendered only when the active state or appearance changes.
+    private var lastIndicatorActive: Bool?
+    private var lastIndicatorAppearance: NSAppearance.Name?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -151,13 +160,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ? "Tiler: Accessibility permission missing"
             : (conflictsPresent
                 ? "Tiler: conflicting system trackpad gestures detected — see Tiler…"
-                : "Tiler")
+                : (powerPolicy.isActive ? "Tiler: Prevent Sleep active" : "Tiler"))
         // Settings item carries the permission alert (stabilize-menu spec).
         settingsMenuItem?.title = trusted ? "Settings" : "Settings ⚠︎"
+        updateSessionIndicator()
+    }
+
+    /// Swap the status glyph for the active-session badge (gate 2.1 pick). Only
+    /// re-renders when the active state or the menu-bar appearance changes.
+    private func updateSessionIndicator() {
+        guard let button = statusItem?.button else { return }
+        let active = powerPolicy.isActive
+        let appearance = button.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) ?? .aqua
+        guard active != lastIndicatorActive || appearance != lastIndicatorAppearance else { return }
+        button.image = active ? sessionIndicatorImage(dark: appearance == .darkAqua) : plainHandImage()
+        lastIndicatorActive = active
+        lastIndicatorAppearance = appearance
     }
 
     func menuWillOpen(_ menu: NSMenu) {
         refreshConflictAlert()
+        refreshPowerMenu()
     }
 
     /// Startup flow v2 (add-onboarding-guide): first launch ever, launch without
@@ -255,6 +278,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    // MARK: Prevent Sleep menu actions
+
+    @objc private func powerStartIndefinite() {
+        powerApply(.start(clamshell: pendingClamshell, duration: nil))
+        pendingClamshell = false
+    }
+
+    @objc private func powerStartDuration(_ sender: NSMenuItem) {
+        powerApply(.start(clamshell: pendingClamshell, duration: TimeInterval(sender.tag) * 60))
+        pendingClamshell = false
+    }
+
+    @objc private func powerStopAction() {
+        powerApply(.stop)
+    }
+
+    @objc private func toggleClamshell(_ sender: NSMenuItem) {
+        pendingClamshell.toggle()
+        sender.state = pendingClamshell ? .on : .off
+    }
+
+    /// Refresh header/Stop/checkbox from the FSM (called on menu open).
+    private func refreshPowerMenu() {
+        let now = Date()
+        let header: String
+        if !powerPolicy.isActive {
+            header = "Off"
+        } else if let remaining = powerPolicy.remaining(now: now) {
+            header = "On — \(formatRemaining(remaining)) left"
+                + (powerPolicy.clamshell ? " · lid-closed ⚠" : "")
+        } else {
+            header = powerPolicy.clamshell ? "On — lid-closed ⚠" : "On (until stopped)"
+        }
+        powerHeaderItem?.title = header
+        powerStopItem?.isEnabled = powerPolicy.isActive
+        powerClamshellItem?.state = pendingClamshell ? .on : .off
+    }
+
+    /// "27 min" under 2 h; "2 h 5 min" (or "3 h") from 2 h up.
+    private func formatRemaining(_ t: TimeInterval) -> String {
+        let minutes = max(0, Int((t / 60).rounded(.up)))
+        guard minutes >= 120 else { return "\(minutes) min" }
+        let h = minutes / 60, m = minutes % 60
+        return m == 0 ? "\(h) h" : "\(h) h \(m) min"
+    }
+
     private func execute(_ command: TilingCommand) {
         if !windowActions.perform(command) {
             // Failed AX action: cheap revocation/permission re-check.
@@ -327,10 +396,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         // Same glyph family as the app icon (owner pick #6); auto-templates for
         // menu bar light/dark. The ⚠︎ title appears next to it when unpermitted.
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
-        item.button?.image = NSImage(systemSymbolName: "hand.pinch.fill",
-                                     accessibilityDescription: "Tiler")?
-            .withSymbolConfiguration(config)
+        item.button?.image = plainHandImage()
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
@@ -339,6 +405,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
         settingsMenuItem = settingsItem
+        menu.addItem(.separator())
+        menu.addItem(makePreventSleepMenu())   // power section, between primaries and Quit
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
             title: "Quit Tiler",
@@ -349,6 +417,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         item.menu = menu
         statusItem = item
+    }
+
+    /// "Prevent Sleep" submenu (power / app-shell spec). Header + Stop + clamshell
+    /// checkbox refresh in `menuWillOpen`.
+    private func makePreventSleepMenu() -> NSMenuItem {
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false       // Stop is enabled by session state, not target
+
+        let header = NSMenuItem(title: "Off", action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        submenu.addItem(header)
+        powerHeaderItem = header
+        submenu.addItem(.separator())
+
+        submenu.addItem(makeItem("On (until stopped)", #selector(powerStartIndefinite)))
+        let durations: [(String, Int)] = [
+            ("For 10 minutes", 10), ("For 30 minutes", 30), ("For 1 hour", 60),
+            ("For 2 hours", 120), ("For 5 hours", 300), ("For 10 hours", 600),
+            ("For 24 hours", 1440),
+        ]
+        for (title, minutes) in durations {
+            let dur = makeItem(title, #selector(powerStartDuration(_:)))
+            dur.tag = minutes
+            submenu.addItem(dur)
+        }
+        submenu.addItem(.separator())
+
+        let clamshell = makeItem("Prevent sleep with lid closed ⚠", #selector(toggleClamshell(_:)))
+        submenu.addItem(clamshell)
+        powerClamshellItem = clamshell
+        submenu.addItem(.separator())
+
+        let stop = makeItem("Stop", #selector(powerStopAction))
+        stop.isEnabled = false
+        submenu.addItem(stop)
+        powerStopItem = stop
+
+        let root = NSMenuItem(title: "Prevent Sleep", action: nil, keyEquivalent: "")
+        root.submenu = submenu
+        return root
+    }
+
+    /// The plain, template menu-bar glyph (adapts to light/dark automatically).
+    private func plainHandImage() -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        let image = NSImage(systemSymbolName: "hand.pinch.fill",
+                            accessibilityDescription: "Tiler")?
+            .withSymbolConfiguration(config)
+        image?.isTemplate = true
+        return image
+    }
+
+    /// Active-session glyph (gate 2.1 pick): the hand with a solid red disc + white
+    /// cup silhouette badge at its bottom-right. Non-template, so rendered for the
+    /// current appearance.
+    private func sessionIndicatorImage(dark: Bool) -> NSImage? {
+        let hand: Color = dark ? .white : .black
+        let badge = ZStack {
+            Circle().fill(Color(nsColor: .systemRed)).frame(width: 12, height: 12)
+            Image(systemName: "cup.and.saucer.fill").font(.system(size: 7)).foregroundStyle(.white)
+        }
+        let view = ZStack {
+            Image(systemName: "hand.pinch.fill").font(.system(size: 15)).foregroundStyle(hand)
+            badge.offset(x: 5, y: 5)
+        }
+        .frame(width: 22, height: 20)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        let image = renderer.nsImage
+        image?.isTemplate = false
+        return image
     }
 
     private func makeItem(_ title: String, _ action: Selector) -> NSMenuItem {
