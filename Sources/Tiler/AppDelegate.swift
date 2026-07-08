@@ -41,6 +41,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var powerClamshellItem: NSMenuItem?
     private weak var powerTopItem: NSMenuItem?         // prominent active-state row at the menu top
     private weak var powerTopSeparator: NSMenuItem?
+    private var powerStartItems: [NSMenuItem] = []      // indefinite (tag 0) + durations (tag = minutes)
+    private var activeMinutes: Int?                     // which start choice is running (for the ✓)
+    private var activeIsIndefinite = false
+    private var sessionStart: Date?                     // for the heartbeat elapsed field
+    private var heartbeatTicks = 0
     private var menuTick: DispatchSourceTimer?          // live countdown, only while the menu is open
     // Status indicator is re-rendered only when the active state or appearance changes.
     private var lastIndicatorActive: Bool?
@@ -250,8 +255,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let power = PowerSourceMonitor.read()
         lastOnBattery = power.onBattery
-        plog("launch — deepSleep=\(deepSleepActive) power=\(power.percent.map(String.init) ?? "-")% "
-             + "\(power.onBattery ? "battery" : "AC") floor=\(settings.batteryFloorPercent)")
+        plog("launch v\(AppDelegate.version) — deepSleep=\(deepSleepActive) "
+             + "power=\(power.percent.map(String.init) ?? "-")% \(power.onBattery ? "battery" : "AC") "
+             + "lid=\(SystemPower.lidClosed() ? "closed" : "open") floor=\(settings.batteryFloorPercent) "
+             + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
+        observeSystemPowerEvents()
+    }
+
+    /// Log system sleep/wake and screen sleep/wake — with the lid state — so a
+    /// lid-closed session's behaviour is visible in the diagnostic log.
+    private func observeSystemPowerEvents() {
+        let nc = NSWorkspace.shared.notificationCenter
+        let events: [(Notification.Name, String)] = [
+            (NSWorkspace.willSleepNotification, "system willSleep"),
+            (NSWorkspace.didWakeNotification, "system didWake"),
+            (NSWorkspace.screensDidSleepNotification, "screens didSleep"),
+            (NSWorkspace.screensDidWakeNotification, "screens didWake"),
+            (NSWorkspace.willPowerOffNotification, "willPowerOff"),
+        ]
+        for (name, tag) in events {
+            nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
+                        + "active=\(self.powerPolicy.isActive) held=\(self.awake?.heldSummary ?? "?")")
+                }
+            }
+        }
     }
 
     /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
@@ -277,7 +307,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// tick timer and the status glyph.
     func powerApply(_ command: PowerCommand) {
         logCommand(command)
+        if case let .start(_, duration) = command {
+            activeMinutes = duration.map { Int($0 / 60) }
+            activeIsIndefinite = (duration == nil)
+            sessionStart = Date()
+        }
         for effect in powerPolicy.handle(command, now: Date()) { perform(effect) }
+        if !powerPolicy.isActive {
+            activeMinutes = nil
+            activeIsIndefinite = false
+            sessionStart = nil
+            heartbeatTicks = 0
+        }
         refreshPowerTick()
         updateStatusGlyph()
     }
@@ -311,7 +352,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .acquire(spec):
             powerNotifier.requestAuthOnce()   // lazy, once, on first session start
             awake?.apply(spec)
-            plog("acquire display=\(spec.displayAwake) system=\(spec.systemSleepBlock)")
+            plog("acquire display=\(spec.displayAwake) system=\(spec.systemSleepBlock) held=\(awake?.heldSummary ?? "?")")
         case let .release(reason):
             awake?.apply(nil)
             plog("release \(reason.rawValue)")
@@ -340,7 +381,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let timer = DispatchSource.makeTimerSource(queue: .main)
             timer.schedule(deadline: .now() + 5, repeating: 5)
             timer.setEventHandler { [weak self] in
-                MainActor.assumeIsolated { self?.powerApply(.tick) }
+                MainActor.assumeIsolated { self?.onPowerTick() }
             }
             timer.resume()
             powerTick = timer
@@ -348,6 +389,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             timer.cancel()
             powerTick = nil
         }
+    }
+
+    /// The 5 s session tick: drive expiry, and every ~15 s (3 ticks) drop a heartbeat
+    /// so a lid-closed/idle stretch shows continuous liveness in the log — a gap means
+    /// the Mac actually slept (the spike's methodology, now built in).
+    private func onPowerTick() {
+        powerApply(.tick)
+        guard powerPolicy.isActive else { heartbeatTicks = 0; return }
+        heartbeatTicks += 1
+        if heartbeatTicks % 3 == 0 { logHeartbeat() }
+    }
+
+    private func logHeartbeat() {
+        let p = PowerSourceMonitor.read()
+        let elapsed = sessionStart.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        // File-only (no NSLog spam): dense enough to catch a sleep gap.
+        powerLog?.log("alive +\(elapsed)s power=\(p.percent.map(String.init) ?? "-")% "
+            + "\(p.onBattery ? "battery" : "AC") lid=\(SystemPower.lidClosed() ? "closed" : "open") "
+            + "held=\(awake?.heldSummary ?? "?")")
     }
 
     // MARK: Prevent Sleep menu actions
@@ -379,6 +439,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem?.title = active ? "On — \(state)" : "Off"
         powerStopItem?.isEnabled = active
         powerClamshellItem?.state = pendingClamshell ? .on : .off
+
+        // Mark the running start choice (until-stopped = tag 0, else duration minutes).
+        for item in powerStartItems {
+            let on = active && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
+            item.state = on ? .on : .off
+        }
 
         powerTopItem?.isHidden = !active
         powerTopSeparator?.isHidden = !active
@@ -506,8 +572,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.autoenablesItems = false     // we manage the top indicator + Stop enabled state
 
         // Prominent active-state row at the very top (hidden while inactive). Bold, with
-        // the red cup mark and a live countdown; refreshed in menuWillOpen / while open.
-        let topItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        // the red cup mark and a live countdown; clicking it stops the session.
+        let topItem = makeItem("", #selector(powerStopAction))
+        topItem.toolTip = "Click to stop Prevent Sleep"
         topItem.isHidden = true
         let cupConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
             .applying(.init(paletteColors: [.systemRed]))
@@ -551,7 +618,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem = header
         submenu.addItem(.separator())
 
-        submenu.addItem(makeItem("On (until stopped)", #selector(powerStartIndefinite)))
+        powerStartItems = []
+        let indefinite = makeItem("On (until stopped)", #selector(powerStartIndefinite))
+        indefinite.tag = 0
+        submenu.addItem(indefinite)
+        powerStartItems.append(indefinite)
         let durations: [(String, Int)] = [
             ("For 10 minutes", 10), ("For 30 minutes", 30), ("For 1 hour", 60),
             ("For 2 hours", 120), ("For 5 hours", 300), ("For 10 hours", 600),
@@ -561,6 +632,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let dur = makeItem(title, #selector(powerStartDuration(_:)))
             dur.tag = minutes
             submenu.addItem(dur)
+            powerStartItems.append(dur)
         }
         submenu.addItem(.separator())
 
@@ -635,7 +707,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         guideModel?.refreshConflicts()
         if guideWindow == nil, let model = guideModel {
-            guideWindow = AuxWindow(title: "About Tiler") { GuideView(model: model) }
+            guideWindow = AuxWindow(title: "About Tiler") { GuideView(model: model, scrollable: true) }
         }
         guideWindow?.show()
         NSLog("Tiler: guide window shown")

@@ -137,3 +137,13 @@
       → Extended acceptance plan (supersedes one-shot hands-on): owner enables
       logging, runs timed/floor/clamshell/Deep-Sleep over days, then the log is
       reviewed for anomalies. Gate 4.2 stays open until that review.
+- [x] 5.3 Top row click stops the session; submenu marks the running start choice
+      (✓ on until-stopped / the chosen duration). Spec app-shell updated.
+- [x] 5.4 Richer diagnostics (owner: "не скромничай"): ~15 s liveness heartbeat while
+      active (elapsed/power/lid/held — a gap = real sleep), system + screen sleep/wake
+      with lid state (`SystemPower.lidClosed()` via IORegistry `AppleClamshellState`),
+      held summary on acquire, richer launch line; size cap raised to ~5 MB × 3 backups
+      (~20 MB). Verified: launch/heartbeat lines carry lid state. Spec power updated.
+- [x] 5.5 About/Guide window: content wrapped in a scroll view capped at 640 h (fits
+      laptops) — render-shots still draws it full-height for the README; reference
+      sections carded for visual separation.

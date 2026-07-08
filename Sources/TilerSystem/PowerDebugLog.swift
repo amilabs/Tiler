@@ -1,16 +1,16 @@
 import Foundation
 
-/// Opt-in, low-overhead diagnostic log for power events (owner-driven multi-day runs).
-/// Deliberately un-paranoid: only discrete EVENTS are written (no polling loop), one
-/// concise line each, and the caller dedupes noisy sources. Bounded on disk — the file
-/// rotates to a single `.1` backup past ~512 KB, so the footprint stays under ~1 MB.
-/// Because writes happen only on real events, CPU cost is negligible.
+/// Opt-in diagnostic log for power events (owner-driven multi-day runs). Records
+/// discrete events plus a ~15 s liveness heartbeat while a session runs (so a sleep
+/// gap is visible). Bounded on disk: rotates through 3 backups past ~5 MB each, so the
+/// footprint stays under ~20 MB — plenty of headroom to leave on for days.
 ///
-/// Location: `~/Library/Logs/Tiler/power-debug.log`.
+/// Location: `~/Library/Logs/Tiler/power-debug.log` (+ `.1`/`.2`/`.3` backups).
 @MainActor public final class PowerDebugLog {
     public private(set) var isEnabled: Bool
     private let fileURL: URL
-    private let maxBytes = 512 * 1024
+    private let maxBytes = 5 * 1024 * 1024
+    private let backups = 3
     private let stamp: ISO8601DateFormatter
 
     public init(enabled: Bool) {
@@ -53,8 +53,13 @@ import Foundation
     private func rotateIfNeeded() {
         guard let size = (try? FileManager.default
             .attributesOfItem(atPath: fileURL.path)[.size]) as? Int, size > maxBytes else { return }
-        let backup = fileURL.deletingPathExtension().appendingPathExtension("1.log")
-        try? FileManager.default.removeItem(at: backup)
-        try? FileManager.default.moveItem(at: fileURL, to: backup)
+        let fm = FileManager.default
+        let base = fileURL.deletingPathExtension()   // …/power-debug
+        func backup(_ n: Int) -> URL { base.appendingPathExtension("\(n).log") }
+        try? fm.removeItem(at: backup(backups))       // drop the oldest
+        for n in stride(from: backups - 1, through: 1, by: -1) {
+            try? fm.moveItem(at: backup(n), to: backup(n + 1))
+        }
+        try? fm.moveItem(at: fileURL, to: backup(1))
     }
 }

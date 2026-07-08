@@ -139,14 +139,17 @@ with neither, system defaults apply. Help SHALL document this order.
 #### Requirement: Diagnostic logging
 
 Settings → Power SHALL offer an opt-in "Debug logging" toggle (default off) that
-records discrete power events (session start/stop/expiry/floor-stop, assertion
-acquire/release, clamshell arm/disarm, Deep Sleep enable/disable, source flips, and
-launch reconciliation) to `~/Library/Logs/Tiler/power-debug.log`. Logging SHALL be
-event-driven only (no polling), deduped for noisy sources, and bounded on disk
-(rotate past ~512 KB to a single backup, ≤ ~1 MB total) so it is safe to leave on for
-days without material CPU or disk cost. A "Reveal Log" affordance SHALL open the file
-in Finder.
+records power events to `~/Library/Logs/Tiler/power-debug.log`: discrete events
+(session start/stop/expiry/floor-stop, assertion acquire/release with held summary,
+clamshell arm/disarm, Deep Sleep enable/disable, deduped source changes, launch
+reconciliation), system sleep/wake and screen sleep/wake with the current lid state,
+and — while a session runs — a ~15 s liveness heartbeat (elapsed, power, lid, held
+assertions) so a real sleep shows as a heartbeat gap. Logging SHALL be event/heartbeat
+driven (no busy polling) and bounded on disk (rotate through 3 backups past ~5 MB each,
+≤ ~20 MB total) so it is safe to leave on for days. A "Reveal Log" affordance SHALL
+open the file in Finder.
 
-##### Scenario: Logging a session over a multi-day run
-- WHEN debug logging is on and the user runs timed and lid-closed sessions over days
-- THEN the log holds one concise timestamped line per event and never exceeds ~1 MB
+##### Scenario: Lid-closed session over a multi-day run
+- WHEN debug logging is on and a lid-closed session runs with the lid shut for 20 min
+- THEN the log shows continuous ~15 s heartbeats with `lid=closed` across that span
+  (proving the Mac stayed awake), and total size stays well under the ~20 MB bound
