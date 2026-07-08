@@ -387,7 +387,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// reproducible on every release). Window-chrome-less; a window-background
     /// wrapper keeps them looking like real screenshots.
     private func renderShots(to directory: String) {
-        guard let engine else { return }
         // Deterministic light appearance for the README regardless of system theme.
         NSApp.appearance = NSAppearance(named: .aqua)
         let dir = URL(fileURLWithPath: directory)
@@ -414,9 +413,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         write("guide", GuideView(model: guideModel))
         let settingsModel = SettingsModel(store: settings, accessibilityGranted: true)
         write("settings", SettingsView(model: settingsModel))
-        let calibrationModel = CalibrationModel(engine: engine) { _ in }
-        write("calibration", CalibrationView(model: calibrationModel))
-        calibrationModel.finish(apply: false)
+        // Power UI mockups (add-power-control gate 2.1) — need no live engine.
+        write("power-menu", PowerMenuMockView())
+        write("power-settings", PowerSettingsMockView())
+        // Calibration preview needs the live gesture engine; skip it when there is no
+        // trackpad (headless render still produces the window/power shots).
+        if let engine {
+            let calibrationModel = CalibrationModel(engine: engine) { _ in }
+            write("calibration", CalibrationView(model: calibrationModel))
+            calibrationModel.finish(apply: false)
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             NSApp.terminate(nil)

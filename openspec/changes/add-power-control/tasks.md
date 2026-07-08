@@ -58,6 +58,10 @@
 - [ ] 2.1 [USER GATE] Rendered mockups via `--render-shots`: menu Power section,
       Settings Power tab, status-glyph active state → owner sign-off on
       naming/layout/glyph before wiring.
+      → 2026-07-08 mockups rendered (`PowerMenuMockView`,
+      `power-menu.png`/`power-settings.png`), posted to owner. AWAITING SIGN-OFF
+      (naming/layout + status-indicator variant A vs B). Do not wire 2.2/2.3
+      until the owner picks; record picks here + in design.md then check this box.
 - [ ] 2.2 Menu: Keep Awake submenu (durations, lid-closed ⚠ option resetting per
       session, Stop, remaining-time header) refreshed in `menuWillOpen`; status item
       session state.
