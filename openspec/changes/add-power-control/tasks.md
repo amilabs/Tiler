@@ -152,3 +152,8 @@
       fits without scroll; (b) top-row click now shows a Stop/Cancel confirm (submenu
       Stop stays direct); (c) log now captures screen lock/unlock (distributed
       notifications, incl. ⌃A) with lid state. Specs app-shell/power updated.
+- [x] 5.7 Round-4: 450 still scrolled (the `.frame(height:)` includes the ~40px tab
+      bar, leaving the Form ~410 vs ~437 needed) → 520. About's overlay scrollbar was
+      invisible until scrolled (`.scrollIndicators(.visible)` doesn't force it on
+      macOS) → `AuxWindow` now flashes the scrollers on open so the scroll advertises
+      itself. Top-row confirm verified by owner.

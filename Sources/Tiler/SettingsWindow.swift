@@ -127,7 +127,7 @@ struct SettingsView: View {
         }
         // Sized so the tallest tab (Power: three sections incl. Diagnostics) fits
         // without the Form's internal scroll (no-scroll rule).
-        .frame(width: 460, height: 450)
+        .frame(width: 460, height: 520)
         .padding(12)
     }
 

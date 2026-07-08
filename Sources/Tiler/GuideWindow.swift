@@ -522,6 +522,16 @@ final class AuxWindow<Content: View> {
             }
         }
         window?.makeKeyAndOrderFront(nil)
+        // macOS overlay scrollbars are invisible until you scroll; flash them once on
+        // open so a scrollable window (the Guide) advertises that there is more below.
+        DispatchQueue.main.async { [weak self] in
+            if let content = self?.window?.contentView { self?.flashScrollers(in: content) }
+        }
+    }
+
+    private func flashScrollers(in view: NSView) {
+        (view as? NSScrollView)?.flashScrollers()
+        for subview in view.subviews { flashScrollers(in: subview) }
     }
 
     func close() {
