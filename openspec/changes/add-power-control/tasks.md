@@ -30,8 +30,10 @@
       replacement, battery floor on-battery-only, stop reasons, no auto-restart.
       → DONE 2026-07-08: `Sources/TilerCore/PowerPolicy.swift` + 25 tests
       (`PowerPolicyTests`), all green; every semantics bullet covered.
-- [ ] 1.2 SettingsStore: `keepDisplayAwake` / `batteryFloorPercent` /
+- [x] 1.2 SettingsStore: `keepDisplayAwake` / `batteryFloorPercent` /
       `deepSleepOnBattery` / `powerSnapshot` + integration tests.
+      → DONE 2026-07-08: 4 keys added (didSet/onChange; powerSnapshot is
+      bookkeeping-only, no onChange), 5 round-trip/notify tests green.
 - [ ] 1.3 `AwakeController` (assertion lifecycle incl. display hold + clamshell spec)
       + `PowerSourceMonitor` (IOPS events); AppDelegate wiring; NSLog state lines.
 - [ ] 1.4 UserNotifications: floor auto-stop banner (lazy permission request).

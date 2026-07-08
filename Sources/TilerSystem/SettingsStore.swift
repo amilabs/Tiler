@@ -10,6 +10,10 @@ public final class SettingsStore {
         static let windowHotkeys = "windowHotkeysEnabled"
         static let utilityHotkeys = "utilityHotkeysEnabled"
         static let tunables = "tunablesOverride"
+        static let keepDisplayAwake = "keepDisplayAwake"
+        static let batteryFloorPercent = "batteryFloorPercent"
+        static let deepSleepOnBattery = "deepSleepOnBattery"
+        static let powerSnapshot = "powerSnapshot"
     }
 
     public var onChange: ((SettingsStore) -> Void)?
@@ -70,6 +74,51 @@ public final class SettingsStore {
         tunablesOverride ?? .default
     }
 
+    // MARK: - Power (add-power-control)
+
+    /// Keep Awake sessions hold the display awake too. Default off (system may sleep
+    /// the display while staying awake).
+    public var keepDisplayAwake: Bool {
+        didSet {
+            guard keepDisplayAwake != oldValue else { return }
+            defaults.set(keepDisplayAwake, forKey: Key.keepDisplayAwake)
+            onChange?(self)
+        }
+    }
+
+    /// Auto-stop floor for an active session on battery: 0 = off, else 30/20/10.
+    public var batteryFloorPercent: Int {
+        didSet {
+            guard batteryFloorPercent != oldValue else { return }
+            defaults.set(batteryFloorPercent, forKey: Key.batteryFloorPercent)
+            onChange?(self)
+        }
+    }
+
+    /// Stored *intent* for the battery-side Deep Sleep profile. Reconciled against
+    /// actual `pmset -g custom` at launch (reality wins), so this may be corrected
+    /// without a user action.
+    public var deepSleepOnBattery: Bool {
+        didSet {
+            guard deepSleepOnBattery != oldValue else { return }
+            defaults.set(deepSleepOnBattery, forKey: Key.deepSleepOnBattery)
+            onChange?(self)
+        }
+    }
+
+    /// Snapshot of the pmset keys Deep Sleep overwrote, for verbatim restore.
+    /// Bookkeeping only: intentionally does NOT fire onChange (like hasSeenGuide).
+    public var powerSnapshot: [String: String]? {
+        didSet {
+            guard powerSnapshot != oldValue else { return }
+            if let value = powerSnapshot, let data = try? JSONEncoder().encode(value) {
+                defaults.set(data, forKey: Key.powerSnapshot)
+            } else {
+                defaults.removeObject(forKey: Key.powerSnapshot)
+            }
+        }
+    }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         gesturesEnabled = defaults.object(forKey: Key.gestures) as? Bool ?? true
@@ -78,6 +127,12 @@ public final class SettingsStore {
         hasSeenGuide = defaults.object(forKey: "hasSeenGuide") as? Bool ?? false
         if let data = defaults.data(forKey: Key.tunables) {
             tunablesOverride = try? JSONDecoder().decode(Tunables.self, from: data)
+        }
+        keepDisplayAwake = defaults.object(forKey: Key.keepDisplayAwake) as? Bool ?? false
+        batteryFloorPercent = defaults.object(forKey: Key.batteryFloorPercent) as? Int ?? 20
+        deepSleepOnBattery = defaults.object(forKey: Key.deepSleepOnBattery) as? Bool ?? false
+        if let data = defaults.data(forKey: Key.powerSnapshot) {
+            powerSnapshot = try? JSONDecoder().decode([String: String].self, from: data)
         }
     }
 }

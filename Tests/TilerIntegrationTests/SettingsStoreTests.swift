@@ -88,4 +88,59 @@ import TilerCore
         store.tunablesOverride = nil
         #expect(count == 2)
     }
+
+    // MARK: power keys (add-power-control)
+
+    @Test func powerKeysDefault() {
+        let store = SettingsStore(defaults: freshDefaults())
+        #expect(!store.keepDisplayAwake)
+        #expect(store.batteryFloorPercent == 20)
+        #expect(!store.deepSleepOnBattery)
+        #expect(store.powerSnapshot == nil)
+    }
+
+    @Test func powerKeysPersistAcrossInstances() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        store.keepDisplayAwake = true
+        store.batteryFloorPercent = 10
+        store.deepSleepOnBattery = true
+        store.powerSnapshot = ["hibernatemode": "3", "powernap": "1"]
+
+        let reloaded = SettingsStore(defaults: defaults)
+        #expect(reloaded.keepDisplayAwake)
+        #expect(reloaded.batteryFloorPercent == 10)
+        #expect(reloaded.deepSleepOnBattery)
+        #expect(reloaded.powerSnapshot == ["hibernatemode": "3", "powernap": "1"])
+    }
+
+    @Test func powerSnapshotClears() {
+        let defaults = freshDefaults()
+        let store = SettingsStore(defaults: defaults)
+        store.powerSnapshot = ["hibernatemode": "25"]
+        #expect(SettingsStore(defaults: defaults).powerSnapshot == ["hibernatemode": "25"])
+        store.powerSnapshot = nil
+        #expect(SettingsStore(defaults: defaults).powerSnapshot == nil)
+    }
+
+    @Test func powerTogglesNotifyExceptSnapshot() {
+        let store = SettingsStore(defaults: freshDefaults())
+        var count = 0
+        store.onChange = { _ in count += 1 }
+        store.keepDisplayAwake = true       // notify
+        store.batteryFloorPercent = 30      // notify
+        store.deepSleepOnBattery = true     // notify
+        store.powerSnapshot = ["a": "b"]    // bookkeeping only — no notify
+        #expect(count == 3)
+    }
+
+    @Test func powerSettingSameValueDoesNotNotify() {
+        let store = SettingsStore(defaults: freshDefaults())
+        var count = 0
+        store.onChange = { _ in count += 1 }
+        store.keepDisplayAwake = false      // already false
+        store.batteryFloorPercent = 20      // already 20
+        store.deepSleepOnBattery = false    // already false
+        #expect(count == 0)
+    }
 }
