@@ -124,31 +124,39 @@ struct PowerMenuMockView: View {
 
 // MARK: - Status-item indicator variants (owner feedback: recolor/encircle, no 2nd icon)
 
-/// Owner direction (gate 2.1, round 2): don't add a second icon — when Keep Awake is
-/// active, recolor the existing status glyph red, optionally encircling the (shrunk)
-/// icon with a contour coffee-cup / ring. Several variants on both light and dark
-/// menu bars (legibility matters).
+/// Owner direction (gate 2.1, round 3): keep the existing glyph MONOCHROME; overlay a
+/// red mark when active. Two families: a red coffee cup pushed onto the hand
+/// (up-left, ~⅓ larger), and a red countdown timer over the icon (digits or an
+/// hourglass). Several variants on light and dark menu bars.
 struct PowerIndicatorMockView: View {
     private let red = Color(nsColor: .systemRed)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Индикатор активной сессии — варианты (иконка hand.pinch.fill)")
+            Text("Индикатор активной сессии — раунд 3 (иконка нецветная + красный оверлей)")
                 .font(.system(size: 13, weight: .semibold))
             Text("столбцы: светлый бар · тёмный бар")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
 
-            row("Сейчас — неактивно (шаблон)") { pinch(.primary) }
+            row("Сейчас — неактивно") { pinch(.primary) }
             Divider()
-            row("1 · Красная заливка") { pinch(red) }
-            row("2 · Красная, крупнее+жирнее") { pinch(red, size: 17, weight: .bold) }
-            row("3 · Иконка в контурном кольце") { ringed }
-            row("4 · Контур чашки вокруг иконки") { cupAround }
-            row("5 · Иконка + мини-бейдж чашки") { badged }
+            group("Чашка поверх руки")
+            row("A · чашка +⅓, сдвиг влево-вверх") { cupOnHand(size: 11, dx: -4, dy: -4) }
+            row("B · чашка крупнее/выше-левее") { cupOnHand(size: 13, dx: -5, dy: -6) }
+            Divider()
+            group("Таймер отсчёта поверх иконки")
+            row("C · красные цифры на ладони") { digitsOver }
+            row("D · иконка + цифры справа") { digitsRight }
+            row("E · песочные часы поверх") { hourglassOver }
+            row("F · песочные часы + цифры") { hourglassRight }
         }
         .padding(24)
-        .frame(width: 520)
+        .frame(width: 540)
         .background(.white)
+    }
+
+    private func group(_ s: String) -> some View {
+        Text(s).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
     }
 
     private func row<G: View>(_ label: String, @ViewBuilder _ glyph: () -> G) -> some View {
@@ -162,7 +170,7 @@ struct PowerIndicatorMockView: View {
     private func bar<G: View>(dark: Bool, @ViewBuilder _ glyph: () -> G) -> some View {
         HStack { Spacer(); glyph() }
             .padding(.horizontal, 12)
-            .frame(width: 96, height: 28)
+            .frame(width: 100, height: 28)
             .background(RoundedRectangle(cornerRadius: 6)
                 .fill(dark ? Color(white: 0.16) : Color(white: 0.95)))
             .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.black.opacity(0.08)))
@@ -175,31 +183,50 @@ struct PowerIndicatorMockView: View {
             .foregroundStyle(color)
     }
 
-    private var ringed: some View {
+    // Monochrome hand + red cup pushed onto it (up-left), cup ~⅓ larger than the badge.
+    private func cupOnHand(size: CGFloat, dx: CGFloat, dy: CGFloat) -> some View {
         ZStack {
-            Circle().strokeBorder(red, lineWidth: 1.6).frame(width: 22, height: 22)
-            pinch(red, size: 11)
-        }
-    }
-
-    private var cupAround: some View {
-        ZStack {
-            Image(systemName: "cup.and.saucer")
-                .font(.system(size: 22))
+            pinch(.primary, size: 16)
+            Image(systemName: "cup.and.saucer.fill")
+                .font(.system(size: size))
                 .foregroundStyle(red)
-            pinch(red, size: 9)
-                .offset(y: -1)
+                .offset(x: dx, y: dy)
         }
     }
 
-    private var badged: some View {
-        pinch(red)
-            .overlay(alignment: .bottomTrailing) {
-                Image(systemName: "cup.and.saucer.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(red)
-                    .offset(x: 5, y: 3)
-            }
+    private var digitsOver: some View {
+        ZStack {
+            pinch(.primary, size: 16)
+            Text("27")
+                .font(.system(size: 8, weight: .heavy, design: .rounded))
+                .foregroundStyle(red)
+                .offset(y: 3)
+        }
+    }
+
+    private var digitsRight: some View {
+        HStack(spacing: 2) {
+            pinch(.primary, size: 15)
+            Text("27m").font(.system(size: 11, weight: .semibold)).foregroundStyle(red)
+        }
+    }
+
+    private var hourglassOver: some View {
+        ZStack {
+            pinch(.primary, size: 16)
+            Image(systemName: "hourglass")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(red)
+                .offset(x: 4, y: 3)
+        }
+    }
+
+    private var hourglassRight: some View {
+        HStack(spacing: 2) {
+            pinch(.primary, size: 15)
+            Image(systemName: "hourglass").font(.system(size: 11)).foregroundStyle(red)
+            Text("27m").font(.system(size: 11, weight: .semibold)).foregroundStyle(red)
+        }
     }
 }
 
