@@ -37,4 +37,16 @@ public enum SystemPower {
                     || line.contains("PreventUserIdleDisplaySleep"))
         }
     }
+
+    /// Put the Mac to sleep now (no root; via System Events — first use prompts for the
+    /// Automation permission). Used when a lid-closed timed session ends: macOS won't
+    /// re-trigger lid-close sleep for an already-closed lid, so Tiler asks explicitly.
+    public static func sleepNow() {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", "tell application \"System Events\" to sleep"]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        try? process.run()   // do not wait — the machine is about to sleep
+    }
 }

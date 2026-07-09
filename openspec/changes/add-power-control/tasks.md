@@ -306,3 +306,20 @@
       holders. So the post-expiry period is continuously visible: ticks continuing =
       awake (+ who holds it), a gap = it slept. This will resolve whether the residual
       not-sleeping is Tiler's ~10 s restore window or a genuine external holder.
+      → RESOLVED 2026-07-09 by the owner's isolation test: a fresh lid-close (no session)
+      SLEPT cleanly (`system willSleep` + a 22-min gap in the 30 s ticks + battery
+      51%→51% no drain + `didWake`; owner misread the instant lid-open wake as "never
+      slept", CPU graph confirms). The audio assertion does NOT hold a closed lid. The
+      real issue is only the clamshell-EXPIRY case (lid already closed) → handled by 6.4.
+- [x] 6.4 Auto-sleep on lid-closed clamshell end (owner-approved). When a clamshell
+      session ends by timer expiry or battery floor (not user Stop) with the lid still
+      closed, Tiler sleeps the Mac once the watchdog restored the flag (poll
+      disablesleep→0, re-check lid still closed, then `SystemPower.sleepNow()` =
+      `osascript tell System Events to sleep`, no root). Bails if the user opens the lid.
+      CAVEAT: first use prompts for the Automation (System Events) permission.
+- [x] 6.5 Window-action logging (owner: a Telegram window moved to a non-Tiler-looking
+      position on monitor reconnect — does the log catch it?). Confirmed Tiler has NO
+      display-change handler (never repositions on screen change). `execute()` is the
+      single chokepoint for every window move (gesture + hotkey); it now logs
+      `window <cmd> src=gesture|hotkey ok=<b>` — a move with no such line is provably not
+      Tiler. Spec power diagnostic-logging updated.

@@ -244,7 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setUpHotkeys() {
         let controller = HotkeyController()
         controller.handler = { [weak self] command in
-            self?.execute(command)
+            self?.execute(command, source: "hotkey")
         }
         controller.apply(windowTiling: settings.windowHotkeysEnabled,
                          utility: settings.utilityHotkeysEnabled)
@@ -419,15 +419,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             activeIsIndefinite = (duration == nil)
             sessionStart = Date()
         }
-        for effect in powerPolicy.handle(command, now: Date()) { perform(effect) }
+        var endedClamshell = false
+        var endReason: KeepAwakeStopReason?
+        for effect in powerPolicy.handle(command, now: Date()) {
+            if case .disarmClamshell = effect { endedClamshell = true }
+            if case let .release(reason) = effect { endReason = reason }
+            perform(effect)
+        }
         if !powerPolicy.isActive {
             activeMinutes = nil
             activeIsIndefinite = false
             sessionStart = nil
             heartbeatTicks = 0
         }
+        // A lid-closed session that ended on its own (timer/floor, not a user Stop)
+        // won't re-trigger lid-close sleep — put the Mac to sleep as intended.
+        if endedClamshell, endReason == .expired || endReason == .batteryFloor,
+           SystemPower.lidClosed() {
+            plog("clamshell ended (\(endReason?.rawValue ?? "?")) with lid closed → will sleep once restored")
+            sleepAfterClamshellRestore(tries: 0)
+        }
         refreshPowerTick()
         updateStatusGlyph()
+    }
+
+    /// After a lid-closed clamshell timer/floor end, the disablesleep watchdog restores
+    /// the flag within its poll; once it's off (so the sleep isn't blocked) and the lid
+    /// is still closed, ask the Mac to sleep. Bails if the user opens the lid.
+    private func sleepAfterClamshellRestore(tries: Int) {
+        guard SystemPower.lidClosed() else {
+            plog("auto-sleep cancelled: lid opened")
+            return
+        }
+        if !DisableSleepGovernor.sleepDisabledNow() {
+            plog("auto-sleep now (clamshell ended, lid closed)")
+            SystemPower.sleepNow()
+        } else if tries < 8 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.sleepAfterClamshellRestore(tries: tries + 1)
+            }
+        } else {
+            plog("auto-sleep skipped: disablesleep still set after ~16 s")
+        }
     }
 
     /// Concise, deduped event lines for the debug log (ticks are never logged; power
@@ -679,8 +712,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return m == 0 ? "\(h) h" : "\(h) h \(m) min"
     }
 
-    private func execute(_ command: TilingCommand) {
-        if !windowActions.perform(command) {
+    private func execute(_ command: TilingCommand, source: String) {
+        let ok = windowActions.perform(command)
+        // Every Tiler window move goes through here (gesture OR hotkey) — so a window
+        // that moves with NO such line is provably not Tiler.
+        powerLog?.log("window \(command) src=\(source) ok=\(ok)")
+        if !ok {
             // Failed AX action: cheap revocation/permission re-check.
             permissionMonitor?.noteActionFailed()
         }
@@ -720,7 +757,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
-        powerLog?.log("gesture EXECUTE dir=\(action.direction.rawValue) third=\(action.thirdWidth) next=\(action.nextDisplay)")
         let command: TilingCommand
         switch action.direction {
         case .left:
@@ -734,7 +770,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .up:
             command = action.thirdWidth ? .centerThird : .maximize
         }
-        execute(command)
+        execute(command, source: "gesture")
     }
 
     private func makeRecorderIfRequested() -> TraceRecorder? {

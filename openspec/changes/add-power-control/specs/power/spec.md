@@ -73,7 +73,11 @@ any case. Cancelling the auth dialog at start SHALL leave no session running. Th
 session SHALL additionally hold the public assertions (idle; plus plain
 `PreventSystemSleep`, which alone suffices on AC). Choosing a lid-closed start is itself
 the per-session opt-in (no persistent mode to leave on) and its UI copy SHALL warn about
-heat (never run closed in a bag). The battery floor applies unchanged. As a rare
+heat (never run closed in a bag). The battery floor applies unchanged. When a lid-closed
+session ends on its own (timer expiry or battery floor — NOT a user Stop) while the lid
+is still closed, Tiler SHALL put the Mac to sleep once the flag is restored: macOS does
+not re-trigger lid-close sleep for an already-closed lid, so "keep awake N min with the
+lid closed" would otherwise leave it awake until the lid is cycled. As a rare
 backstop (watchdog process itself killed), Tiler SHALL self-check at launch and on wake:
 a leftover `SleepDisabled 1` with no live session is offered for a one-click restore via
 a warning alert carrying the heat/bag graphic.
@@ -149,7 +153,9 @@ the ⌃A hotkey, via distributed notifications) with the current lid state,
 and — while a session runs — a ~15 s liveness heartbeat (elapsed, power, lid, held
 assertions) so a real sleep shows as a heartbeat gap. For diagnosis it SHALL also log
 every confirmed gesture decision with its evidence (direction, movement, speed, finger
-count, modifiers — so a false positive is caught with data, not guesswork) and, at
+count, modifiers — so a false positive is caught with data, not guesswork), every
+executed window move with its source (gesture / hotkey — so a window that moves with no
+such line is provably not Tiler), and, at
 launch/wake/sleep transitions and after a session release, the full set of
 sleep-blocking assertion holders (`pmset -g assertions`, incl. non-Tiler holders) so
 "why won't it sleep" needs no manual command. Logging SHALL be event/heartbeat driven
