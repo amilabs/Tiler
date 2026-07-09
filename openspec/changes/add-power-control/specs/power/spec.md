@@ -140,14 +140,20 @@ with neither, system defaults apply. Help SHALL document this order.
 #### Requirement: Diagnostic logging
 
 Settings → Power SHALL offer an opt-in "Debug logging" toggle (default off) that
-records power events to `~/Library/Logs/Tiler/power-debug.log`: discrete events
+records power events (and, for diagnosis, gesture decisions and sleep-blocker
+assertions) to `~/Library/Logs/Tiler/power-debug.log`: discrete events
 (session start/stop/expiry/floor-stop, assertion acquire/release with held summary,
 clamshell arm/disarm, Deep Sleep enable/disable, deduped source changes, launch
 reconciliation), system sleep/wake, screen sleep/wake, and screen lock/unlock (incl.
 the ⌃A hotkey, via distributed notifications) with the current lid state,
 and — while a session runs — a ~15 s liveness heartbeat (elapsed, power, lid, held
-assertions) so a real sleep shows as a heartbeat gap. Logging SHALL be event/heartbeat
-driven (no busy polling) and bounded on disk (rotate through 3 backups past ~5 MB each,
+assertions) so a real sleep shows as a heartbeat gap. For diagnosis it SHALL also log
+every confirmed gesture decision with its evidence (direction, movement, speed, finger
+count, modifiers — so a false positive is caught with data, not guesswork) and, at
+launch/wake/sleep transitions and after a session release, the full set of
+sleep-blocking assertion holders (`pmset -g assertions`, incl. non-Tiler holders) so
+"why won't it sleep" needs no manual command. Logging SHALL be event/heartbeat driven
+(no busy polling) and bounded on disk (rotate through 3 backups past ~5 MB each,
 ≤ ~20 MB total) so it is safe to leave on for days. A "Reveal Log" affordance SHALL
 open the file in Finder.
 

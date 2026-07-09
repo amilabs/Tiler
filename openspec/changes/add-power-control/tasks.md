@@ -279,3 +279,23 @@
       NOTE: the gate-4.2 "expiry with lid closed" case was NOT actually exercised (the
       owner relaunched the app ~1.5 min into a 10-min clamshell); the relaunch did prove
       the crash-safe promptless restore (`sleepDisabled=false` at the next launch).
+      → 2026-07-09 the owner then DID run the expiry (10-min clamshell, lid closed,
+      deadline 17:25:34): Tiler correctly did `clamshell disarm` + `release expired` at
+      the deadline, no dialog, flag→0. The Mac did NOT sleep afterward, but that is
+      external to Tiler (coreaudiod holds `PreventUserIdleSystemSleep` ~7 h + the owner's
+      "prevent sleep while working" setting) — Tiler had released everything.
+
+## 6. Diagnostics deepening (owner, 2026-07-09)
+- [ ] 6.1 [RELEASE BLOCKER — false gesture positive] Owner saw a window move
+      (left → ~top-third) with no gesture and no ⇧. Per CLAUDE.md a false positive is a
+      release blocker. First step (owner's ask): add gesture logging to diagnose. DONE:
+      `GestureRecognizer.diagnostic` opt-in side-channel emits one line per CONFIRMED
+      decision (dir, action, dx/dy, progress, dt, speed, fingers, cmd, shift) — keeps
+      the pure logic, zero cost when nil; threaded via `GestureEngine.onDiagnostic` →
+      AppDelegate → debug log; `route` also logs the executed command. 3 TDD tests.
+      STILL OPEN: reproduce with the log and fix/tune (do NOT release until resolved).
+- [x] 6.2 Auto-log all sleep blockers (owner: less manual `pmset`): `SystemPower
+      .sleepBlockers()` (parses `pmset -g assertions` holder lines) logged at
+      launch/wake/sleep-wake/screen-sleep/after-release with the `SleepDisabled` flag —
+      so "why won't it sleep" is captured automatically. Verified: launch line shows
+      powerd/runningboardd/coreaudiod holders. Spec power diagnostic-logging updated.

@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.reconcileStuckSleepDisabled()   // clear a leftover clamshell flag on wake
+                self?.logSleepBlockers("wake")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     self?.restartTouchStreamAfterWake()
                 }
@@ -287,6 +288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
              + "lid=\(SystemPower.lidClosed() ? "closed" : "open") floor=\(settings.batteryFloorPercent) "
              + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
         observeSystemPowerEvents()
+        logSleepBlockers("launch")
     }
 
     /// Log system sleep/wake and screen sleep/wake — with the lid state — so a
@@ -318,6 +320,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func logSystemEvent(_ tag: String) {
         plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
             + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
+        // On any sleep/wake transition, capture who is (still) blocking sleep.
+        if tag.contains("Sleep") || tag.contains("didWake") { logSleepBlockers(tag) }
     }
 
     /// Backstop for a leftover clamshell `disablesleep` flag (called at launch and on
@@ -429,6 +433,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .release(reason):
             awake?.apply(nil)
             plog("release \(reason.rawValue)")
+            logSleepBlockers("after release")
         case let .armClamshell(deadline):
             plog("clamshell arm deadline=\(deadline.map { ISO8601DateFormatter().string(from: $0) } ?? "none")")
             governor?.arm(deadline: deadline) { [weak self] in
@@ -469,6 +474,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard powerPolicy.isActive else { heartbeatTicks = 0; return }
         heartbeatTicks += 1
         if heartbeatTicks % 3 == 0 { logHeartbeat() }
+    }
+
+    /// Dump every sleep-blocking assertion holder to the debug log (file only) so the
+    /// "why didn't it sleep" question needs no manual `pmset -g assertions`.
+    private func logSleepBlockers(_ context: String) {
+        guard powerLog?.isEnabled == true else { return }   // skip the subprocess when off
+        let blockers = SystemPower.sleepBlockers()
+        let flag = DisableSleepGovernor.sleepDisabledNow()
+        if blockers.isEmpty {
+            powerLog?.log("blockers[\(context)] sleepDisabled=\(flag): none")
+        } else {
+            powerLog?.log("blockers[\(context)] sleepDisabled=\(flag):")
+            for b in blockers { powerLog?.log("  · \(b)") }
+        }
     }
 
     private func logHeartbeat() {
@@ -642,7 +661,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func startTouchPipeline() {
         let engine = GestureEngine(
             recorder: makeRecorderIfRequested(),
-            tunables: settings.effectiveTunables
+            tunables: settings.effectiveTunables,
+            onDiagnostic: { [weak self] line in       // gesture-decision logging (debug log)
+                Task { @MainActor in self?.powerLog?.log("gesture \(line)") }
+            }
         ) { [weak self] action in
             Task { @MainActor in
                 self?.route(action)
@@ -663,8 +685,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func route(_ action: GestureAction) {
-        guard settings.gesturesEnabled, !calibrationActive else { return }
+        guard settings.gesturesEnabled, !calibrationActive else {
+            powerLog?.log("gesture ignored (gesturesEnabled=\(settings.gesturesEnabled) calibrating=\(calibrationActive))")
+            return
+        }
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
+        powerLog?.log("gesture EXECUTE dir=\(action.direction.rawValue) third=\(action.thirdWidth) next=\(action.nextDisplay)")
         let command: TilingCommand
         switch action.direction {
         case .left:

@@ -15,4 +15,26 @@ public enum SystemPower {
                                                     kCFAllocatorDefault, 0)
         return (value?.takeRetainedValue() as? Bool) ?? false
     }
+
+    /// Every process-held sleep-blocking assertion (`pmset -g assertions`) as trimmed
+    /// one-line summaries — so the diagnostic log shows exactly what is keeping the Mac
+    /// awake (incl. non-Tiler holders like coreaudiod), no manual `pmset` needed.
+    public static func sleepBlockers() -> [String] {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.arguments = ["-g", "assertions"]
+        let out = Pipe()
+        process.standardOutput = out
+        process.standardError = Pipe()
+        do { try process.run() } catch { return [] }
+        let data = out.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        let text = String(decoding: data, as: UTF8.self)
+        return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { line in
+            line.hasPrefix("pid ")
+                && (line.contains("PreventUserIdleSystemSleep")
+                    || line.contains("PreventSystemSleep")
+                    || line.contains("PreventUserIdleDisplaySleep"))
+        }
+    }
 }

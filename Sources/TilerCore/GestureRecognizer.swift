@@ -21,6 +21,11 @@ public final class GestureRecognizer {
     /// Staged by updateTunables; applied only from a clean idle pad (never mid-gesture).
     private var pendingTunables: Tunables?
 
+    /// Opt-in diagnostic side-channel (nil = zero cost): emits a concise line at every
+    /// confirmed decision so a false positive can be caught with its evidence (movement,
+    /// speed, finger count, modifiers). Does NOT affect recognition.
+    public var diagnostic: ((String) -> Void)?
+
     // Phase and per-session bookkeeping. A "session" spans from the first contact
     // after a clean idle pad to full lift-off.
     private var phase: Phase = .idle
@@ -213,18 +218,34 @@ public final class GestureRecognizer {
 
         // Confirmed: exactly one decision per physical gesture.
         lockoutNow()
+        let action: GestureAction?
         switch direction {
         case .down:
-            return nil // deliberately not implemented
+            action = nil // deliberately not implemented
         case .up:
             // ⇧+up = center-third (the double-press ↑ analog); ⌘+up stays silent.
-            return cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false,
-                                                 thirdWidth: shiftHeld)
+            action = cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false,
+                                                   thirdWidth: shiftHeld)
         case .left:
-            return GestureAction(direction: .left, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
+            action = GestureAction(direction: .left, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         case .right:
-            return GestureAction(direction: .right, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
+            action = GestureAction(direction: .right, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         }
+        emitDiagnostic(direction, action: action, dx: dx, dy: dy, progress: progress,
+                       elapsed: elapsed, fingers: active.count, cmdHeld: cmdHeld, shiftHeld: shiftHeld)
+        return action
+    }
+
+    private func emitDiagnostic(_ direction: Direction, action: GestureAction?,
+                                dx: Double, dy: Double, progress: Double, elapsed: Double,
+                                fingers: Int, cmdHeld: Bool, shiftHeld: Bool) {
+        guard let diagnostic else { return }
+        func r(_ v: Double) -> Double { (v * 10).rounded() / 10 }
+        let speed = elapsed > 0 ? r(progress / elapsed) : 0
+        let dir = "\(direction)"
+        let act = action.map { "\($0.direction.rawValue)\($0.thirdWidth ? "-third" : "")\($0.nextDisplay ? "-next" : "")" } ?? "none"
+        diagnostic("fire dir=\(dir) action=\(act) dx=\(r(dx)) dy=\(r(dy)) prog=\(r(progress)) "
+            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) cmd=\(cmdHeld) shift=\(shiftHeld)")
     }
 
     // MARK: - State transitions

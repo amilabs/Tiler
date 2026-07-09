@@ -17,8 +17,10 @@ public final class GestureEngine: @unchecked Sendable {
 
     public init(recorder: TraceRecorder?,
                 tunables: Tunables = .default,
+                onDiagnostic: (@Sendable (String) -> Void)? = nil,
                 onAction: @escaping @Sendable (GestureAction) -> Void) {
         recognizer = GestureRecognizer(tunables: tunables)
+        recognizer.diagnostic = onDiagnostic   // opt-in gesture-decision logging
         self.recorder = recorder
         self.onAction = onAction
     }
