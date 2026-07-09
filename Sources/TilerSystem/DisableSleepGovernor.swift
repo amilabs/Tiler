@@ -1,95 +1,36 @@
 import AppKit
 import Foundation
 
-/// The clamshell lid-closed-awake root path (power spec, gate 0.3 decision). One admin
-/// prompt per session arms `pmset -a disablesleep 1` plus a detached root **watchdog**
-/// that restores `disablesleep 0` promptlessly once a sentinel file goes stale/absent
-/// (normal stop, floor stop, crash, quit) or a timed deadline+grace passes. The app
-/// keeps the sentinel fresh (every 10 s) while the session lives. This closes the
-/// critical failure mode: a battery-floor auto-stop with the lid shut (Mac in a bag)
-/// must not wait for a second auth dialog nobody can answer.
+/// The clamshell lid-closed path (power spec). Sets/clears `pmset -a disablesleep`
+/// through the standard admin dialog — a FOREGROUND `osascript … with administrator
+/// privileges` command, which reliably runs as root. (The earlier detached background
+/// watchdog was silently reaped by the privileged wrapper and never restored the flag —
+/// proven on the owner's machine — so `do shell script … &` cannot host a persistent
+/// root process.)
+///
+/// Restore happens when the app ends the session (`disarm`), backstopped by a
+/// self-check at launch and on wake (`promptRestore`): a leftover flag with no live
+/// clamshell session is offered for a one-click restore. macOS caches the admin
+/// credential for ~5 min, so a short arm→disarm cycle needs only the one prompt.
 @MainActor public final class DisableSleepGovernor {
-    public nonisolated static let sentinelPath = "/tmp/pro.amilabs.tilerx.clamshell.sentinel"
-
     private let adminRun: @Sendable (String) throws -> String
-    private var refreshTimer: DispatchSourceTimer?
 
     public init(adminRun: @escaping @Sendable (String) throws -> String) {
         self.adminRun = adminRun
     }
 
-    /// The exact privileged command: set the flag and detach the watchdog. `D` is an
-    /// absolute epoch the watchdog compares against wall-clock — 0 for an indefinite
-    /// session (never time-triggered), else the deadline plus a 120 s grace. `now` is
-    /// accepted for call-site symmetry with `arm` and to keep this pure/testable; the
-    /// epoch derives from `deadline`.
-    public nonisolated static func armCommand(deadline: Date?, now: Date) -> String {
-        let d = deadline.map { Int($0.timeIntervalSince1970) + 120 } ?? 0
-        return [
-            "pmset -a disablesleep 1",
-            "nohup /bin/zsh -c 'S=\(sentinelPath); D=\(d)",
-            "while :; do",
-            "  [ -f \"$S\" ] || break",
-            "  A=$(( $(date +%s) - $(stat -f %m \"$S\") )); [ \"$A\" -lt 45 ] || break",
-            "  [ \"$D\" -eq 0 ] || [ \"$(date +%s)\" -lt \"$D\" ] || break",
-            "  sleep 15",
-            "done",
-            "pmset -a disablesleep 0",
-            "rm -f \"$S\"' >/dev/null 2>&1 &",
-        ].joined(separator: "\n")
+    /// One admin prompt sets the flag (foreground → runs as root). Throws on cancel.
+    public func arm() throws {
+        _ = try adminRun("pmset -a disablesleep 1")
+        NSLog("Tiler: clamshell armed (disablesleep 1)")
     }
 
-    /// Write the sentinel, start the refresh timer, then arm via admin auth. On any
-    /// failure (incl. a cancelled dialog) undo the sentinel/timer and rethrow so the
-    /// caller can tear the half-started session down (never run half-armed).
-    public func arm(deadline: Date?) throws {
-        FileManager.default.createFile(atPath: Self.sentinelPath, contents: Data())
-        startRefreshTimer()
-        do {
-            _ = try adminRun(Self.armCommand(deadline: deadline, now: Date()))
-            NSLog("Tiler: clamshell armed (disablesleep 1 + watchdog)")
-        } catch {
-            stopRefreshTimer()
-            try? FileManager.default.removeItem(atPath: Self.sentinelPath)
-            throw error
-        }
-    }
-
-    /// Stop refreshing and drop the sentinel; the watchdog restores `disablesleep 0`
-    /// within its poll grace (~15 s), promptlessly.
-    public func disarm() {
-        stopRefreshTimer()
-        try? FileManager.default.removeItem(atPath: Self.sentinelPath)
-        NSLog("Tiler: clamshell disarmed (sentinel removed; watchdog will restore)")
-    }
-
-    /// A freshly-launched app holds no clamshell session, so ANY `SleepDisabled 1` at
-    /// launch is leftover from a previous (force-quit or crashed) session — whether or
-    /// not a stale sentinel is still lying around (a force-quit leaves the sentinel
-    /// present, which the earlier `!fileExists` gate wrongly treated as "live"). Offer
-    /// a one-click restore. Returns whether a stale flag was detected.
-    @discardableResult
-    public func reconcileAtLaunch() -> Bool {
-        guard Self.sleepDisabledNow() else { return false }
-        NSLog("Tiler: stale SleepDisabled flag detected at launch")
-        let alert = NSAlert()
-        alert.messageText = "Sleep is still disabled"
-        alert.informativeText = "Tiler left sleep disabled from a previous lid-closed session. "
-            + "Restore normal sleep behavior?"
-        alert.addButton(withTitle: "Restore normal sleep")
-        alert.addButton(withTitle: "Keep as is")
-        if alert.runModal() == .alertFirstButtonReturn {
-            do {
-                _ = try adminRun("pmset -a disablesleep 0")
-                try? FileManager.default.removeItem(atPath: Self.sentinelPath)  // stop any lingering watchdog
-                NSLog("Tiler: stale flag cleared")
-            } catch {
-                NSLog("Tiler: stale-flag restore failed/cancelled: %@", "\(error)")
-            }
-        } else {
-            NSLog("Tiler: stale flag kept by user choice")
-        }
-        return true
+    /// Restore normal sleep. Prompts for admin unless the credential is still cached
+    /// (~5 min) from arming. Throws on cancel/failure (the flag then persists until the
+    /// next self-check).
+    public func disarm() throws {
+        _ = try adminRun("pmset -a disablesleep 0")
+        NSLog("Tiler: clamshell disarmed (disablesleep 0)")
     }
 
     /// `pmset -g` reports `SleepDisabled 1` only once the flag has been touched; macOS
@@ -108,22 +49,28 @@ import Foundation
         return text.range(of: #"SleepDisabled\s+1"#, options: .regularExpression) != nil
     }
 
-    private func startRefreshTimer() {
-        stopRefreshTimer()
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: .now() + 10, repeating: 10)
-        timer.setEventHandler {
-            MainActor.assumeIsolated {
-                try? FileManager.default.setAttributes([.modificationDate: Date()],
-                                                       ofItemAtPath: Self.sentinelPath)
-            }
+    /// Offer a one-click restore of a leftover flag (alert → foreground admin restore).
+    /// The caller decides WHEN to call this (launch / wake, only when no live clamshell
+    /// session holds the flag legitimately). Returns true iff the flag was cleared.
+    @discardableResult
+    public func promptRestore() -> Bool {
+        NSLog("Tiler: leftover SleepDisabled flag detected")
+        let alert = NSAlert()
+        alert.messageText = "Sleep is still disabled"
+        alert.informativeText = "Tiler left sleep disabled from a lid-closed session. "
+            + "Restore normal sleep behavior?"
+        alert.addButton(withTitle: "Restore normal sleep")
+        alert.addButton(withTitle: "Keep as is")
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            NSLog("Tiler: leftover flag kept by user choice")
+            return false
         }
-        timer.resume()
-        refreshTimer = timer
-    }
-
-    private func stopRefreshTimer() {
-        refreshTimer?.cancel()
-        refreshTimer = nil
+        do {
+            try disarm()
+            return true
+        } catch {
+            NSLog("Tiler: leftover-flag restore failed/cancelled: %@", "\(error)")
+            return false
+        }
     }
 }

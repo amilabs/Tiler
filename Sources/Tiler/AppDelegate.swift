@@ -73,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
+                self?.reconcileStuckSleepDisabled()   // clear a leftover clamshell flag on wake
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     self?.restartTouchStreamAfterWake()
                 }
@@ -270,11 +271,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         monitor.onChange = { [weak self] status in self?.powerApply(.power(status)) }
         monitor.start()
         powerMonitor = monitor
-        let gov = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
-        governor = gov
-        if gov.reconcileAtLaunch() {   // offer to clear a leftover SleepDisabled flag
-            plog("launch reconcile: stale SleepDisabled flag detected")
-        }
+        governor = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
+        reconcileStuckSleepDisabled()   // offer to clear a leftover SleepDisabled flag at launch
 
         let profile = PowerProfileController(store: settings,
                                              adminRun: { try AdminShell.runPrivileged($0) })
@@ -320,6 +318,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func logSystemEvent(_ tag: String) {
         plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
             + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
+    }
+
+    /// Offer a one-click restore of a leftover clamshell `disablesleep` flag (called at
+    /// launch and on wake). Skips when a live clamshell session legitimately holds it.
+    private func reconcileStuckSleepDisabled() {
+        guard let governor,
+              DisableSleepGovernor.sleepDisabledNow(),
+              !(powerPolicy.isActive && powerPolicy.clamshell) else { return }
+        plog(governor.promptRestore() ? "leftover SleepDisabled flag restored"
+                                      : "leftover SleepDisabled flag detected (kept)")
     }
 
     /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
@@ -395,9 +403,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             awake?.apply(nil)
             plog("release \(reason.rawValue)")
         case let .armClamshell(deadline):
+            // The FSM's deadline drives expiry/`remaining`; the flag itself is just
+            // set now and cleared on disarm (no watchdog).
             plog("clamshell arm deadline=\(deadline.map { ISO8601DateFormatter().string(from: $0) } ?? "none")")
             do {
-                try governor?.arm(deadline: deadline)
+                try governor?.arm()
             } catch {
                 // Any arm failure (incl. a cancelled auth dialog) must not leave a
                 // half-armed session: tear it back down through the FSM.
@@ -405,8 +415,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 powerApply(.clamshellArmFailed)
             }
         case .disarmClamshell:
-            governor?.disarm()
-            plog("clamshell disarm")
+            do {
+                try governor?.disarm()
+                plog("clamshell disarm")
+            } catch {
+                // Cancelled/failed restore: the flag persists; the launch/wake
+                // self-check will offer to clear it later.
+                plog("clamshell disarm FAILED (flag persists until self-check): \(error)")
+            }
         case let .notifyFloorStop(percent):
             powerNotifier.floorStop(percent: percent)
             plog("floorStop \(percent)%")

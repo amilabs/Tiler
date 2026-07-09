@@ -232,3 +232,16 @@
       never runs (watchdog dead). `do shell script … &` cannot host a persistent root
       process — the correct mechanism is a launchd daemon (model B, SMAppService).
       DECISION PENDING (owner): escalate to Fable vs. implement model B here.
+- [x] 5.15 Restore rework (owner-approved: self-check + foreground dialog, NO model B).
+      Removed the detached watchdog entirely (armCommand / sentinel / refresh timer /
+      armCommand tests). `DisableSleepGovernor` now: `arm` = foreground
+      `pmset -a disablesleep 1` (one admin prompt, runs as root — proven), `disarm` =
+      foreground `pmset -a disablesleep 0` (prompts only if the ~5 min admin cache
+      expired), `promptRestore` = alert + foreground restore. AppDelegate
+      `reconcileStuckSleepDisabled()` (flag set & no live clamshell session → offer
+      restore) runs at launch AND on wake; disarm on session end (Stop/expiry/floor).
+      Spec power lid-closed requirement rewritten. 141 unit tests + power-acceptance
+      green; flag stays 0. Needs the owner's hands-on clamshell re-test (start → Stop →
+      SleepDisabled 0).
+- [ ] 5.16 [MOCK → sign-off] "Custom" end date/time for Prevent Sleep (owner request):
+      a menu item that opens a dialog to pick an exact end time. Mock first, then wire.
