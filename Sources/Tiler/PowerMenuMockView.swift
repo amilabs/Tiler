@@ -195,7 +195,7 @@ struct PowerMenuMockView: View {
 struct CustomMockView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("«Custom…» в меню Prevent Sleep + диалог выбора даты/времени окончания")
+            Text("«Until a specific time…» в меню Prevent Sleep + диалог выбора конечной даты/времени")
                 .font(.system(size: 13, weight: .semibold))
             HStack(alignment: .top, spacing: 40) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -217,7 +217,7 @@ struct CustomMockView: View {
             ForEach(["On (until stopped)", "For 10 minutes", "…", "For 24 hours"], id: \.self) {
                 row($0, bold: false)
             }
-            row("Custom…", bold: true)
+            row("Until a specific time…", bold: true)
             Divider().padding(.horizontal, 8).padding(.vertical, 4)
             row("Prevent sleep with lid closed  ⚠", bold: false)
         }
@@ -237,7 +237,7 @@ struct CustomMockView: View {
                 .font(.system(size: 40)).foregroundStyle(Color.accentColor)
             Text("Prevent sleep until a set time").font(.system(size: 14, weight: .bold))
             HStack(spacing: 8) {
-                Text("Ends at:").font(.system(size: 12))
+                Text("Ends:").font(.system(size: 12))
                 field("Jul 9, 2026", dark: dark, width: 118)
                 field("18:30", dark: dark, width: 64)
             }
