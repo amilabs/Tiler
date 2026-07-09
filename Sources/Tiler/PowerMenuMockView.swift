@@ -22,25 +22,49 @@ struct PowerMenuMockView: View {
                 menuPanel
             }
             VStack(alignment: .leading, spacing: 10) {
-                sectionTitle("“With lid closed ⚠” → (atomic clamshell start)")
-                clamshellPanel
+                sectionTitle("…opens a dialog (no duplicated list)")
+                clamshellDialog
             }
         }
         .padding(24)
-        .frame(width: 860)
+        .frame(width: 900)
     }
 
-    private var clamshellPanel: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            row("⚠ Keeps running folded — never in a bag", role: .header)
-            divider
-            row("On (until stopped)")
-            ForEach(durations, id: \.self) { row($0) }
+    private var clamshellDialog: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Prevent sleep with the lid closed")
+                .font(.system(size: 13, weight: .bold))
+            Text("The Mac keeps running folded — it gets hot, so never leave it in a bag. "
+                 + "Starting this asks for an administrator password.")
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Text("Keep awake for:").font(.system(size: 12))
+                HStack {
+                    Text("2 hours").font(.system(size: 12))
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 9)).foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .frame(width: 120)
+                .background(RoundedRectangle(cornerRadius: 5).fill(Color(white: 0.96)))
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(.black.opacity(0.15)))
+            }
+            HStack(spacing: 8) {
+                Spacer()
+                Text("Cancel").font(.system(size: 12))
+                    .padding(.horizontal, 14).padding(.vertical, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color(white: 0.94)))
+                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.black.opacity(0.12)))
+                Text("Start").font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
+            }
         }
-        .padding(.vertical, 6)
-        .frame(width: 250, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(white: 0.98)))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.12)))
+        .padding(16)
+        .frame(width: 300, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color(white: 0.99)))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.black.opacity(0.12)))
     }
 
     private func sectionTitle(_ s: String) -> some View {
@@ -81,7 +105,7 @@ struct PowerMenuMockView: View {
             row("On (until stopped)")
             ForEach(durations, id: \.self) { row($0) }
             divider
-            row("With lid closed  ⚠                    ▸")
+            row("Prevent sleep with lid closed…  ⚠")
             divider
             row("Stop", role: .strong)
         }

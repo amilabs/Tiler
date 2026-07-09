@@ -38,7 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var powerTopItem: NSMenuItem?         // prominent active-state row at the menu top
     private weak var powerTopSeparator: NSMenuItem?
     private var powerStartItems: [NSMenuItem] = []      // normal starts (tag 0 = indefinite, else minutes)
-    private var powerClamshellStartItems: [NSMenuItem] = []  // lid-closed starts (nested submenu)
+    private weak var powerClamshellItem: NSMenuItem?    // "…with lid closed" → opens the start dialog
     private var activeMinutes: Int?                     // which start choice is running (for the ✓)
     private var activeIsIndefinite = false
     private var sessionStart: Date?                     // for the heartbeat elapsed field
@@ -451,12 +451,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerApply(.start(clamshell: false, duration: duration(for: sender)))
     }
 
-    @objc private func powerStartClamshell(_ sender: NSMenuItem) {
-        powerApply(.start(clamshell: true, duration: duration(for: sender)))
-    }
-
     private func duration(for item: NSMenuItem) -> TimeInterval? {
         item.tag == 0 ? nil : TimeInterval(item.tag) * 60   // tag 0 = indefinite
+    }
+
+    /// Lid-closed start: a focused dialog picks the duration and carries the heat
+    /// warning, then starts a clamshell session (which triggers the admin auth + the
+    /// disablesleep watchdog). Keeps the risky option deliberate and atomic.
+    @objc private func promptClamshellStart() {
+        let alert = NSAlert()
+        alert.messageText = "Prevent sleep with the lid closed"
+        alert.informativeText = "The Mac keeps running folded — it gets hot, so never leave "
+            + "it in a bag. Starting this asks for an administrator password.\n\nKeep awake for:"
+        alert.addButton(withTitle: "Start")
+        alert.addButton(withTitle: "Cancel")
+
+        let titles = ["Until stopped", "10 minutes", "30 minutes", "1 hour",
+                      "2 hours", "5 hours", "10 hours", "24 hours"]
+        let minutes = [0, 10, 30, 60, 120, 300, 600, 1440]
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 220, height: 25), pullsDown: false)
+        popup.addItems(withTitles: titles)
+        popup.selectItem(at: 4)   // default: 2 hours
+        alert.accessoryView = popup
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let m = minutes[popup.indexOfSelectedItem]
+        powerApply(.start(clamshell: true, duration: m == 0 ? nil : TimeInterval(m) * 60))
     }
 
     @objc private func powerStopAction() {
@@ -485,17 +505,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem?.title = active ? "On — \(state)" : "Off"
         powerStopItem?.isEnabled = active
 
-        // Mark the running start choice (tag 0 = indefinite, else minutes) in whichever
-        // list matches the session's clamshell flag.
-        func mark(_ items: [NSMenuItem], clamshell: Bool) {
-            for item in items {
-                let on = active && powerPolicy.clamshell == clamshell
-                    && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
-                item.state = on ? .on : .off
-            }
+        // Mark the running normal start choice (tag 0 = indefinite, else minutes); a
+        // clamshell session instead checks the "…with lid closed" item (its duration
+        // shows in the header/top row).
+        for item in powerStartItems {
+            let on = active && !powerPolicy.clamshell
+                && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
+            item.state = on ? .on : .off
         }
-        mark(powerStartItems, clamshell: false)
-        mark(powerClamshellStartItems, clamshell: true)
+        powerClamshellItem?.state = (active && powerPolicy.clamshell) ? .on : .off
 
         powerTopItem?.isHidden = !active
         powerTopSeparator?.isHidden = !active
@@ -674,21 +692,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerStartItems = addStartItems(to: submenu, selector: #selector(powerStart(_:)))
         submenu.addItem(.separator())
 
-        // Lid-closed starts live in their own submenu so choosing one is atomic and
-        // discoverable — a menu-closing checkbox couldn't be set together with a
-        // duration (owner hit exactly that at gate 4.2: no clamshell session ever
-        // started). Each item runs the admin-authorized disablesleep + watchdog path.
-        let clamMenu = NSMenu()
-        clamMenu.autoenablesItems = false
-        let heat = NSMenuItem(title: "⚠ Keeps running folded — gets hot, never in a bag",
-                              action: nil, keyEquivalent: "")
-        heat.isEnabled = false
-        clamMenu.addItem(heat)
-        clamMenu.addItem(.separator())
-        powerClamshellStartItems = addStartItems(to: clamMenu, selector: #selector(powerStartClamshell(_:)))
-        let clamRoot = NSMenuItem(title: "With lid closed ⚠", action: nil, keyEquivalent: "")
-        clamRoot.submenu = clamMenu
-        submenu.addItem(clamRoot)
+        // Lid-closed is the dangerous (heat) option, so it opens a focused dialog that
+        // picks the duration and warns — one atomic step, no duplicated duration list
+        // and no menu-closing checkbox (which couldn't be set together with a duration;
+        // owner hit exactly that at gate 4.2 → no clamshell session ever started).
+        let clamshell = makeItem("Prevent sleep with lid closed…  ⚠", #selector(promptClamshellStart))
+        submenu.addItem(clamshell)
+        powerClamshellItem = clamshell
         submenu.addItem(.separator())
 
         let stop = makeItem("Stop", #selector(powerStopAction))

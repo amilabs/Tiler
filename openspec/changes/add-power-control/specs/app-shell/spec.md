@@ -5,12 +5,13 @@
 #### Requirement: Menu Power section
 
 The status-item menu SHALL gain a Power section between the primary items and Quit:
-a "Prevent Sleep" submenu (start indefinite, the seven fixed durations, a nested
-"With lid closed ⚠" submenu offering the same start choices, Stop) whose header line
-shows the active state and remaining time. The lid-closed starts live in their own
-submenu — not a menu-closing checkbox — so choosing one is atomic and discoverable (a
-checkbox could not be set together with a duration in one pass; the owner hit exactly
-that at gate 4.2 and no clamshell session ever started). While a session is active the main menu SHALL ALSO show a prominent
+a "Prevent Sleep" submenu (start indefinite, the seven fixed durations, a single
+"Prevent sleep with lid closed…" ⚠ item, Stop) whose header line shows the active
+state and remaining time. The lid-closed item SHALL open a focused dialog that picks
+the duration and carries the heat warning, then starts a clamshell session — one
+atomic, deliberate step, with no duplicated duration list and no menu-closing checkbox
+(a checkbox could not be set together with a duration in one pass; the owner hit
+exactly that at gate 4.2 and no clamshell session ever started). While a session is active the main menu SHALL ALSO show a prominent
 row at its very top (bold, with the red cup mark) stating the feature and the
 remaining time / lid-closed state (owner request 2026-07-08); the row is hidden when
 inactive and clicking it SHALL stop the session after a confirmation dialog (so an

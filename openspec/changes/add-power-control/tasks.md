@@ -175,3 +175,10 @@
       closed ⚠" submenu of the same start choices → atomic, discoverable clamshell
       start (heat warning as a disabled header). Specs app-shell/power updated; mock
       re-rendered. Clamshell mechanism itself still needs a real hands-on run.
+      → SUPERSEDED by 5.10: owner rejected the nested submenu as interface
+      duplication.
+- [x] 5.10 Clamshell UX (final): single "Prevent sleep with lid closed…" ⚠ item opens
+      a dialog (duration popup + heat warning + Start/Cancel) → one atomic step, no
+      duplicated duration list, no menu-closing checkbox. Specs app-shell/power +
+      mock updated. Still needs a real hands-on clamshell run to exercise the
+      disablesleep+watchdog mechanism.

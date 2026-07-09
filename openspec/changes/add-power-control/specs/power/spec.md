@@ -56,10 +56,10 @@ action. Floor evaluation SHALL be event-driven (power-source change notification
 
 #### Requirement: Lid-closed keep-awake
 
-The Prevent Sleep menu SHALL offer lid-closed sessions via a nested "With lid closed"
-⚠ submenu (the same start choices), so each lid-closed start is an explicit,
-atomic, per-session choice — not a menu-closing checkbox (mechanism spike-verified
-2026-07-08). Starting such a session SHALL run exactly ONE
+The Prevent Sleep menu SHALL offer lid-closed sessions via a single "Prevent sleep
+with lid closed…" ⚠ item that opens a dialog (duration picker + heat warning + Start/
+Cancel), so each lid-closed start is an explicit, atomic, per-session choice — not a
+menu-closing checkbox (mechanism spike-verified 2026-07-08). Starting such a session SHALL run exactly ONE
 admin-authorized command that sets `pmset -a disablesleep 1` and arms a root
 watchdog; the app SHALL refresh a sentinel file (every ~10 s) while the session
 lives, and the watchdog SHALL restore `disablesleep 0` without further prompts once
