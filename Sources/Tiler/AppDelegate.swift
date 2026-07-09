@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var powerTopSeparator: NSMenuItem?
     private var powerStartItems: [NSMenuItem] = []      // normal starts (tag 0 = indefinite, else minutes)
     private weak var powerClamshellItem: NSMenuItem?    // "…with lid closed" → opens the start dialog
+    private var clamshellDialogWindow: NSWindow?
     private var activeMinutes: Int?                     // which start choice is running (for the ✓)
     private var activeIsIndefinite = false
     private var sessionStart: Date?                     // for the heartbeat elapsed field
@@ -455,54 +456,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.tag == 0 ? nil : TimeInterval(item.tag) * 60   // tag 0 = indefinite
     }
 
-    /// Lid-closed start: a focused dialog picks the duration and carries the heat
-    /// warning, then starts a clamshell session (which triggers the admin auth + the
-    /// disablesleep watchdog). Keeps the risky option deliberate and atomic.
+    /// Lid-closed start: a help-styled modal dialog (centered card) picks the duration
+    /// and carries the heat warning, then starts a clamshell session (which triggers
+    /// the admin auth + the disablesleep watchdog). Keeps the risky option deliberate
+    /// and atomic; reuses the menu's timer by pre-selecting the running duration.
     @objc private func promptClamshellStart() {
-        let alert = NSAlert()
-        alert.messageText = "Prevent sleep with the lid closed"
-        alert.informativeText = "The Mac keeps running folded — it gets hot, so never leave "
-            + "it in a bag. Starting this asks for an administrator password.\n\nKeep awake for:"
-        alert.icon = clamshellWarningImage()   // backpack + laptop, crossed out
-        alert.addButton(withTitle: "Start")
-        alert.addButton(withTitle: "Cancel")
-
-        let titles = ["Until stopped", "10 minutes", "30 minutes", "1 hour",
-                      "2 hours", "5 hours", "10 hours", "24 hours"]
-        let minutes = [0, 10, 30, 60, 120, 300, 600, 1440]
-        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 220, height: 25), pullsDown: false)
-        popup.addItems(withTitles: titles)
-        // Reuse the menu's timer: pre-select the running duration, else default 2 h.
-        let preselect = powerPolicy.isActive
-            ? (activeIsIndefinite ? 0 : (minutes.firstIndex(of: activeMinutes ?? -1) ?? 4))
-            : 4
-        popup.selectItem(at: preselect)
-        alert.accessoryView = popup
-
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let m = minutes[popup.indexOfSelectedItem]
-        powerApply(.start(clamshell: true, duration: m == 0 ? nil : TimeInterval(m) * 60))
-    }
-
-    /// A laptop being put into a backpack, crossed out by the red prohibitory sign —
-    /// the "never run closed in a bag" heat warning (owner request).
-    private func clamshellWarningImage() -> NSImage? {
-        let view = ZStack {
-            Image(systemName: "backpack.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.secondary)
-            Image(systemName: "laptopcomputer")
-                .font(.system(size: 20))
-                .foregroundStyle(.primary)
-                .offset(y: -3)
-            Image(systemName: "nosign")
-                .font(.system(size: 60, weight: .regular))
-                .foregroundStyle(.red)
+        let preselect = powerPolicy.isActive ? (activeIsIndefinite ? 0 : (activeMinutes ?? 120)) : 120
+        let model = ClamshellDialogModel(preselectMinutes: preselect)
+        model.onFinish = { [weak self] in
+            guard let self else { return }
+            self.clamshellDialogWindow?.close()
+            self.clamshellDialogWindow = nil
+            guard model.confirmed else { return }
+            let m = model.selectedMinutes
+            self.powerApply(.start(clamshell: true, duration: m == 0 ? nil : TimeInterval(m) * 60))
         }
-        .frame(width: 72, height: 72)
-        let renderer = ImageRenderer(content: view)
-        renderer.scale = 2
-        return renderer.nsImage
+        let hosting = NSHostingController(rootView: ClamshellDialogView(model: model))
+        let window = NSWindow(contentViewController: hosting)
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.isReleasedWhenClosed = false
+        window.level = .floating
+        window.center()
+        clamshellDialogWindow = window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 
     @objc private func powerStopAction() {

@@ -7,9 +7,10 @@
 The status-item menu SHALL gain a Power section between the primary items and Quit:
 a "Prevent Sleep" submenu (start indefinite, the seven fixed durations, a single
 "Prevent sleep with lid closed…" ⚠ item, Stop) whose header line shows the active
-state and remaining time. The lid-closed item SHALL open a focused dialog that picks
-the duration and carries the heat warning (a "no laptop in a bag" image — backpack +
-laptop crossed out), then starts a clamshell session — one atomic, deliberate step,
+state and remaining time. The lid-closed item SHALL open a focused help-styled dialog (a centered card, not a
+plain alert) that picks the duration and carries the heat warning (a "no laptop in a
+bag" image — a laptop in a bag crossed out by the red prohibitory sign), then starts a
+clamshell session — one atomic, deliberate step,
 with no duplicated duration list and no menu-closing checkbox (a checkbox could not be
 set together with a duration in one pass; the owner hit exactly that at gate 4.2 and no
 clamshell session ever started). The dialog SHALL pre-select the currently running

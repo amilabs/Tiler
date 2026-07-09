@@ -188,3 +188,10 @@
       dialog — a laptop going into a backpack, crossed out by the red prohibitory sign
       (backpack.fill + laptopcomputer + nosign, rendered to the alert icon). Mock +
       specs updated.
+- [x] 5.12 [MINI-GATE, owner sign-off before wiring] Owner reminded me to approve UI
+      on mockups first. Rendered 5 warning-image variants (light/dark) + a help-styled
+      dialog mock (`ClamshellMockView`). Owner picked image **5 (bag + laptop +
+      nosign)** and approved the **help-styled centered dialog**. Implemented:
+      `ClamshellDialog.swift` (SwiftUI `ClamshellDialogView` + model), shown as a
+      non-modal floating card window from `promptClamshellStart` (replaces the plain
+      NSAlert), reusing the menu timer (pre-select). Spec app-shell updated.
