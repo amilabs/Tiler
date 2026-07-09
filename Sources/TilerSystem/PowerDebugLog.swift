@@ -2,15 +2,15 @@ import Foundation
 
 /// Opt-in diagnostic log for power events (owner-driven multi-day runs). Records
 /// discrete events plus a ~15 s liveness heartbeat while a session runs (so a sleep
-/// gap is visible). Bounded on disk: rotates through 3 backups past ~5 MB each, so the
-/// footprint stays under ~20 MB — plenty of headroom to leave on for days.
+/// gap is visible). Bounded on disk: rotates to one backup past ~100 MB, so the
+/// footprint stays under ~200 MB — enough headroom to log in detail without worry.
 ///
-/// Location: `~/Library/Logs/Tiler/power-debug.log` (+ `.1`/`.2`/`.3` backups).
+/// Location: `~/Library/Logs/Tiler/power-debug.log` (+ a `.1` backup).
 @MainActor public final class PowerDebugLog {
     public private(set) var isEnabled: Bool
     private let fileURL: URL
-    private let maxBytes = 5 * 1024 * 1024
-    private let backups = 3
+    private let maxBytes = 100 * 1024 * 1024
+    private let backups = 1
     private let stamp: ISO8601DateFormatter
 
     public init(enabled: Bool) {

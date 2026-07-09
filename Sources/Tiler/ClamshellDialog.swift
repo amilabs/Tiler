@@ -112,6 +112,11 @@ struct ClamshellDialogView: View {
                  + "Starting this asks for an administrator password.")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Label("When a timer ends, the Mac is put to sleep for you — the first time, "
+                  + "macOS may ask to allow Tiler to control System Events.",
+                  systemImage: "exclamationmark.triangle.fill")
+                .font(.caption).foregroundStyle(.orange)
+                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Text("Keep awake for:")
                 Picker("", selection: $model.selectedTag) {

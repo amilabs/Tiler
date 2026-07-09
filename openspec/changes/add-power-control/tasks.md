@@ -322,4 +322,9 @@
       display-change handler (never repositions on screen change). `execute()` is the
       single chokepoint for every window move (gesture + hotkey); it now logs
       `window <cmd> src=gesture|hotkey ok=<b>` — a move with no such line is provably not
-      Tiler. Spec power diagnostic-logging updated.
+      Tiler. Spec power diagnostic-logging updated. Owner confirmed the Telegram move was
+      macOS's own tiling on monitor disconnect (not Tiler).
+- [x] 6.6 Round-2 polish (owner): (a) the lid-closed dialog gains an orange warning
+      Label that a system Automation prompt may appear (the auto-sleep uses System
+      Events on first use); (b) debug log rotation raised to ~100 MB × 1 backup
+      (~200 MB) so detailed logging can run without worry.
