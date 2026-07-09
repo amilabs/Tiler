@@ -271,8 +271,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         monitor.start()
         powerMonitor = monitor
         let gov = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
-        gov.reconcileAtLaunch()      // clear a stale SleepDisabled flag from a prior session
         governor = gov
+        if gov.reconcileAtLaunch() {   // offer to clear a leftover SleepDisabled flag
+            plog("launch reconcile: stale SleepDisabled flag detected")
+        }
 
         let profile = PowerProfileController(store: settings,
                                              adminRun: { try AdminShell.runPrivileged($0) })

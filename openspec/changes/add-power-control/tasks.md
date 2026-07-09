@@ -195,3 +195,18 @@
       `ClamshellDialog.swift` (SwiftUI `ClamshellDialogView` + model), shown as a
       non-modal floating card window from `promptClamshellStart` (replaces the plain
       NSAlert), reusing the menu timer (pre-select). Spec app-shell updated.
+- [x] 5.13 Clamshell HOLD verified on real hardware (gate-4.2 log): a lid-closed
+      session on battery held the Mac awake ~44 min (179 continuous `lid=closed
+      held=idle+system` heartbeats, no gap, no `system willSleep`). Touch-stream wake
+      recovery also confirmed (`touch stream restarted after wake`).
+- [ ] 5.14 [BUG — restore] `SleepDisabled 1` got stuck (no session). Two issues:
+      (a) `reconcileAtLaunch` only fired when the sentinel was ABSENT, but a force-quit
+      leaves a stale-but-present sentinel → the leftover flag was never offered for
+      restore across relaunches. FIXED: reconcile on the flag at launch regardless of
+      the sentinel (+ remove the sentinel on restore).
+      (b) DEEPER: the detached root watchdog (`osascript … with administrator
+      privileges &`) exited WITHOUT restoring (flag still 1, sentinel not removed) —
+      the spike restored the flag manually, never via this detached watchdog, so the
+      restore path is unproven and looks unreliable. Needs a clean controlled test
+      (single clamshell → clean Stop → flag clears ≤15 s?; force-quit → ≤60 s?); if it
+      fails, escalate to Fable (watchdog design / model-B root daemon).

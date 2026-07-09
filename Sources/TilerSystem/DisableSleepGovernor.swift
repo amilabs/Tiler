@@ -63,13 +63,14 @@ import Foundation
         NSLog("Tiler: clamshell disarmed (sentinel removed; watchdog will restore)")
     }
 
-    /// `SleepDisabled 1` with no live sentinel means a previous session left the flag
-    /// set (e.g. a reboot before the watchdog cleared it). Offer a one-click restore.
-    /// Returns whether a stale flag was detected.
+    /// A freshly-launched app holds no clamshell session, so ANY `SleepDisabled 1` at
+    /// launch is leftover from a previous (force-quit or crashed) session — whether or
+    /// not a stale sentinel is still lying around (a force-quit leaves the sentinel
+    /// present, which the earlier `!fileExists` gate wrongly treated as "live"). Offer
+    /// a one-click restore. Returns whether a stale flag was detected.
     @discardableResult
     public func reconcileAtLaunch() -> Bool {
-        guard Self.sleepDisabledNow(),
-              !FileManager.default.fileExists(atPath: Self.sentinelPath) else { return false }
+        guard Self.sleepDisabledNow() else { return false }
         NSLog("Tiler: stale SleepDisabled flag detected at launch")
         let alert = NSAlert()
         alert.messageText = "Sleep is still disabled"
@@ -80,6 +81,7 @@ import Foundation
         if alert.runModal() == .alertFirstButtonReturn {
             do {
                 _ = try adminRun("pmset -a disablesleep 0")
+                try? FileManager.default.removeItem(atPath: Self.sentinelPath)  // stop any lingering watchdog
                 NSLog("Tiler: stale flag cleared")
             } catch {
                 NSLog("Tiler: stale-flag restore failed/cancelled: %@", "\(error)")
