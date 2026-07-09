@@ -463,6 +463,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         alert.messageText = "Prevent sleep with the lid closed"
         alert.informativeText = "The Mac keeps running folded — it gets hot, so never leave "
             + "it in a bag. Starting this asks for an administrator password.\n\nKeep awake for:"
+        alert.icon = clamshellWarningImage()   // backpack + laptop, crossed out
         alert.addButton(withTitle: "Start")
         alert.addButton(withTitle: "Cancel")
 
@@ -471,12 +472,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let minutes = [0, 10, 30, 60, 120, 300, 600, 1440]
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 220, height: 25), pullsDown: false)
         popup.addItems(withTitles: titles)
-        popup.selectItem(at: 4)   // default: 2 hours
+        // Reuse the menu's timer: pre-select the running duration, else default 2 h.
+        let preselect = powerPolicy.isActive
+            ? (activeIsIndefinite ? 0 : (minutes.firstIndex(of: activeMinutes ?? -1) ?? 4))
+            : 4
+        popup.selectItem(at: preselect)
         alert.accessoryView = popup
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let m = minutes[popup.indexOfSelectedItem]
         powerApply(.start(clamshell: true, duration: m == 0 ? nil : TimeInterval(m) * 60))
+    }
+
+    /// A laptop being put into a backpack, crossed out by the red prohibitory sign —
+    /// the "never run closed in a bag" heat warning (owner request).
+    private func clamshellWarningImage() -> NSImage? {
+        let view = ZStack {
+            Image(systemName: "backpack.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+            Image(systemName: "laptopcomputer")
+                .font(.system(size: 20))
+                .foregroundStyle(.primary)
+                .offset(y: -3)
+            Image(systemName: "nosign")
+                .font(.system(size: 60, weight: .regular))
+                .foregroundStyle(.red)
+        }
+        .frame(width: 72, height: 72)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2
+        return renderer.nsImage
     }
 
     @objc private func powerStopAction() {
@@ -505,15 +531,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem?.title = active ? "On — \(state)" : "Off"
         powerStopItem?.isEnabled = active
 
-        // Mark the running normal start choice (tag 0 = indefinite, else minutes); a
-        // clamshell session instead checks the "…with lid closed" item (its duration
-        // shows in the header/top row).
+        // Mark the running duration (tag 0 = indefinite, else minutes) — the same
+        // list is reused for both normal and lid-closed sessions, so it always shows
+        // which timer is running; the lid-closed nature shows in the header/top row.
         for item in powerStartItems {
-            let on = active && !powerPolicy.clamshell
-                && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
+            let on = active && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
             item.state = on ? .on : .off
         }
-        powerClamshellItem?.state = (active && powerPolicy.clamshell) ? .on : .off
 
         powerTopItem?.isHidden = !active
         powerTopSeparator?.isHidden = !active

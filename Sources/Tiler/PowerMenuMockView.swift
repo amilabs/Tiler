@@ -32,6 +32,13 @@ struct PowerMenuMockView: View {
 
     private var clamshellDialog: some View {
         VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                Image(systemName: "backpack.fill").font(.system(size: 44)).foregroundStyle(.secondary)
+                Image(systemName: "laptopcomputer").font(.system(size: 20)).foregroundStyle(.primary).offset(y: -3)
+                Image(systemName: "nosign").font(.system(size: 60)).foregroundStyle(.red)
+            }
+            .frame(width: 72, height: 72)
+            .frame(maxWidth: .infinity, alignment: .center)
             Text("Prevent sleep with the lid closed")
                 .font(.system(size: 13, weight: .bold))
             Text("The Mac keeps running folded — it gets hot, so never leave it in a bag. "

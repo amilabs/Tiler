@@ -182,3 +182,9 @@
       duplicated duration list, no menu-closing checkbox. Specs app-shell/power +
       mock updated. Still needs a real hands-on clamshell run to exercise the
       disablesleep+watchdog mechanism.
+- [x] 5.11 Dialog polish (owner): (a) reuse the menu timer — the dialog pre-selects
+      the running duration (else 2 h) and the menu's duration list marks the running
+      timer for BOTH normal and lid-closed sessions; (b) a heat-warning image in the
+      dialog — a laptop going into a backpack, crossed out by the red prohibitory sign
+      (backpack.fill + laptopcomputer + nosign, rendered to the alert icon). Mock +
+      specs updated.
