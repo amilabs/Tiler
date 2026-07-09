@@ -224,3 +224,11 @@
       the flag manually, never via this detached watchdog). Part-1 reconcile fix WORKS
       (owner cleared the stuck flag with it). Clamshell must not ship until restore is
       reliable.
+      → ROOT CAUSE PROVEN 2026-07-09 (owner admin test, `scratchpad/detach-test.sh`
+      logic via osascript): with `with administrator privileges`, the FOREGROUND runs
+      as root (`fg_uid=0`) but the backgrounded `&` child never writes even its first
+      line → the privileged wrapper reaps the whole process tree, so the detached
+      watchdog is killed instantly. The flag SET works (foreground, root); the RESTORE
+      never runs (watchdog dead). `do shell script … &` cannot host a persistent root
+      process — the correct mechanism is a launchd daemon (model B, SMAppService).
+      DECISION PENDING (owner): escalate to Fable vs. implement model B here.
