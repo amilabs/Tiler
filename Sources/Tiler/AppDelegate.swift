@@ -847,6 +847,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         write("power-settings", PowerSettingsMockView())
         write("power-indicator", PowerIndicatorMockView())
         write("power-clamshell", ClamshellMockView())
+        write("power-custom", CustomMockView())
         // Calibration preview needs the live gesture engine; skip it when there is no
         // trackpad (headless render still produces the window/power shots).
         if let engine {

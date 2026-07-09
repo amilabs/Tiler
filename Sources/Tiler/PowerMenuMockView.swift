@@ -190,6 +190,83 @@ struct PowerMenuMockView: View {
     }
 }
 
+// MARK: - "Custom" end date/time (owner request) — mock for sign-off
+
+struct CustomMockView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("«Custom…» в меню Prevent Sleep + диалог выбора даты/времени окончания")
+                .font(.system(size: 13, weight: .semibold))
+            HStack(alignment: .top, spacing: 40) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Пункт меню").font(.system(size: 11)).foregroundStyle(.secondary)
+                    menuSnippet
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Диалог (стиль help), светлый · тёмный")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                    HStack(spacing: 20) { dialog(dark: false); dialog(dark: true) }
+                }
+            }
+        }
+        .padding(24).frame(width: 940).background(.white)
+    }
+
+    private var menuSnippet: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(["On (until stopped)", "For 10 minutes", "…", "For 24 hours"], id: \.self) {
+                row($0, bold: false)
+            }
+            row("Custom…", bold: true)
+            Divider().padding(.horizontal, 8).padding(.vertical, 4)
+            row("Prevent sleep with lid closed  ⚠", bold: false)
+        }
+        .padding(.vertical, 6).frame(width: 250, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(white: 0.98)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.12)))
+    }
+
+    private func row(_ s: String, bold: Bool) -> some View {
+        HStack { Text(s).font(.system(size: 13, weight: bold ? .semibold : .regular)); Spacer(minLength: 0) }
+            .padding(.horizontal, 14).padding(.vertical, 3.5)
+    }
+
+    private func dialog(dark: Bool) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "clock.badge.checkmark")
+                .font(.system(size: 40)).foregroundStyle(Color.accentColor)
+            Text("Prevent sleep until a set time").font(.system(size: 14, weight: .bold))
+            HStack(spacing: 8) {
+                Text("Ends at:").font(.system(size: 12))
+                field("Jul 9, 2026", dark: dark, width: 118)
+                field("18:30", dark: dark, width: 64)
+            }
+            Text("≈ 2 h 55 min from now")
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Text("Cancel").font(.system(size: 12))
+                    .padding(.horizontal, 16).padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(dark ? Color(white: 0.25) : Color(white: 0.92)))
+                Text("Start").font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
+            }.padding(.top, 2)
+        }
+        .padding(20).frame(width: 320)
+        .environment(\.colorScheme, dark ? .dark : .light)
+        .background(RoundedRectangle(cornerRadius: 14).fill(dark ? Color(white: 0.12) : .white))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.gray.opacity(0.3)))
+    }
+
+    private func field(_ s: String, dark: Bool, width: CGFloat) -> some View {
+        HStack { Text(s).font(.system(size: 12)); Spacer(minLength: 4)
+            Image(systemName: "chevron.up.chevron.down").font(.system(size: 8)).foregroundStyle(.secondary) }
+            .padding(.horizontal, 8).padding(.vertical, 3).frame(width: width)
+            .background(RoundedRectangle(cornerRadius: 5).fill(dark ? Color(white: 0.22) : Color(white: 0.96)))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(.gray.opacity(0.4)))
+    }
+}
+
 // MARK: - Clamshell dialog: image variants + help-styled dialog (for owner sign-off)
 
 /// A rough side-view backpack silhouette (owner asked to try a side view).
