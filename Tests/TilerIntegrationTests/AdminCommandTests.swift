@@ -35,8 +35,8 @@ import Testing
     private func expectedArm(d: Int) -> String {
         [
             "pmset -a disablesleep 1",
-            "echo 1 > /tmp/pro.amilabs.tilerx.clamshell.started",
-            "S=/tmp/pro.amilabs.tilerx.clamshell.sentinel; D=\(d)",
+            "echo 1 > \(DisableSleepGovernor.startedPath)",
+            "S=\(DisableSleepGovernor.sentinelPath); D=\(d)",
             "while [ -f \"$S\" ]; do",
             "  A=$(( $(date +%s) - $(stat -f %m \"$S\") )); [ \"$A\" -lt 45 ] || break",
             "  [ \"$D\" -eq 0 ] || [ \"$(date +%s)\" -lt \"$D\" ] || break",

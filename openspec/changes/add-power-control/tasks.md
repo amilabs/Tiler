@@ -269,3 +269,13 @@
       test (asserts NO `nohup`/`&`). 144 tests + acceptance green. This ALSO closes the
       in-a-bag gap → model B not needed. Needs owner hands-on: start clamshell → Stop →
       SleepDisabled 0 with NO second password.
+- [x] 5.18 Bug found reviewing the gate-4.2 log: the "started" cancel-detection marker
+      was written by the ROOT watchdog into sticky `/tmp`, so the non-root app could
+      never delete it → after the first clamshell session a stale root-owned marker
+      would make the NEXT start's cancel detection always read "armed". Moved the marker
+      to the per-user temp dir (`NSTemporaryDirectory()`, non-sticky, app-owned) so the
+      app can create/remove it; the root watchdog can still write there. (The sentinel
+      stays in /tmp — the app owns it.) armCommand test references the dynamic paths.
+      NOTE: the gate-4.2 "expiry with lid closed" case was NOT actually exercised (the
+      owner relaunched the app ~1.5 min into a 10-min clamshell); the relaunch did prove
+      the crash-safe promptless restore (`sleepDisabled=false` at the next launch).

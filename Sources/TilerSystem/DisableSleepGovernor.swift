@@ -15,8 +15,13 @@ import Foundation
 /// self-check (`sleepDisabledNow` + `restoreNow`) is the rare backstop if the watchdog
 /// process is itself killed.
 @MainActor public final class DisableSleepGovernor {
+    /// The app (non-root) creates/refreshes/removes the sentinel, so it lives in /tmp
+    /// where the app owns it. The "started" marker is written by the ROOT watchdog, so
+    /// it goes in the per-user temp dir (non-sticky, app-owned) — otherwise a
+    /// root-owned marker in sticky /tmp could never be cleared by the app, breaking the
+    /// next start's cancel detection.
     public nonisolated static let sentinelPath = "/tmp/pro.amilabs.tilerx.clamshell.sentinel"
-    public nonisolated static let startedPath = "/tmp/pro.amilabs.tilerx.clamshell.started"
+    public nonisolated static let startedPath = NSTemporaryDirectory() + "pro.amilabs.tilerx.clamshell.started"
 
     private let adminRun: @Sendable (String) throws -> String
     private var refreshTimer: DispatchSourceTimer?
