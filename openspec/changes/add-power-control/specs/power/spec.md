@@ -59,33 +59,34 @@ action. Floor evaluation SHALL be event-driven (power-source change notification
 The Prevent Sleep menu SHALL offer lid-closed sessions via a single "Prevent sleep
 with lid closed…" ⚠ item that opens a dialog (duration picker + heat warning + Start/
 Cancel), so each lid-closed start is an explicit, atomic, per-session choice — not a
-menu-closing checkbox. Starting such a session SHALL set `pmset -a disablesleep 1`
-through the standard admin dialog (a FOREGROUND command — verified to run as root; a
-detached background watchdog is NOT used: it was proven to be reaped by the privileged
-wrapper on macOS 26, 2026-07-09, and never restored the flag). The flag is cleared with
-`pmset -a disablesleep 0` through the same foreground admin path when the session ends
-(Stop, timer expiry, battery-floor stop); macOS caches the admin credential for ~5 min,
-so a short session ends with no second prompt. Because there is no promptless daemon,
-Tiler SHALL self-check for a leftover flag AT LAUNCH and ON WAKE (and offer a one-click
-restore) so a crash/quit or a cancelled restore self-heals; a reboot also clears the
-runtime flag. The session SHALL additionally hold the public assertions (idle; plus
-plain `PreventSystemSleep`, which alone suffices on AC). Cancelling the auth dialog at
-start SHALL leave no session running. Choosing a lid-closed start is itself the
-per-session opt-in (no persistent mode to leave on) and its UI copy SHALL warn about
-heat (never run closed in a bag). The battery floor applies unchanged. (Trade-off vs a
-root daemon / model B: a battery-floor stop while the Mac is literally in a bag would
-wait for the user to authorize the restore on return — the very misuse the ⚠ warns
-against; deferred unless it proves necessary.)
+menu-closing checkbox. Starting such a session SHALL run EXACTLY ONE admin-authorized
+command that sets `pmset -a disablesleep 1` and then runs an inline watchdog which
+restores `disablesleep 0` — all as the FOREGROUND command of one
+`osascript … with administrator privileges`, launched asynchronously. It MUST NOT
+background the watchdog with `&` (the privileged wrapper reaps such children — proven
+on macOS 26, 2026-07-09 — so the flag was never restored). A foreground command runs as
+root and survives the app's death, so the restore is PROMPTLESS. The app keeps a
+sentinel file fresh (~10 s) while the session lives; the watchdog restores the flag once
+the sentinel is removed (clean Stop / timer expiry / battery-floor stop), goes stale
+(crash / quit / in a bag), or a timed deadline (+ grace) passes — no second prompt in
+any case. Cancelling the auth dialog at start SHALL leave no session running. The
+session SHALL additionally hold the public assertions (idle; plus plain
+`PreventSystemSleep`, which alone suffices on AC). Choosing a lid-closed start is itself
+the per-session opt-in (no persistent mode to leave on) and its UI copy SHALL warn about
+heat (never run closed in a bag). The battery floor applies unchanged. As a rare
+backstop (watchdog process itself killed), Tiler SHALL self-check at launch and on wake:
+a leftover `SleepDisabled 1` with no live session is offered for a one-click restore via
+a warning alert carrying the heat/bag graphic.
 
 ##### Scenario: Lid closed during clamshell session
 - WHEN the lid closes during a session with the option enabled
 - THEN the system keeps running (verified hands-on at gate 4.2: ~44 min, continuous
   liveness heartbeats)
 
-##### Scenario: Clamshell session ends (short session)
-- WHEN such a session started and is stopped within ~5 min
-- THEN `pmset -g` shows SleepDisabled 0 with no second authorization dialog (cached
-  credential), and normal lid-close sleep behavior returns
+##### Scenario: Clamshell session ends without a second prompt
+- WHEN such a session ends for any reason (Stop, expiry, floor stop, crash, quit)
+- THEN `pmset -g` shows SleepDisabled 0 within the watchdog grace (~15 s) with NO
+  additional authorization dialog, and normal lid-close sleep behavior returns
 
 ##### Scenario: Authorization cancelled
 - WHEN the user cancels the admin dialog at clamshell session start
@@ -93,7 +94,8 @@ against; deferred unless it proves necessary.)
 
 ##### Scenario: Leftover flag self-heals at launch/wake
 - WHEN Tiler launches or wakes while SleepDisabled is 1 with no live clamshell session
-- THEN an alert explains the state and offers a one-click (admin-authorized) restore
+  (the watchdog process was killed)
+- THEN a warning alert (with the heat/bag graphic) offers a one-click restore
 
 #### Requirement: Deep Sleep profile (battery)
 

@@ -1,40 +1,107 @@
 import AppKit
 import Foundation
 
-/// The clamshell lid-closed path (power spec). Sets/clears `pmset -a disablesleep`
-/// through the standard admin dialog — a FOREGROUND `osascript … with administrator
-/// privileges` command, which reliably runs as root. (The earlier detached background
-/// watchdog was silently reaped by the privileged wrapper and never restored the flag —
-/// proven on the owner's machine — so `do shell script … &` cannot host a persistent
-/// root process.)
+/// The clamshell lid-closed path (power spec). One admin prompt at start sets
+/// `pmset -a disablesleep 1` AND runs an inline watchdog that clears it again — all as
+/// the FOREGROUND command of a single `osascript … with administrator privileges`,
+/// launched asynchronously. (Crucially NOT a backgrounded `&` child: the privileged
+/// wrapper reaps those, so the earlier watchdog never restored the flag — proven on the
+/// owner's machine 2026-07-09. A foreground command runs as root, survives the app's
+/// death, and restores WITHOUT a second prompt.)
 ///
-/// Restore happens when the app ends the session (`disarm`), backstopped by a
-/// self-check at launch and on wake (`promptRestore`): a leftover flag with no live
-/// clamshell session is offered for a one-click restore. macOS caches the admin
-/// credential for ~5 min, so a short arm→disarm cycle needs only the one prompt.
+/// The app keeps a sentinel file fresh (~10 s) while the session lives; the watchdog
+/// restores the flag once the sentinel is removed (clean stop / expiry / floor), goes
+/// stale (crash / quit / in a bag), or a timed deadline+grace passes. A launch/wake
+/// self-check (`sleepDisabledNow` + `restoreNow`) is the rare backstop if the watchdog
+/// process is itself killed.
 @MainActor public final class DisableSleepGovernor {
+    public nonisolated static let sentinelPath = "/tmp/pro.amilabs.tilerx.clamshell.sentinel"
+    public nonisolated static let startedPath = "/tmp/pro.amilabs.tilerx.clamshell.started"
+
     private let adminRun: @Sendable (String) throws -> String
+    private var refreshTimer: DispatchSourceTimer?
+    private var armProcess: Process?
 
     public init(adminRun: @escaping @Sendable (String) throws -> String) {
         self.adminRun = adminRun
     }
 
-    /// One admin prompt sets the flag (foreground → runs as root). Throws on cancel.
-    public func arm() throws {
-        _ = try adminRun("pmset -a disablesleep 1")
-        NSLog("Tiler: clamshell armed (disablesleep 1)")
+    /// The privileged foreground command: set the flag, mark "started", poll the
+    /// sentinel, then restore. `D` is an absolute epoch (deadline + 120 s grace) or 0
+    /// for indefinite. Exact bytes are locked by tests.
+    public nonisolated static func armCommand(deadline: Date?) -> String {
+        let d = deadline.map { Int($0.timeIntervalSince1970) + 120 } ?? 0
+        return [
+            "pmset -a disablesleep 1",
+            "echo 1 > \(startedPath)",
+            "S=\(sentinelPath); D=\(d)",
+            "while [ -f \"$S\" ]; do",
+            "  A=$(( $(date +%s) - $(stat -f %m \"$S\") )); [ \"$A\" -lt 45 ] || break",
+            "  [ \"$D\" -eq 0 ] || [ \"$(date +%s)\" -lt \"$D\" ] || break",
+            "  sleep 10",
+            "done",
+            "pmset -a disablesleep 0",
+            "rm -f \"$S\"",
+        ].joined(separator: "\n")
     }
 
-    /// Restore normal sleep. Prompts for admin unless the credential is still cached
-    /// (~5 min) from arming. Throws on cancel/failure (the flag then persists until the
-    /// next self-check).
-    public func disarm() throws {
+    /// Launch the arm+watchdog asynchronously (one admin prompt). Writes the sentinel
+    /// and starts refreshing it. If the osascript exits WITHOUT the "started" marker the
+    /// prompt was cancelled/failed → undo and call `onArmFailed` (so the FSM tears the
+    /// half-started session down).
+    public func arm(deadline: Date?, onArmFailed: @escaping @MainActor () -> Void) {
+        FileManager.default.createFile(atPath: Self.sentinelPath, contents: Data())
+        try? FileManager.default.removeItem(atPath: Self.startedPath)
+        let script = "do shell script \(AdminShell.appleScriptLiteral(Self.armCommand(deadline: deadline)))"
+            + " with administrator privileges"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", script]
+        process.standardOutput = Pipe()
+        process.standardError = Pipe()
+        process.terminationHandler = { [weak self] _ in
+            let armed = FileManager.default.fileExists(atPath: Self.startedPath)
+            Task { @MainActor in
+                guard let self else { return }
+                self.stopRefreshTimer()
+                try? FileManager.default.removeItem(atPath: Self.startedPath)
+                self.armProcess = nil
+                if armed {
+                    NSLog("Tiler: clamshell watchdog exited (flag restored)")
+                } else {
+                    try? FileManager.default.removeItem(atPath: Self.sentinelPath)
+                    NSLog("Tiler: clamshell arm cancelled/failed")
+                    onArmFailed()
+                }
+            }
+        }
+        do {
+            try process.run()
+            armProcess = process
+            startRefreshTimer()
+            NSLog("Tiler: clamshell arming (foreground watchdog, async)")
+        } catch {
+            try? FileManager.default.removeItem(atPath: Self.sentinelPath)
+            NSLog("Tiler: clamshell arm launch failed: %@", "\(error)")
+            onArmFailed()
+        }
+    }
+
+    /// End the session: stop refreshing and drop the sentinel — the watchdog restores
+    /// `disablesleep 0` promptlessly (no second admin prompt).
+    public func disarm() {
+        stopRefreshTimer()
+        try? FileManager.default.removeItem(atPath: Self.sentinelPath)
+        NSLog("Tiler: clamshell disarm (watchdog will restore promptlessly)")
+    }
+
+    /// Direct restore for the launch/wake backstop (foreground admin — prompts). Used
+    /// only when a leftover flag exists with no live watchdog.
+    public func restoreNow() throws {
         _ = try adminRun("pmset -a disablesleep 0")
-        NSLog("Tiler: clamshell disarmed (disablesleep 0)")
+        try? FileManager.default.removeItem(atPath: Self.sentinelPath)
     }
 
-    /// `pmset -g` reports `SleepDisabled 1` only once the flag has been touched; macOS
-    /// omits the key otherwise, so an absent key reads as false.
     public nonisolated static func sleepDisabledNow() -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
@@ -49,28 +116,22 @@ import Foundation
         return text.range(of: #"SleepDisabled\s+1"#, options: .regularExpression) != nil
     }
 
-    /// Offer a one-click restore of a leftover flag (alert → foreground admin restore).
-    /// The caller decides WHEN to call this (launch / wake, only when no live clamshell
-    /// session holds the flag legitimately). Returns true iff the flag was cleared.
-    @discardableResult
-    public func promptRestore() -> Bool {
-        NSLog("Tiler: leftover SleepDisabled flag detected")
-        let alert = NSAlert()
-        alert.messageText = "Sleep is still disabled"
-        alert.informativeText = "Tiler left sleep disabled from a lid-closed session. "
-            + "Restore normal sleep behavior?"
-        alert.addButton(withTitle: "Restore normal sleep")
-        alert.addButton(withTitle: "Keep as is")
-        guard alert.runModal() == .alertFirstButtonReturn else {
-            NSLog("Tiler: leftover flag kept by user choice")
-            return false
+    private func startRefreshTimer() {
+        stopRefreshTimer()
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 10, repeating: 10)
+        timer.setEventHandler {
+            MainActor.assumeIsolated {
+                try? FileManager.default.setAttributes([.modificationDate: Date()],
+                                                       ofItemAtPath: Self.sentinelPath)
+            }
         }
-        do {
-            try disarm()
-            return true
-        } catch {
-            NSLog("Tiler: leftover-flag restore failed/cancelled: %@", "\(error)")
-            return false
-        }
+        timer.resume()
+        refreshTimer = timer
+    }
+
+    private func stopRefreshTimer() {
+        refreshTimer?.cancel()
+        refreshTimer = nil
     }
 }

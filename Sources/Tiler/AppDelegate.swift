@@ -320,14 +320,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
     }
 
-    /// Offer a one-click restore of a leftover clamshell `disablesleep` flag (called at
-    /// launch and on wake). Skips when a live clamshell session legitimately holds it.
+    /// Backstop for a leftover clamshell `disablesleep` flag (called at launch and on
+    /// wake): if sleep is still disabled with no live clamshell session, warn (with the
+    /// heat/bag graphic) and offer a one-click restore.
     private func reconcileStuckSleepDisabled() {
         guard let governor,
               DisableSleepGovernor.sleepDisabledNow(),
               !(powerPolicy.isActive && powerPolicy.clamshell) else { return }
-        plog(governor.promptRestore() ? "leftover SleepDisabled flag restored"
-                                      : "leftover SleepDisabled flag detected (kept)")
+        let alert = NSAlert()
+        alert.icon = clamshellWarningNSImage()
+        alert.messageText = "Sleep is still disabled"
+        alert.informativeText = "A “Prevent sleep with lid closed” session left sleep disabled — "
+            + "the Mac won't sleep and can overheat or drain (never leave it closed in a bag). "
+            + "Restore normal sleep?"
+        alert.addButton(withTitle: "Restore normal sleep")
+        alert.addButton(withTitle: "Keep as is")
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            plog("leftover SleepDisabled flag kept by user")
+            return
+        }
+        do {
+            try governor.restoreNow()
+            plog("leftover SleepDisabled flag restored")
+        } catch {
+            plog("leftover SleepDisabled restore failed/cancelled: \(error)")
+        }
+    }
+
+    /// The lid-closed heat-warning graphic (backpack + laptop, crossed out) as an
+    /// NSImage for alert icons.
+    private func clamshellWarningNSImage() -> NSImage? {
+        let renderer = ImageRenderer(content: ClamshellWarningImage().frame(width: 64, height: 64))
+        renderer.scale = 2
+        let image = renderer.nsImage
+        image?.isTemplate = false
+        return image
     }
 
     /// Deep Sleep toggle handler (from SettingsModel.onDeepSleepToggle). On a
@@ -403,26 +430,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             awake?.apply(nil)
             plog("release \(reason.rawValue)")
         case let .armClamshell(deadline):
-            // The FSM's deadline drives expiry/`remaining`; the flag itself is just
-            // set now and cleared on disarm (no watchdog).
             plog("clamshell arm deadline=\(deadline.map { ISO8601DateFormatter().string(from: $0) } ?? "none")")
-            do {
-                try governor?.arm()
-            } catch {
-                // Any arm failure (incl. a cancelled auth dialog) must not leave a
-                // half-armed session: tear it back down through the FSM.
-                plog("clamshell arm FAILED: \(error)")
-                powerApply(.clamshellArmFailed)
+            governor?.arm(deadline: deadline) { [weak self] in
+                // Cancelled auth / launch failure: tear the half-started session down.
+                self?.plog("clamshell arm cancelled/failed")
+                self?.powerApply(.clamshellArmFailed)
             }
         case .disarmClamshell:
-            do {
-                try governor?.disarm()
-                plog("clamshell disarm")
-            } catch {
-                // Cancelled/failed restore: the flag persists; the launch/wake
-                // self-check will offer to clear it later.
-                plog("clamshell disarm FAILED (flag persists until self-check): \(error)")
-            }
+            governor?.disarm()   // promptless — the foreground watchdog restores the flag
+            plog("clamshell disarm")
         case let .notifyFloorStop(percent):
             powerNotifier.floorStop(percent: percent)
             plog("floorStop \(percent)%")

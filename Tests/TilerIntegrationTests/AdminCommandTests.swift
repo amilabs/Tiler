@@ -29,7 +29,37 @@ import Testing
         #expect(AdminShell.appleScriptLiteral("a\nb") == "\"a\nb\"")
     }
 
-    // The clamshell flag is set/cleared with plain `pmset -a disablesleep 1/0` via a
-    // foreground admin command; the old detached-watchdog `armCommand` was removed
-    // (proven reaped by the privileged wrapper — the restore never ran).
+    // MARK: armCommand — the FOREGROUND watchdog (not backgrounded `&`: that gets reaped
+    // by the privileged wrapper). D=0 indefinite, else deadline epoch + 120 s grace.
+
+    private func expectedArm(d: Int) -> String {
+        [
+            "pmset -a disablesleep 1",
+            "echo 1 > /tmp/pro.amilabs.tilerx.clamshell.started",
+            "S=/tmp/pro.amilabs.tilerx.clamshell.sentinel; D=\(d)",
+            "while [ -f \"$S\" ]; do",
+            "  A=$(( $(date +%s) - $(stat -f %m \"$S\") )); [ \"$A\" -lt 45 ] || break",
+            "  [ \"$D\" -eq 0 ] || [ \"$(date +%s)\" -lt \"$D\" ] || break",
+            "  sleep 10",
+            "done",
+            "pmset -a disablesleep 0",
+            "rm -f \"$S\"",
+        ].joined(separator: "\n")
+    }
+
+    @Test func armIndefiniteUsesDZero() {
+        #expect(DisableSleepGovernor.armCommand(deadline: nil) == expectedArm(d: 0))
+    }
+
+    @Test func armTimedUsesDeadlineEpochPlusGrace() {
+        let deadline = Date(timeIntervalSince1970: 1_000_000)
+        #expect(DisableSleepGovernor.armCommand(deadline: deadline) == expectedArm(d: 1_000_120))
+    }
+
+    @Test func armIsForegroundNotBackgrounded() {
+        let cmd = DisableSleepGovernor.armCommand(deadline: nil)
+        #expect(!cmd.contains("nohup"))
+        #expect(!cmd.contains("&"))
+        #expect(cmd.contains("-lt 45"))   // staleness cutoff
+    }
 }

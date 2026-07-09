@@ -253,3 +253,19 @@
       (`sizingOptions=.preferredContentSize`) so the picker can grow the window. Active
       marker handles the -1 (custom) case. Specs app-shell updated. 141 tests +
       acceptance green.
+- [x] 5.17 Clamshell restore — FINAL fix. Owner: the 2nd (restore) prompt ALWAYS
+      appears, even after 10 s — the ~5 min `do shell script` admin cache does NOT carry
+      across separate osascript invocations. Root insight proven headless
+      (`scratchpad/detach-test.sh` + a foreground test): the reap only hit the
+      BACKGROUNDED `&` child; a FOREGROUND osascript command runs as root, SURVIVES the
+      app's death, and restores when the sentinel is removed. So the watchdog is back —
+      as the foreground command of ONE async `osascript … with administrator
+      privileges`: ONE prompt at start, PROMPTLESS restore on
+      stop/expiry/floor/crash/quit/in-a-bag (sentinel removal, staleness, or deadline).
+      `arm(deadline:onArmFailed:)` async + terminationHandler (no "started" marker =
+      cancelled → teardown); `disarm` just removes the sentinel; `restoreNow` (foreground
+      admin) is the rare launch/wake backstop. The leftover-flag alert now carries the
+      backpack heat-warning graphic + danger text (owner request). armCommand back under
+      test (asserts NO `nohup`/`&`). 144 tests + acceptance green. This ALSO closes the
+      in-a-bag gap → model B not needed. Needs owner hands-on: start clamshell → Stop →
+      SleepDisabled 0 with NO second password.
