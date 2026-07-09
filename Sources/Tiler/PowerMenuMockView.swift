@@ -190,6 +190,153 @@ struct PowerMenuMockView: View {
     }
 }
 
+// MARK: - Clamshell dialog: image variants + help-styled dialog (for owner sign-off)
+
+/// A rough side-view backpack silhouette (owner asked to try a side view).
+struct SideBackpack: Shape {
+    func path(in r: CGRect) -> Path {
+        let w = r.width, h = r.height
+        var p = Path()
+        p.addRoundedRect(in: CGRect(x: r.minX + w * 0.20, y: r.minY + h * 0.20,
+                                    width: w * 0.62, height: h * 0.76),
+                         cornerSize: CGSize(width: w * 0.20, height: w * 0.20))
+        // front pocket
+        p.addRoundedRect(in: CGRect(x: r.minX + w * 0.34, y: r.minY + h * 0.52,
+                                    width: w * 0.40, height: h * 0.34),
+                         cornerSize: CGSize(width: w * 0.10, height: w * 0.10))
+        // grab handle
+        var handle = Path()
+        handle.addArc(center: CGPoint(x: r.minX + w * 0.5, y: r.minY + h * 0.22),
+                      radius: w * 0.15, startAngle: .degrees(195), endAngle: .degrees(345), clockwise: false)
+        p.addPath(handle.strokedPath(.init(lineWidth: w * 0.08)))
+        // shoulder strap
+        var strap = Path()
+        strap.move(to: CGPoint(x: r.minX + w * 0.24, y: r.minY + h * 0.26))
+        strap.addQuadCurve(to: CGPoint(x: r.minX + w * 0.30, y: r.minY + h * 0.92),
+                           control: CGPoint(x: r.minX - w * 0.02, y: r.minY + h * 0.6))
+        p.addPath(strap.strokedPath(.init(lineWidth: w * 0.09, lineCap: .round)))
+        return p
+    }
+}
+
+struct ClamshellMockView: View {
+    private let red = Color(nsColor: .systemRed)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Предупреждающая картинка — варианты (светлый · тёмный фон)")
+                .font(.system(size: 13, weight: .semibold))
+            HStack(alignment: .top, spacing: 20) {
+                variant("1 · рюкзак спереди\n(текущий)") { current }
+                variant("2 · кейс сбоку\n+ запрет") { suitcase }
+                variant("3 · ноут + пламя\n(нагрев)") { laptopFlame }
+                variant("4 · рюкзак сбоку\n(рисованный)") { sideBackpack }
+                variant("5 · сумка + ноут\n+ запрет") { bagLaptop }
+            }
+            Divider().padding(.vertical, 4)
+            Text("Диалог в стиле help — по центру, карточкой")
+                .font(.system(size: 13, weight: .semibold))
+            HStack(spacing: 24) {
+                dialog(dark: false)
+                dialog(dark: true)
+            }
+        }
+        .padding(24)
+        .frame(width: 900)
+        .background(.white)
+    }
+
+    // MARK: image candidates
+
+    private var current: some View {
+        ZStack {
+            Image(systemName: "backpack.fill").font(.system(size: 44)).foregroundStyle(.secondary)
+            Image(systemName: "laptopcomputer").font(.system(size: 20)).foregroundStyle(.primary).offset(y: -3)
+            Image(systemName: "nosign").font(.system(size: 60)).foregroundStyle(red)
+        }
+    }
+    private var suitcase: some View {
+        ZStack {
+            Image(systemName: "suitcase.fill").font(.system(size: 38)).foregroundStyle(.secondary)
+            Image(systemName: "nosign").font(.system(size: 58)).foregroundStyle(red)
+        }
+    }
+    private var laptopFlame: some View {
+        ZStack {
+            Image(systemName: "laptopcomputer").font(.system(size: 40)).foregroundStyle(.primary)
+            Image(systemName: "flame.fill").font(.system(size: 24)).foregroundStyle(.orange).offset(x: 16, y: -14)
+        }
+    }
+    private var sideBackpack: some View {
+        ZStack {
+            SideBackpack().fill(Color.secondary).frame(width: 46, height: 54)
+            Image(systemName: "nosign").font(.system(size: 60)).foregroundStyle(red)
+        }
+    }
+    private var bagLaptop: some View {
+        ZStack {
+            Image(systemName: "bag.fill").font(.system(size: 42)).foregroundStyle(.secondary)
+            Image(systemName: "laptopcomputer").font(.system(size: 17)).foregroundStyle(.white).offset(y: 3)
+            Image(systemName: "nosign").font(.system(size: 56)).foregroundStyle(red)
+        }
+    }
+
+    private func variant<V: View>(_ label: String, @ViewBuilder _ img: () -> V) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                chip(dark: false, img)
+                chip(dark: true, img)
+            }
+            Text(label).font(.system(size: 11)).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center).fixedSize()
+        }
+    }
+    private func chip<V: View>(dark: Bool, @ViewBuilder _ img: () -> V) -> some View {
+        img()
+            .frame(width: 72, height: 72)
+            .environment(\.colorScheme, dark ? .dark : .light)
+            .background(RoundedRectangle(cornerRadius: 10).fill(dark ? Color(white: 0.14) : Color(white: 0.96)))
+    }
+
+    // MARK: help-styled dialog
+
+    private func dialog(dark: Bool) -> some View {
+        VStack(spacing: 12) {
+            current.frame(width: 72, height: 72)
+            Text("Prevent sleep with the lid closed")
+                .font(.system(size: 14, weight: .bold)).multilineTextAlignment(.center)
+            Text("The Mac keeps running folded — it gets hot, so never leave it in a bag. "
+                 + "Starting this asks for an administrator password.")
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Text("Keep awake for:").font(.system(size: 12))
+                HStack {
+                    Text("2 hours").font(.system(size: 12)); Spacer()
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 9)).foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 3).frame(width: 110)
+                .background(RoundedRectangle(cornerRadius: 5).fill(dark ? Color(white: 0.22) : Color(white: 0.96)))
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(.gray.opacity(0.4)))
+            }
+            HStack(spacing: 10) {
+                Text("Cancel").font(.system(size: 12))
+                    .padding(.horizontal, 16).padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(dark ? Color(white: 0.25) : Color(white: 0.92)))
+                Text("Start").font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor))
+            }
+            .padding(.top, 2)
+        }
+        .padding(20)
+        .frame(width: 320)
+        .environment(\.colorScheme, dark ? .dark : .light)
+        .background(RoundedRectangle(cornerRadius: 14).fill(dark ? Color(white: 0.12) : .white))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.gray.opacity(0.3)))
+    }
+}
+
 // MARK: - Status-item indicator variants (owner feedback: recolor/encircle, no 2nd icon)
 
 /// Owner direction (gate 2.1, round 3): keep the existing glyph MONOCHROME; overlay a
