@@ -60,9 +60,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setUpHotkeys()
         setUpSettingsWiring()
         startTouchPipeline()
+        setUpTouchWakeRecovery()
         runStartupPermissionFlow()
         setUpPower()
         handleDebugWindowArgs()
+    }
+
+    /// The MultitouchSupport contact stream goes stale across a real system sleep
+    /// (its device refs die), so gestures stop working until relaunch — observed in
+    /// the diagnostic log at gate 4.2. Rebuild the stream shortly after wake (a small
+    /// delay lets the HID stack re-enumerate the trackpad first).
+    private func setUpTouchWakeRecovery() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    self?.restartTouchStreamAfterWake()
+                }
+            }
+        }
+    }
+
+    private func restartTouchStreamAfterWake() {
+        guard let stream = touchStream else { return }   // no trackpad → nothing to do
+        stream.stop()
+        do {
+            try stream.start()   // start() builds a fresh device list
+            plog("touch stream restarted after wake")
+        } catch {
+            plog("touch stream restart failed, rebuilding pipeline: \(error)")
+            startTouchPipeline()
+        }
     }
 
     /// Headless UI smoke: `--show-settings` / `--show-about` / `--show-calibration`

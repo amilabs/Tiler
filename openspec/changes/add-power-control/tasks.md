@@ -157,3 +157,13 @@
       invisible until scrolled (`.scrollIndicators(.visible)` doesn't force it on
       macOS) → `AuxWindow` now flashes the scrollers on open so the scroll advertises
       itself. Top-row confirm verified by owner.
+- [x] 5.8 Gesture recovery after wake (found via the gate-4.2 diagnostic log): the
+      log showed a real 2 h hibernate (Deep Sleep test) with a 7050 s heartbeat gap,
+      wake at lid-open, then the owner's manual relaunch — the MultitouchSupport
+      stream had died across sleep. Fix: rebuild the touch stream 1.5 s after
+      `didWakeNotification` (stop()+start() → fresh device list); fallback to full
+      pipeline rebuild. Spec app-shell "Gesture recovery after system wake" added.
+      DIAGNOSIS: no power-feature anomalies in the ~16 h log — Deep Sleep hibernated
+      and woke cleanly, disable restored without error, no stale sleepDisabled at any
+      launch, screen-lock with an active session kept the system awake (display only
+      slept), battery never neared the floor. Clamshell/floor paths not exercised yet.

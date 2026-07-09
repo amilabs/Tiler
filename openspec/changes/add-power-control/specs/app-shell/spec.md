@@ -34,3 +34,16 @@ only when the active state or the menu-bar appearance changes.
 ##### Scenario: Session indicator
 - WHEN a session is active and permissions are fine
 - THEN the status item shows the red-cup badge and no ⚠
+
+#### Requirement: Gesture recovery after system wake
+
+The MultitouchSupport contact stream goes stale across a real system sleep (its
+device refs die), so gestures stop working until relaunch. Tiler SHALL rebuild the
+touch stream shortly after `NSWorkspace.didWakeNotification` (after a brief delay for
+the HID stack to re-enumerate the trackpad), restoring gestures without a relaunch.
+(Surfaced by the Deep Sleep test at gate 4.2, where a real 2 h hibernate left
+gestures dead until the owner restarted the app.)
+
+##### Scenario: Gestures work after a sleep/wake cycle
+- WHEN the Mac sleeps and later wakes
+- THEN gestures resume within a couple of seconds with no relaunch
