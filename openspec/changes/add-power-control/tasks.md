@@ -210,3 +210,17 @@
       restore path is unproven and looks unreliable. Needs a clean controlled test
       (single clamshell → clean Stop → flag clears ≤15 s?; force-quit → ≤60 s?); if it
       fails, escalate to Fable (watchdog design / model-B root daemon).
+      → CONFIRMED BROKEN 2026-07-09 (owner clean test): after Stop, SleepDisabled
+      stayed 1. Diagnosis: a headless test (`scratchpad/detach-test.sh`) proves the
+      detached `nohup zsh` watchdog launched via `osascript do shell script` (NO admin)
+      survives osascript's return AND runs its cleanup on sentinel removal — so detach
+      + loop logic are fine. The only delta in the real path is
+      `with administrator privileges` + `pmset`: the flag SET works (arm's foreground
+      `pmset -a disablesleep 1` runs as root), but the backgrounded watchdog's
+      `pmset -a disablesleep 0` does not restore → the `&`-detached child almost
+      certainly is NOT root (`do shell script … &` is a known-unreliable way to run a
+      persistent privileged process; the documented-correct way is a launchd daemon =
+      model B). ESCALATE to Fable (designed the watchdog + ran the spike, which restored
+      the flag manually, never via this detached watchdog). Part-1 reconcile fix WORKS
+      (owner cleared the stuck flag with it). Clamshell must not ship until restore is
+      reliable.
