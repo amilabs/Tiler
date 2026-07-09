@@ -243,5 +243,13 @@
       Spec power lid-closed requirement rewritten. 141 unit tests + power-acceptance
       green; flag stays 0. Needs the owner's hands-on clamshell re-test (start → Stop →
       SleepDisabled 0).
-- [ ] 5.16 [MOCK → sign-off] "Custom" end date/time for Prevent Sleep (owner request):
-      a menu item that opens a dialog to pick an exact end time. Mock first, then wire.
+- [x] 5.16 "Until a specific time…" end date/time for Prevent Sleep (owner request).
+      Mock → sign-off (label iterated: Custom… → Custom duration… → owner clarified he
+      needs an END date/time, so "Until a specific time…"). Implemented:
+      `UntilTimeDialogView` (DatePicker date+time, "from now" hint) for the normal menu
+      item, and an "Until a specific time" option added to the lid-closed dialog's
+      picker (reveals the DatePicker). `PowerDuration` shared tag/duration resolver
+      (0=indefinite, -1=until-time, else minutes); dialogs auto-size
+      (`sizingOptions=.preferredContentSize`) so the picker can grow the window. Active
+      marker handles the -1 (custom) case. Specs app-shell updated. 141 tests +
+      acceptance green.

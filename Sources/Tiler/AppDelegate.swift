@@ -39,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private weak var powerTopSeparator: NSMenuItem?
     private var powerStartItems: [NSMenuItem] = []      // normal starts (tag 0 = indefinite, else minutes)
     private weak var powerClamshellItem: NSMenuItem?    // "…with lid closed" → opens the start dialog
-    private var clamshellDialogWindow: NSWindow?
+    private var powerDialogWindow: NSWindow?   // transient clamshell / until-time dialog
     private var activeMinutes: Int?                     // which start choice is running (for the ✓)
     private var activeIsIndefinite = false
     private var sessionStart: Date?                     // for the heartbeat elapsed field
@@ -479,17 +479,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// the admin auth + the disablesleep watchdog). Keeps the risky option deliberate
     /// and atomic; reuses the menu's timer by pre-selecting the running duration.
     @objc private func promptClamshellStart() {
-        let preselect = powerPolicy.isActive ? (activeIsIndefinite ? 0 : (activeMinutes ?? 120)) : 120
-        let model = ClamshellDialogModel(preselectMinutes: preselect)
+        let fixed: Set<Int> = [10, 30, 60, 120, 300, 600, 1440]
+        let preselect: Int
+        if powerPolicy.isActive {
+            if activeIsIndefinite { preselect = 0 }
+            else if let m = activeMinutes, fixed.contains(m) { preselect = m }
+            else { preselect = 120 }
+        } else { preselect = 120 }
+        let model = ClamshellDialogModel(preselectTag: preselect,
+                                         defaultEnd: Date().addingTimeInterval(2 * 3600))
         model.onFinish = { [weak self] in
             guard let self else { return }
-            self.clamshellDialogWindow?.close()
-            self.clamshellDialogWindow = nil
+            self.powerDialogWindow?.close(); self.powerDialogWindow = nil
             guard model.confirmed else { return }
-            let m = model.selectedMinutes
-            self.powerApply(.start(clamshell: true, duration: m == 0 ? nil : TimeInterval(m) * 60))
+            self.powerApply(.start(clamshell: true, duration: model.resolvedDuration()))
         }
-        let hosting = NSHostingController(rootView: ClamshellDialogView(model: model))
+        powerDialogWindow = showPowerDialog(ClamshellDialogView(model: model))
+    }
+
+    /// "Until a specific time…" — pick an end date/time, start a normal session that
+    /// runs until then.
+    @objc private func promptUntilTimeStart() {
+        let model = UntilTimeDialogModel(defaultEnd: Date().addingTimeInterval(2 * 3600))
+        model.onFinish = { [weak self] in
+            guard let self else { return }
+            self.powerDialogWindow?.close(); self.powerDialogWindow = nil
+            guard model.confirmed else { return }
+            self.powerApply(.start(clamshell: false, duration: max(60, model.endDate.timeIntervalSinceNow)))
+        }
+        powerDialogWindow = showPowerDialog(UntilTimeDialogView(model: model))
+    }
+
+    /// A floating, help-styled dialog window that auto-sizes to its SwiftUI content
+    /// (so the conditional date picker can grow it).
+    private func showPowerDialog<V: View>(_ view: V) -> NSWindow {
+        let hosting = NSHostingController(rootView: view)
+        hosting.sizingOptions = [.preferredContentSize]
         let window = NSWindow(contentViewController: hosting)
         window.styleMask = [.titled, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
@@ -498,9 +523,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         window.isReleasedWhenClosed = false
         window.level = .floating
         window.center()
-        clamshellDialogWindow = window
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+        return window
     }
 
     @objc private func powerStopAction() {
@@ -529,11 +554,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem?.title = active ? "On — \(state)" : "Off"
         powerStopItem?.isEnabled = active
 
-        // Mark the running duration (tag 0 = indefinite, else minutes) — the same
-        // list is reused for both normal and lid-closed sessions, so it always shows
-        // which timer is running; the lid-closed nature shows in the header/top row.
+        // Mark the running choice (tag 0 = indefinite, -1 = a custom end time, else
+        // minutes) — the same list is reused for normal and lid-closed sessions, so it
+        // always shows which timer is running; the lid-closed nature shows in the header.
+        let fixedTags: Set<Int> = [10, 30, 60, 120, 300, 600, 1440]
         for item in powerStartItems {
-            let on = active && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
+            let on: Bool
+            if !active { on = false }
+            else if item.tag == 0 { on = activeIsIndefinite }
+            else if item.tag == -1 { on = !activeIsIndefinite && !fixedTags.contains(activeMinutes ?? -2) }
+            else { on = activeMinutes == item.tag }
             item.state = on ? .on : .off
         }
 
@@ -712,6 +742,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Normal starts (system stays awake with the lid open).
         powerStartItems = addStartItems(to: submenu, selector: #selector(powerStart(_:)))
+        let untilTime = makeItem("Until a specific time…", #selector(promptUntilTimeStart))
+        untilTime.tag = -1                 // custom end date/time (opens a dialog)
+        submenu.addItem(untilTime)
+        powerStartItems.append(untilTime)
         submenu.addItem(.separator())
 
         // Lid-closed is the dangerous (heat) option, so it opens a focused dialog that
