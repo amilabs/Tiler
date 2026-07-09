@@ -33,15 +33,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let powerNotifier = PowerNotifier()
     private var governor: DisableSleepGovernor?
     private var powerProfile: PowerProfileController?
-    /// Lid-closed opt-in for the NEXT start; resets to false after every start
-    /// (deliberate per-session friction).
-    private var pendingClamshell = false
     private weak var powerHeaderItem: NSMenuItem?
     private weak var powerStopItem: NSMenuItem?
-    private weak var powerClamshellItem: NSMenuItem?
     private weak var powerTopItem: NSMenuItem?         // prominent active-state row at the menu top
     private weak var powerTopSeparator: NSMenuItem?
-    private var powerStartItems: [NSMenuItem] = []      // indefinite (tag 0) + durations (tag = minutes)
+    private var powerStartItems: [NSMenuItem] = []      // normal starts (tag 0 = indefinite, else minutes)
+    private var powerClamshellStartItems: [NSMenuItem] = []  // lid-closed starts (nested submenu)
     private var activeMinutes: Int?                     // which start choice is running (for the ✓)
     private var activeIsIndefinite = false
     private var sessionStart: Date?                     // for the heartbeat elapsed field
@@ -450,14 +447,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Prevent Sleep menu actions
 
-    @objc private func powerStartIndefinite() {
-        powerApply(.start(clamshell: pendingClamshell, duration: nil))
-        pendingClamshell = false
+    @objc private func powerStart(_ sender: NSMenuItem) {
+        powerApply(.start(clamshell: false, duration: duration(for: sender)))
     }
 
-    @objc private func powerStartDuration(_ sender: NSMenuItem) {
-        powerApply(.start(clamshell: pendingClamshell, duration: TimeInterval(sender.tag) * 60))
-        pendingClamshell = false
+    @objc private func powerStartClamshell(_ sender: NSMenuItem) {
+        powerApply(.start(clamshell: true, duration: duration(for: sender)))
+    }
+
+    private func duration(for item: NSMenuItem) -> TimeInterval? {
+        item.tag == 0 ? nil : TimeInterval(item.tag) * 60   // tag 0 = indefinite
     }
 
     @objc private func powerStopAction() {
@@ -478,25 +477,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    @objc private func toggleClamshell(_ sender: NSMenuItem) {
-        pendingClamshell.toggle()
-        sender.state = pendingClamshell ? .on : .off
-    }
-
-    /// Refresh the top indicator, submenu header, Stop, and checkbox from the FSM
+    /// Refresh the top indicator, submenu header, Stop, and active marker from the FSM
     /// (called on menu open and, for a timed session, every second while open).
     private func refreshPowerMenu() {
         let active = powerPolicy.isActive
         let state = powerStateText(now: Date())
         powerHeaderItem?.title = active ? "On — \(state)" : "Off"
         powerStopItem?.isEnabled = active
-        powerClamshellItem?.state = pendingClamshell ? .on : .off
 
-        // Mark the running start choice (until-stopped = tag 0, else duration minutes).
-        for item in powerStartItems {
-            let on = active && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
-            item.state = on ? .on : .off
+        // Mark the running start choice (tag 0 = indefinite, else minutes) in whichever
+        // list matches the session's clamshell flag.
+        func mark(_ items: [NSMenuItem], clamshell: Bool) {
+            for item in items {
+                let on = active && powerPolicy.clamshell == clamshell
+                    && (item.tag == 0 ? activeIsIndefinite : activeMinutes == item.tag)
+                item.state = on ? .on : .off
+            }
         }
+        mark(powerStartItems, clamshell: false)
+        mark(powerClamshellStartItems, clamshell: true)
 
         powerTopItem?.isHidden = !active
         powerTopSeparator?.isHidden = !active
@@ -671,27 +670,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         powerHeaderItem = header
         submenu.addItem(.separator())
 
-        powerStartItems = []
-        let indefinite = makeItem("On (until stopped)", #selector(powerStartIndefinite))
-        indefinite.tag = 0
-        submenu.addItem(indefinite)
-        powerStartItems.append(indefinite)
-        let durations: [(String, Int)] = [
-            ("For 10 minutes", 10), ("For 30 minutes", 30), ("For 1 hour", 60),
-            ("For 2 hours", 120), ("For 5 hours", 300), ("For 10 hours", 600),
-            ("For 24 hours", 1440),
-        ]
-        for (title, minutes) in durations {
-            let dur = makeItem(title, #selector(powerStartDuration(_:)))
-            dur.tag = minutes
-            submenu.addItem(dur)
-            powerStartItems.append(dur)
-        }
+        // Normal starts (system stays awake with the lid open).
+        powerStartItems = addStartItems(to: submenu, selector: #selector(powerStart(_:)))
         submenu.addItem(.separator())
 
-        let clamshell = makeItem("Prevent sleep with lid closed ⚠", #selector(toggleClamshell(_:)))
-        submenu.addItem(clamshell)
-        powerClamshellItem = clamshell
+        // Lid-closed starts live in their own submenu so choosing one is atomic and
+        // discoverable — a menu-closing checkbox couldn't be set together with a
+        // duration (owner hit exactly that at gate 4.2: no clamshell session ever
+        // started). Each item runs the admin-authorized disablesleep + watchdog path.
+        let clamMenu = NSMenu()
+        clamMenu.autoenablesItems = false
+        let heat = NSMenuItem(title: "⚠ Keeps running folded — gets hot, never in a bag",
+                              action: nil, keyEquivalent: "")
+        heat.isEnabled = false
+        clamMenu.addItem(heat)
+        clamMenu.addItem(.separator())
+        powerClamshellStartItems = addStartItems(to: clamMenu, selector: #selector(powerStartClamshell(_:)))
+        let clamRoot = NSMenuItem(title: "With lid closed ⚠", action: nil, keyEquivalent: "")
+        clamRoot.submenu = clamMenu
+        submenu.addItem(clamRoot)
         submenu.addItem(.separator())
 
         let stop = makeItem("Stop", #selector(powerStopAction))
@@ -702,6 +699,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let root = NSMenuItem(title: "Prevent Sleep", action: nil, keyEquivalent: "")
         root.submenu = submenu
         return root
+    }
+
+    /// The eight start choices (tag 0 = indefinite, else minutes), wired to `selector`.
+    private func addStartItems(to menu: NSMenu, selector: Selector) -> [NSMenuItem] {
+        let choices: [(String, Int)] = [
+            ("On (until stopped)", 0),
+            ("For 10 minutes", 10), ("For 30 minutes", 30), ("For 1 hour", 60),
+            ("For 2 hours", 120), ("For 5 hours", 300), ("For 10 hours", 600),
+            ("For 24 hours", 1440),
+        ]
+        return choices.map { title, minutes in
+            let item = makeItem(title, selector)
+            item.tag = minutes
+            menu.addItem(item)
+            return item
+        }
     }
 
     /// The plain, template menu-bar glyph (adapts to light/dark automatically).

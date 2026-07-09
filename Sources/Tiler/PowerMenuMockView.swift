@@ -21,9 +21,26 @@ struct PowerMenuMockView: View {
                 sectionTitle("“Prevent Sleep” submenu")
                 menuPanel
             }
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle("“With lid closed ⚠” → (atomic clamshell start)")
+                clamshellPanel
+            }
         }
         .padding(24)
-        .frame(width: 580)
+        .frame(width: 860)
+    }
+
+    private var clamshellPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            row("⚠ Keeps running folded — never in a bag", role: .header)
+            divider
+            row("On (until stopped)")
+            ForEach(durations, id: \.self) { row($0) }
+        }
+        .padding(.vertical, 6)
+        .frame(width: 250, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(white: 0.98)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.12)))
     }
 
     private func sectionTitle(_ s: String) -> some View {
@@ -64,7 +81,7 @@ struct PowerMenuMockView: View {
             row("On (until stopped)")
             ForEach(durations, id: \.self) { row($0) }
             divider
-            row("Prevent sleep with lid closed  ⚠", role: .checkbox)
+            row("With lid closed  ⚠                    ▸")
             divider
             row("Stop", role: .strong)
         }

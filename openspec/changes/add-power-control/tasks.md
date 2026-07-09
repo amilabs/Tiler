@@ -167,3 +167,11 @@
       and woke cleanly, disable restored without error, no stale sleepDisabled at any
       launch, screen-lock with an active session kept the system awake (display only
       slept), battery never neared the floor. Clamshell/floor paths not exercised yet.
+- [x] 5.9 Clamshell never started (owner: "не сработало с закрытой крышкой"). Log
+      root cause: EVERY start was `clamshell=false` — the "with lid closed" checkbox
+      closed the menu, so it could not be set together with a duration; the
+      disablesleep+watchdog path was never invoked (Mac correctly slept on a
+      non-clamshell session). Fix: replaced the checkbox with a nested "With lid
+      closed ⚠" submenu of the same start choices → atomic, discoverable clamshell
+      start (heat warning as a disabled header). Specs app-shell/power updated; mock
+      re-rendered. Clamshell mechanism itself still needs a real hands-on run.

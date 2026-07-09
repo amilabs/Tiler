@@ -56,8 +56,10 @@ action. Floor evaluation SHALL be event-driven (power-source change notification
 
 #### Requirement: Lid-closed keep-awake
 
-The Keep Awake menu SHALL offer a per-session "Keep awake with lid closed" ⚠ option
-(mechanism spike-verified 2026-07-08). Starting such a session SHALL run exactly ONE
+The Prevent Sleep menu SHALL offer lid-closed sessions via a nested "With lid closed"
+⚠ submenu (the same start choices), so each lid-closed start is an explicit,
+atomic, per-session choice — not a menu-closing checkbox (mechanism spike-verified
+2026-07-08). Starting such a session SHALL run exactly ONE
 admin-authorized command that sets `pmset -a disablesleep 1` and arms a root
 watchdog; the app SHALL refresh a sentinel file (every ~10 s) while the session
 lives, and the watchdog SHALL restore `disablesleep 0` without further prompts once
@@ -65,8 +67,8 @@ the sentinel is stale or absent — covering normal stop, timer expiry, battery-
 stop, app crash, and quit — or once a timed session's deadline (+ grace) passes.
 The session SHALL additionally hold the public assertions (idle; plus plain
 `PreventSystemSleep`, which alone suffices on AC). Cancelling the auth dialog SHALL
-leave no session running. The option SHALL reset to off for every new session
-(deliberate opt-in friction) and its UI copy SHALL warn about heat (never run
+leave no session running. Choosing a lid-closed start is itself the per-session opt-in
+(no persistent mode to leave on) and its UI copy SHALL warn about heat (never run
 closed in a bag). The battery floor applies unchanged. At launch, Tiler SHALL
 reconcile a leftover `SleepDisabled 1` with no live session by alerting with a
 one-click (admin-authorized) restore.
