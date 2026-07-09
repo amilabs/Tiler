@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var powerLog: PowerDebugLog?
     private var lastLoggedPower: String?
     private var lastOnBattery = false
+    private var debugStateTimer: DispatchSourceTimer?   // 30 s idle-state log while debug logging is on
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -289,6 +290,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
              + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
         observeSystemPowerEvents()
         logSleepBlockers("launch")
+        refreshDebugStateTimer()
+    }
+
+    /// A 30 s idle-state log (only while debug logging is on) so the post-session /
+    /// no-session period is visible: if the lid is closed but the Mac stays awake, this
+    /// shows exactly who holds sleep — and a gap in these lines means it slept.
+    private func refreshDebugStateTimer() {
+        let on = powerLog?.isEnabled == true
+        if on, debugStateTimer == nil {
+            let timer = DispatchSource.makeTimerSource(queue: .main)
+            timer.schedule(deadline: .now() + 30, repeating: 30)
+            timer.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.onDebugStateTick() } }
+            timer.resume()
+            debugStateTimer = timer
+        } else if !on, let timer = debugStateTimer {
+            timer.cancel()
+            debugStateTimer = nil
+        }
+    }
+
+    private func onDebugStateTick() {
+        guard powerLog?.isEnabled == true, !powerPolicy.isActive else { return }  // active → heartbeat covers it
+        let p = PowerSourceMonitor.read()
+        let lidClosed = SystemPower.lidClosed()
+        let blockers = SystemPower.sleepBlockers()
+        powerLog?.log("state lid=\(lidClosed ? "closed" : "open") "
+            + "power=\(p.percent.map(String.init) ?? "-")% \(p.onBattery ? "battery" : "AC") "
+            + "sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow()) blockers=\(blockers.count)")
+        if lidClosed { for b in blockers { powerLog?.log("  · \(b)") } }   // lid closed + awake = the puzzle
     }
 
     /// Log system sleep/wake and screen sleep/wake — with the lid state — so a
@@ -956,6 +986,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             settingsModel?.onDebugLoggingToggle = { [weak self] on in
                 self?.powerLog?.setEnabled(on)
+                self?.refreshDebugStateTimer()
             }
             settingsModel?.onRevealDebugLog = { [weak self] in
                 guard let url = self?.powerLog?.url else { return }

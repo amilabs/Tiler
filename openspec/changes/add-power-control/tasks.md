@@ -299,3 +299,10 @@
       launch/wake/sleep-wake/screen-sleep/after-release with the `SleepDisabled` flag —
       so "why won't it sleep" is captured automatically. Verified: launch line shows
       powerd/runningboardd/coreaudiod holders. Spec power diagnostic-logging updated.
+- [x] 6.3 Idle-state log (owner puzzle: nothing should hold a CLOSED lid awake, yet the
+      Mac didn't sleep after expiry). A 30 s `state lid=… power=… sleepDisabled=…
+      blockers=N` tick runs only while debug logging is on and no session is active
+      (heartbeat covers active sessions); when the lid is closed it also lists the
+      holders. So the post-expiry period is continuously visible: ticks continuing =
+      awake (+ who holds it), a gap = it slept. This will resolve whether the residual
+      not-sleeping is Tiler's ~10 s restore window or a genuine external holder.
