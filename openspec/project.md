@@ -56,14 +56,14 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 
 ## Active changes
 
-- `add-power-control` — caffeinator-class power control: Keep Awake sessions
-  (indefinite/timed), battery floor, lid-closed keep-awake (`disablesleep` +
-  sentinel watchdog, spike-verified), Deep Sleep battery profile (hibernatemode 25).
-  Phase 0 complete 2026-07-08 (design approved, spike done, decisions protocoled);
-  **implementation-ready**: execute `implementation-brief.md` in the change folder
-  task-by-task (written for a fresh session), gates 2.1 and 4.2 remain.
+- None. Start new work as a fresh change folder (kebab-case) with
+  proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-04-add-tiler-mvp` (MVP), `2026-07-04-add-shell-and-calibration`
+Archived: `2026-07-10-add-power-control` (v0.3.0: Prevent Sleep sessions —
+indefinite/timed/until-a-set-time, battery floor, lid-closed keep-awake via a
+foreground admin watchdog, Deep Sleep battery hibernate profile, opt-in power/
+gesture debug log; gate 4.2 passed over days of owner hands-on runs),
+`2026-07-04-add-tiler-mvp` (MVP), `2026-07-04-add-shell-and-calibration`
 (v0.2: icon/About/Settings, startup flow, per-user calibration, dominance retunes),
 `2026-07-04-add-onboarding-guide` (Guide window, cheat sheet, conflict alerting,
 startup flow v2), `2026-07-05-unify-about-guide` (single-entry unified window,
@@ -74,4 +74,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.2.6 (GitHub release with zip).
+`openspec/specs/` are current truth. Released: v0.3.0 (GitHub release with zip).

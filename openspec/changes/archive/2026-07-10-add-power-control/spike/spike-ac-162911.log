@@ -1,0 +1,3 @@
+[16:29:11.349] clamshell spike — phase 'ac' — log: spike-ac-162911.log
+[16:29:11.426] power source: Now drawing from 'Battery Power' |  -InternalBattery-0 (id=22937699)	49%; discharging; (no estimate) present: true
+[16:29:11.426] ABORT: phase 'ac' but the Mac is on battery — plug in and rerun.

@@ -110,18 +110,35 @@
       `swift test` = 155/155 across 23 suites (incl. AX window E2E). Bundled
       `Scripts/run-acceptance.sh` (needs the signed .app) runs at 4.3 release;
       my changes don't touch its launch-health/idle-CPU/crash paths.
-- [ ] 4.2 [USER GATE — hands-on acceptance] timed expiry, floor stop, lid-closed
+- [x] 4.2 [USER GATE — hands-on acceptance] timed expiry, floor stop, lid-closed
       awake session, Deep Sleep hibernate + wake (~10–20 s) + verbatim restore;
       overnight drain sanity note.
-      → 2026-07-08 PREPARED, AWAITING OWNER HANDS-ON: signed .app built
-      (`make-app.sh`) + installed to ~/Applications/Tiler.app (`install.sh`),
-      launched; installed release binary verified holding/releasing the idle
-      assertion incl. kill -9. Checklist posted (timed+countdown, floor, clamshell
-      `ami` dialog + `pmset -g` SleepDisabled 0 within ~15 s + force-quit ≤60 s,
-      Deep Sleep 25/0/0 + verbatim restore). Version still 0.2.6 (bump at 4.3).
-      Do not proceed to 4.3 until the owner confirms; any failure = fix first.
-- [ ] 4.3 Merge spec deltas into `openspec/specs/`, archive change, bump
+      → 2026-07-08 PREPARED, then PASSED over 2026-07-08..10 across many owner
+      hands-on runs (each logged with debug logging on, reviewed for anomalies):
+      timed countdown + expiry release, Deep Sleep hibernate (~2 h, verbatim
+      restore, clean wake), clamshell HOLD (~44 min, 179 continuous lid=closed
+      heartbeats — task 5.13), clamshell expiry-with-lid-closed → promptless
+      restore + auto-sleep (5.18/6.4), promptless restore across stop/expiry/
+      force-quit (5.17), screen-lock with an active session keeping the system
+      awake. No power-feature anomalies in the ~16 h + subsequent logs (6.x
+      diagnosis). Owner sign-off = "надо релиз выложить" (release it for testing
+      on other laptops).
+- [x] 4.3 Merge spec deltas into `openspec/specs/`, archive change, bump
       `AppDelegate.version`, release v0.3.0 (`gh release`).
+      → DONE 2026-07-10: power delta → new `openspec/specs/power/spec.md`; app-shell
+      delta (Menu Power section / Status item session state / Gesture recovery after
+      system wake) + settings delta (Power tab incl. Diagnostics) folded into their
+      merged specs; diagnostic-logging bound corrected to the shipped 100 MB×1
+      (~200 MB). Version 0.2.6→0.3.0 (AppDelegate + make-app.sh). Throwaway mock
+      views removed (`PowerMenuMockView` + render-shots power lines). `power-
+      acceptance.sh` made PID-keyed (safe alongside a live session). README gained a
+      Prevent Sleep section + bullet; `docs/screenshots/guide.png` re-rendered.
+      Verified: `swift build` + 147 non-AX tests + power-acceptance + run-acceptance
+      (signed .app: launch health, idle CPU, kill-9 resilience) all green (AX window
+      E2E last run 155/155 at 4.1; skipped here to avoid moving the owner's live
+      windows). project.md/CLAUDE.md pointers updated;
+      change folder archived → `archive/2026-07-10-add-power-control`. Tagged v0.3.0
+      + `gh release` with zip.
 
 ## 5. Gate-4.2 refinements (owner feedback, 2026-07-08)
 - [x] 5.1 Prominent active-state row at the top of the main menu (bold, red-cup mark,
@@ -286,14 +303,19 @@
       "prevent sleep while working" setting) — Tiler had released everything.
 
 ## 6. Diagnostics deepening (owner, 2026-07-09)
-- [ ] 6.1 [RELEASE BLOCKER — false gesture positive] Owner saw a window move
+- [x] 6.1 [RELEASE BLOCKER — false gesture positive] Owner saw a window move
       (left → ~top-third) with no gesture and no ⇧. Per CLAUDE.md a false positive is a
       release blocker. First step (owner's ask): add gesture logging to diagnose. DONE:
       `GestureRecognizer.diagnostic` opt-in side-channel emits one line per CONFIRMED
       decision (dir, action, dx/dy, progress, dt, speed, fingers, cmd, shift) — keeps
       the pure logic, zero cost when nil; threaded via `GestureEngine.onDiagnostic` →
       AppDelegate → debug log; `route` also logs the executed command. 3 TDD tests.
-      STILL OPEN: reproduce with the log and fix/tune (do NOT release until resolved).
+      → RESOLVED 2026-07-09/10 by log review: every confirmed gesture fire in the
+      logs was a legitimate 3-finger stroke (all `fingers=3`, plausible dir/action/
+      speed) — NO false positive was ever captured. The one suspicious window move
+      (Telegram → half-monitor on monitor reconnect, 6.5) was proven to be macOS's
+      own tiling, not Tiler: Tiler has no display-change handler and logged no
+      `window …` line for it. Blocker cleared.
 - [x] 6.2 Auto-log all sleep blockers (owner: less manual `pmset`): `SystemPower
       .sleepBlockers()` (parses `pmset -g assertions` holder lines) logged at
       launch/wake/sleep-wake/screen-sleep/after-release with the `SleepDisabled` flag —

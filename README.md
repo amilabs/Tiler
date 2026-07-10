@@ -12,6 +12,9 @@ your displays.
   direction, so ordinary scrolling and resting palms don't affect your windows.
 - Swipe angles can be calibrated to your hand in about a minute.
 - Light on resources: under 1% CPU when your fingers are off the trackpad.
+- **Prevent Sleep**: keep the Mac awake on demand — indefinitely, for a set
+  duration, until a chosen time, or with the lid closed — plus an optional
+  battery-side **Deep Sleep** (hibernate) profile.
 
 ## Shortcuts and gestures
 
@@ -29,6 +32,21 @@ your displays.
 
 Swipe-down, two- and four-finger movements do nothing. The full reference lives
 in the app: menu bar → **Tiler**.
+
+## Prevent Sleep
+
+The menu-bar **Prevent Sleep** section keeps the Mac awake on command —
+indefinitely, for a fixed duration (10 min … 24 h), or until a specific time.
+The menu-bar icon turns red with a coffee-cup badge while a session runs.
+
+- **Keep display awake** (Settings → Power) also holds the screen on; off by
+  default, so only the system stays awake.
+- **Battery floor** (default 20%) auto-stops a session on battery once the
+  charge drops to the floor, with a notification and no surprise restart.
+- **Prevent sleep with the lid closed** runs the Mac folded; it needs an
+  administrator password and gets hot — never leave it in a bag.
+- **Deep Sleep on lid close** (Settings → Power) switches the battery-side sleep
+  profile to full hibernation for near-zero drain; wake then takes ~10–20 s.
 
 ## Install
 

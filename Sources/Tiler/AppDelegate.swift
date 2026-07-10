@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.2.6"
+    static let version = "0.3.0"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -984,14 +984,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         write("guide", GuideView(model: guideModel))
         let settingsModel = SettingsModel(store: settings, accessibilityGranted: true)
         write("settings", SettingsView(model: settingsModel))
-        // Power UI mockups (add-power-control gate 2.1) — need no live engine.
-        write("power-menu", PowerMenuMockView())
-        write("power-settings", PowerSettingsMockView())
-        write("power-indicator", PowerIndicatorMockView())
-        write("power-clamshell", ClamshellMockView())
-        write("power-custom", CustomMockView())
         // Calibration preview needs the live gesture engine; skip it when there is no
-        // trackpad (headless render still produces the window/power shots).
+        // trackpad (headless render still produces the window shots).
         if let engine {
             let calibrationModel = CalibrationModel(engine: engine) { _ in }
             write("calibration", CalibrationView(model: calibrationModel))

@@ -3,12 +3,13 @@
 **Start here every session:**
 1. Read `openspec/project.md` (context, environment, workflow rules).
 2. Check the active change listed in `openspec/project.md`. Currently:
-   `add-power-control` (Keep Awake / Deep Sleep power control) — proposed 2026-07-08,
-   blocked on the [USER GATE] items in its tasks.md; do not implement past a gate.
-   v0.1 (MVP) and v0.2 (shell + calibration) are archived under
-   `openspec/changes/archive/` with full design history; `openspec/specs/` is the
-   current merged truth (scenarios = required tests). The owner's verbatim original
-   assignment is `archive/2026-07-04-add-tiler-mvp/brief.md`.
+   **none** — `add-power-control` shipped as v0.3.0 (2026-07-10) and is archived
+   under `openspec/changes/archive/2026-07-10-add-power-control/` with full design
+   history. Start new work as a fresh change folder. v0.1 (MVP), v0.2 (shell +
+   calibration), and v0.3 (power control) are all archived under
+   `openspec/changes/archive/`; `openspec/specs/` is the current merged truth
+   (scenarios = required tests). The owner's verbatim original assignment is
+   `archive/2026-07-04-add-tiler-mvp/brief.md`.
 3. New work starts as a new change folder (kebab-case) with proposal/design/tasks/spec
    deltas; update `tasks.md` checkboxes **as you work** and keep specs in sync with
    any behavior change (owner mandate: everything is protocoled in OpenSpec).

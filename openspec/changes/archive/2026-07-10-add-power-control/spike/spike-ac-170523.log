@@ -1,0 +1,243 @@
+[17:05:23.722] clamshell spike — phase 'ac' — log: spike-ac-170523.log
+[17:05:23.802] power source: Now drawing from 'AC Power' |  -InternalBattery-0 (id=22937699)	42%; AC attached; not charging present: true
+[17:05:23.802] assertion held: PreventUserIdleSystemSleep (base) (id 35521)
+[17:05:23.802] FAILED to hold PreventUserIdleSystemSleep+AppliesOnLidClose: IOReturn 0xe00002c1
+[17:05:23.803] assertion held: PreventSystemSleep (plain, privilege probe) (id 35522)
+[17:05:23.803] FAILED to hold PreventSystemSleep+AppliesToLimitedPower (privilege probe): IOReturn 0xe00002c1
+[17:05:23.883] --- pmset -g assertions after create ---
+2026-07-08 17:05:23 +0200 
+Assertion status system-wide:
+   BackgroundTask                 1
+   ApplePushServiceTask           0
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    0
+   SoftwareUpdateTask             0
+   PreventSystemSleep             1
+   ExternalMedia                  0
+   PreventUserIdleSystemSleep     1
+   NetworkClientActive            0
+Listed by owning process:
+   pid 415(runningboardd): [0x00046eb700018ac0] 00:00:00 PreventUserIdleSystemSleep named: "osservice<com.apple.mobileassetd>415-38489-194771:com.apple.CFNetwork.StorageDB"  
+	Created for PID: 38489. 
+   pid 425(coreaudiod): [0x0004661e000197f6] 00:36:41 PreventUserIdleSystemSleep named: "com.apple.audio.BuiltInSpeakerDevice.context.preventuseridlesleep"  
+	Created for PID: 24131. 
+	Resources: audio-out BuiltInSpeakerDevice 
+   pid 37790(Claude): [0x000351360001a188] 20:30:05 NoIdleSleepAssertion named: "Electron"  
+   pid 669(sharingd): [0x00046e8c00018a58] 00:00:43 PreventUserIdleSystemSleep named: "Handoff"  
+   pid 409(WindowServer): [0x00046e8700098a49] 00:00:00 UserIsActive named: "com.apple.iohideventsystem.queue.tickle serviceID:10000096d service:AppleMultitouchDevice product:Apple Internal Keyboard / Trackpad eventType:11"  
+	Timeout will fire in 600 secs Action=TimeoutActionRelease
+   pid 388(dasd): [0x00046eaf00018a95] 00:00:08 PreventUserIdleSystemSleep named: "DASActivity-ClientRequested:503:com.apple.photoanalysisd.graphNonIntensiveTasks"  
+	Created for PID: 55308. 
+   pid 55335(swift-frontend): [0x00046eb700018ac1] 00:00:00 PreventUserIdleSystemSleep named: "Tiler clamshell spike (idle)"  
+   pid 55335(swift-frontend): [0x00046eb700078ac2] 00:00:00 PreventSystemSleep named: "Tiler clamshell spike (system plain)"  
+   pid 55314(CloudTelemetryService): [0x00046eb4000c8ab7] 00:00:03 SystemIsActive named: "NSURLSessionTask D492D40B-0312-4267-9DAF-5C07204DD638"  
+	Timeout will fire in 10796 secs Action=TimeoutActionTurnOff
+   pid 350(powerd): [0x00046e8700018a4a] 00:00:48 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+   pid 350(powerd): [0x00046e8700098a48] 00:00:48 UserIsActive named: "com.apple.powermanagement.lidopen"  
+	Timeout will fire in 552 secs Action=TimeoutActionRelease
+   pid 2825(nsurlsessiond): [0x00046eb3000b8aae] 00:00:04 BackgroundTask named: "NSURLSessionTask 897E3C03-9AFC-41EC-9F8F-B98BD5AA51FE"  
+	Timeout will fire in 10796 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb4000b8ab8] 00:00:03 BackgroundTask named: "NSURLSessionTask 7A61A9AB-F2E0-4E1B-B931-A635D1722AB9"  
+	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb4000b8ab9] 00:00:03 BackgroundTask named: "NSURLSessionTask 7B6CD3A3-9CE8-44FB-BC27-2B0F392A35A4"  
+	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb4000b8aba] 00:00:03 BackgroundTask named: "NSURLSessionTask 01A69AA6-D794-4304-A219-D0B5D39862AC"  
+	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb4000b8abb] 00:00:03 BackgroundTask named: "NSURLSessionTask 26E1D473-683F-4FC0-A58B-11506CDA1982"  
+	Timeout will fire in 10797 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb7000b8abd] 00:00:00 BackgroundTask named: "NSURLSessionTask 5355644B-A4F6-47D3-9FCD-C3F588F5EDC1"  
+	Timeout will fire in 10800 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb7000b8abe] 00:00:00 BackgroundTask named: "NSURLSessionTask 66ADC147-E32B-47C0-BF7C-F97104726893"  
+	Timeout will fire in 10800 secs Action=TimeoutActionTurnOff
+   pid 2825(nsurlsessiond): [0x00046eb7000b8abf] 00:00:00 BackgroundTask named: "NSURLSessionTask 30A34CD1-6DCC-439F-BAB1-97BA0F75FA1F"  
+	Timeout will fire in 10800 secs Action=TimeoutActionTurnOff
+No kernel assertions.
+--- end ---
+[17:05:23.883] pmset lists the spike assertions ✓
+[17:05:23.883] note: AppliesOnLidClose not visible in pmset dump (may still be honored — lid test decides)
+[17:05:23.883] READY. Close the lid now, keep it closed for ~2 minutes, then open it.
+[17:05:23.883] (the script waits up to 90 s for the close, finishes itself after reopen)
+[17:05:31.946] lid CLOSED — heartbeating every 2 s (gaps = sleep) …
+[17:05:33.952] beat gap=2.0 s
+[17:05:35.960] beat gap=2.0 s
+[17:05:37.970] beat gap=2.0 s
+[17:05:39.981] beat gap=2.0 s
+[17:05:41.985] beat gap=2.0 s
+[17:05:43.995] beat gap=2.0 s
+[17:05:46.007] beat gap=2.0 s
+[17:05:48.015] beat gap=2.0 s
+[17:05:50.025] beat gap=2.0 s
+[17:05:52.033] beat gap=2.0 s
+[17:05:54.038] beat gap=2.0 s
+[17:05:56.049] beat gap=2.0 s
+[17:05:58.059] beat gap=2.0 s
+[17:06:00.060] beat gap=2.0 s
+[17:06:02.067] beat gap=2.0 s
+[17:06:04.075] beat gap=2.0 s
+[17:06:06.084] beat gap=2.0 s
+[17:06:08.090] beat gap=2.0 s
+[17:06:10.095] beat gap=2.0 s
+[17:06:12.101] beat gap=2.0 s
+[17:06:14.110] beat gap=2.0 s
+[17:06:16.118] beat gap=2.0 s
+[17:06:18.128] beat gap=2.0 s
+[17:06:20.137] beat gap=2.0 s
+[17:06:22.144] beat gap=2.0 s
+[17:06:24.152] beat gap=2.0 s
+[17:06:26.161] beat gap=2.0 s
+[17:06:28.169] beat gap=2.0 s
+[17:06:30.174] beat gap=2.0 s
+[17:06:32.179] beat gap=2.0 s
+[17:06:34.181] beat gap=2.0 s
+[17:06:36.191] beat gap=2.0 s
+[17:06:38.199] beat gap=2.0 s
+[17:06:40.201] beat gap=2.0 s
+[17:06:42.206] beat gap=2.0 s
+[17:06:44.216] beat gap=2.0 s
+[17:06:46.220] beat gap=2.0 s
+[17:06:48.229] beat gap=2.0 s
+[17:06:50.239] beat gap=2.0 s
+[17:06:52.241] beat gap=2.0 s
+[17:06:54.248] beat gap=2.0 s
+[17:06:56.251] beat gap=2.0 s
+[17:06:58.262] beat gap=2.0 s
+[17:07:00.269] beat gap=2.0 s
+[17:07:02.278] beat gap=2.0 s
+[17:07:04.286] beat gap=2.0 s
+[17:07:06.296] beat gap=2.0 s
+[17:07:08.305] beat gap=2.0 s
+[17:07:10.310] beat gap=2.0 s
+[17:07:12.319] beat gap=2.0 s
+[17:07:14.321] beat gap=2.0 s
+[17:07:16.329] beat gap=2.0 s
+[17:07:18.338] beat gap=2.0 s
+[17:07:20.348] beat gap=2.0 s
+[17:07:22.358] beat gap=2.0 s
+[17:07:24.369] beat gap=2.0 s
+[17:07:26.374] beat gap=2.0 s
+[17:07:28.381] beat gap=2.0 s
+[17:07:30.385] beat gap=2.0 s
+[17:07:32.391] beat gap=2.0 s
+[17:07:34.397] beat gap=2.0 s
+[17:07:36.407] beat gap=2.0 s
+[17:07:38.413] beat gap=2.0 s
+[17:07:40.422] beat gap=2.0 s
+[17:07:42.423] beat gap=2.0 s
+[17:07:44.433] beat gap=2.0 s
+[17:07:46.441] beat gap=2.0 s
+[17:07:48.446] beat gap=2.0 s
+[17:07:50.453] beat gap=2.0 s
+[17:07:52.463] beat gap=2.0 s
+[17:07:54.470] beat gap=2.0 s
+[17:07:56.478] beat gap=2.0 s
+[17:07:58.482] beat gap=2.0 s
+[17:08:00.495] beat gap=2.0 s
+[17:08:02.502] beat gap=2.0 s
+[17:08:04.511] beat gap=2.0 s
+[17:08:06.520] beat gap=2.0 s
+[17:08:08.529] beat gap=2.0 s
+[17:08:10.540] beat gap=2.0 s
+[17:08:12.549] beat gap=2.0 s
+[17:08:14.556] beat gap=2.0 s
+[17:08:16.563] beat gap=2.0 s
+[17:08:18.575] beat gap=2.0 s
+[17:08:20.579] beat gap=2.0 s
+[17:08:22.584] beat gap=2.0 s
+[17:08:24.593] beat gap=2.0 s
+[17:08:26.594] beat gap=2.0 s
+[17:08:28.596] beat gap=2.0 s
+[17:08:30.598] beat gap=2.0 s
+[17:08:32.604] beat gap=2.0 s
+[17:08:34.613] beat gap=2.0 s
+[17:08:36.623] beat gap=2.0 s
+[17:08:38.630] beat gap=2.0 s
+[17:08:40.635] beat gap=2.0 s
+[17:08:42.645] beat gap=2.0 s
+[17:08:44.646] beat gap=2.0 s
+[17:08:46.652] beat gap=2.0 s
+[17:08:48.662] beat gap=2.0 s
+[17:08:50.669] beat gap=2.0 s
+[17:08:52.679] beat gap=2.0 s
+[17:08:54.689] beat gap=2.0 s
+[17:08:56.698] beat gap=2.0 s
+[17:08:58.704] beat gap=2.0 s
+[17:09:00.715] beat gap=2.0 s
+[17:09:02.725] beat gap=2.0 s
+[17:09:04.729] beat gap=2.0 s
+[17:09:06.736] beat gap=2.0 s
+[17:09:08.745] beat gap=2.0 s
+[17:09:10.746] beat gap=2.0 s
+[17:09:12.751] beat gap=2.0 s
+[17:09:14.761] beat gap=2.0 s
+[17:09:16.769] beat gap=2.0 s
+[17:09:18.777] beat gap=2.0 s
+[17:09:20.785] beat gap=2.0 s
+[17:09:22.789] beat gap=2.0 s
+[17:09:24.796] beat gap=2.0 s
+[17:09:26.801] beat gap=2.0 s
+[17:09:28.809] beat gap=2.0 s
+[17:09:30.819] beat gap=2.0 s
+[17:09:32.824] beat gap=2.0 s
+[17:09:34.830] beat gap=2.0 s
+[17:09:36.839] beat gap=2.0 s
+[17:09:38.849] beat gap=2.0 s
+[17:09:40.857] beat gap=2.0 s
+[17:09:42.865] beat gap=2.0 s
+[17:09:44.869] beat gap=2.0 s
+[17:09:44.869] lid OPENED — closed for 253 s, max heartbeat gap 2.0 s
+[17:09:44.870] VERDICT: STAYED AWAKE (AC) — lid closed 253 s, max gap 2.0 s.
+[17:09:46.613] --- pmset -g log excerpt (sleep/wake around the test) ---
+2026-07-05 11:30:30 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00008558 [System: PrevIdle BGTask]          
+2026-07-05 11:30:30 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 45 secs   
+2026-07-05 11:31:15 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 391 secs  
+2026-07-05 11:31:16 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 11:46:15 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=1721 wakeAt=2026-07-05 11:59:57] [process=powerd request=UserWake deltaSecs=1723 wakeAt=2026-07-05 12:00:00 info="com.apple.alarm.user-invisible-com.apple.calaccessd.alarmEngine.alarm.name,2780"]           
+2026-07-05 11:37:45 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd0000857b [System: PrevIdle DeclUser SysAct SRPrevSleep kCPU kDisp]          
+2026-07-05 11:37:45 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd0000857b [System: PrevIdle PrevSleep DeclUser SysAct kCPU kDisp]          
+2026-07-05 11:37:46 +0200 Wake                	Wake from Deep Idle [CDNVA] : due to MTP.DOCK.CHANNELS.AP0.IRQ RTP.keyboard/UserActivity Assertion Using AC (Charge:80%)           
+2026-07-05 19:55:35 +0200 Sleep               	Entering Sleep state due to 'Idle Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 900 secs  
+2026-07-05 19:55:37 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 20:10:35 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=6931 wakeAt=2026-07-05 21:51:08] [process=powerd request=UserWake deltaSecs=5852 wakeAt=2026-07-05 21:33:09 info="com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer,617"]           
+2026-07-05 20:10:35 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009737 [System: PrevIdle BGTask SRPrevSleep kCPU]          
+2026-07-05 20:10:35 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 46 secs   
+2026-07-05 20:10:36 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009737 [System: BGTask SRPrevSleep kCPU]          
+2026-07-05 20:11:21 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 900 secs  
+2026-07-05 20:11:23 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 20:26:21 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=5985 wakeAt=2026-07-05 21:51:08] [process=powerd request=UserWake deltaSecs=4906 wakeAt=2026-07-05 21:33:09 info="com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer,617"]           
+2026-07-05 20:26:21 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009772 [System: SRPrevSleep kCPU]          
+2026-07-05 20:26:21 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 45 secs   
+2026-07-05 20:26:21 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009772 [System: PrevIdle SRPrevSleep IPushSrvc kCPU]          
+2026-07-05 20:27:06 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 900 secs  
+2026-07-05 20:27:08 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 20:42:06 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=5040 wakeAt=2026-07-05 21:51:08] [process=powerd request=UserWake deltaSecs=3961 wakeAt=2026-07-05 21:33:09 info="com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer,617"]           
+2026-07-05 20:42:06 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000097a1 [System: BGTask SRPrevSleep kCPU]          
+2026-07-05 20:42:06 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 45 secs   
+2026-07-05 20:42:07 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000097a1 [System: PrevIdle BGTask SRPrevSleep kCPU]          
+2026-07-05 20:42:51 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 900 secs  
+2026-07-05 20:42:53 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 20:57:51 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=4095 wakeAt=2026-07-05 21:51:08] [process=powerd request=UserWake deltaSecs=3016 wakeAt=2026-07-05 21:33:09 info="com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer,617"]           
+2026-07-05 20:57:51 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000097fe [System: SRPrevSleep kCPU]          
+2026-07-05 20:57:51 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to NUB.SPMI0.SW3 nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 45 secs   
+2026-07-05 20:57:51 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000097fe [System: PrevIdle SRPrevSleep IPushSrvc kCPU]          
+2026-07-05 20:58:36 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using AC (Charge:80%) 607 secs  
+2026-07-05 20:58:38 +0200 Wake Requests       	[*process=PowerUIAgent request=Maintenance deltaSecs=898 wakeAt=2026-07-05 21:13:36 info="com.apple.obc"] [process=powerd request=CSPNEvaluation deltaSecs=3150 wakeAt=2026-07-05 21:51:08] [process=powerd request=UserWake deltaSecs=2071 wakeAt=2026-07-05 21:33:09 info="com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer,617"]           
+2026-07-05 21:08:42 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009840 [System: PrevIdle PrevSleep DeclUser BGTask SRPrevSleep kCPU kDisp]          
+2026-07-05 21:08:43 +0200 Wake                	Wake from Deep Idle [CDNVA] : due to MTP.DOCK.CHANNELS.AP0.IRQ RTP.keyboard/UserActivity Assertion Using AC (Charge:80%)           
+2026-07-05 21:08:43 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00009840 [System: PrevIdle PrevSleep DeclUser BGTask SRPrevSleep IPushSrvc kCPU kDisp]          
+2026-07-08 13:32:38 +0200 Sleep               	Entering Sleep state due to 'Clamshell Sleep':TCPKeepAlive=disabled Using Batt (Charge:80%) 226 secs  
+2026-07-08 13:36:24 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd0000829b [System: PrevIdle DeclUser kDisp]          
+2026-07-08 13:36:24 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to smc.sysState.Wake(0x70070000) wifibt SMC.OutboxNotEmpty E_CONNECTION_LOSS ARPT/ Using BATT (Charge:80%) 45 secs   
+2026-07-08 13:36:25 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd0000829b [System: PrevIdle DeclUser SRPrevSleep kCPU kDisp]          
+2026-07-08 13:37:09 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using Batt (Charge:80%) 151 secs  
+2026-07-08 13:39:40 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000082d4 [System: PrevIdle DeclUser kDisp]          
+2026-07-08 13:39:40 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000082d4 [System: PrevIdle DeclUser kDisp]          
+2026-07-08 13:39:40 +0200 DarkWake            	DarkWake from Deep Idle [CDN] : due to smc.sysState.Wake(0x70070000) wifibt SMC.OutboxNotEmpty E_UNKNOWN ARPT/ Using BATT (Charge:80%) 45 secs   
+2026-07-08 13:40:25 +0200 Sleep               	Entering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=disabled Using Batt (Charge:80%) 230 secs  
+2026-07-08 13:44:14 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000082e2 [System: PrevIdle DeclUser kDisp]          
+2026-07-08 13:44:15 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd000082e2 [System: PrevIdle DeclUser kDisp]          
+2026-07-08 13:44:15 +0200 Wake                	Wake from Deep Idle [CDNVA] : due to smc.sysState.Wake(0x70070000) lid SMC.OutboxNotEmpty RTP.multi-touch/HID Activity Using BATT (Charge:80%)           
+2026-07-08 16:26:43 +0200 Sleep               	Entering Sleep state due to 'Clamshell Sleep':TCPKeepAlive=disabled Using Batt (Charge:49%) 119 secs  
+2026-07-08 16:28:41 +0200 Assertions          	PID 476(mDNSResponder) Created MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00008170 [System: PrevIdle PrevDisp DeclUser kDisp]          
+2026-07-08 16:28:42 +0200 Wake                	Wake from Deep Idle [CDNVA] : due to smc.sysState.Wake(0x70070000) lid SMC.OutboxNotEmpty RTP.multi-touch/HID Activity Using BATT (Charge:49%)           
+2026-07-08 16:28:42 +0200 Assertions          	PID 476(mDNSResponder) Released MaintenanceWake "mDNSResponder:maintenance" 00:00:00  id:0x0xd00008170 [System: PrevIdle PrevDisp DeclUser kDisp]          
+2026-07-08 17:05:31 +0200 Sleep               	Entering DarkWake state due to 'Clamshell Sleep':TCPKeepAlive=disabled Using AC (Charge:42%) 252 secs  
+2026-07-08 17:09:43 +0200 Wake                	DarkWake to FullWake from Deep Idle [CDNVA] : due to UserActivity Assertion Using AC (Charge:49%)           
+--- end ---
+[17:09:46.614] assertion released: PreventUserIdleSystemSleep (base)
+[17:09:46.614] assertion released: PreventSystemSleep (plain, privilege probe)
+[17:09:46.614] done — evidence: /Users/Shared/SharedWork/ProjectsClaude/Tiler/openspec/changes/add-power-control/spike/spike-ac-170523.log

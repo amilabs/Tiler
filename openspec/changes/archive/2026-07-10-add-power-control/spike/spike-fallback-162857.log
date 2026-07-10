@@ -1,0 +1,3 @@
+[16:28:57.796] clamshell spike — phase 'fallback' — log: spike-fallback-162857.log
+[16:28:57.875] power source: Now drawing from 'Battery Power' |  -InternalBattery-0 (id=22937699)	49%; discharging; (no estimate) present: true
+[16:28:57.956] ABORT: phase 'fallback' needs the flag first:  sudo pmset -a disablesleep 1
