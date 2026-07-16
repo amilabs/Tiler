@@ -3,12 +3,12 @@
 **Start here every session:**
 1. Read `openspec/project.md` (context, environment, workflow rules).
 2. Check the active change listed in `openspec/project.md`. Currently:
-   **none** — `add-power-control` shipped as v0.3.0 (2026-07-10) and is archived
-   under `openspec/changes/archive/2026-07-10-add-power-control/` with full design
-   history. Start new work as a fresh change folder. v0.1 (MVP), v0.2 (shell +
-   calibration), and v0.3 (power control) are all archived under
-   `openspec/changes/archive/`; `openspec/specs/` is the current merged truth
-   (scenarios = required tests). The owner's verbatim original assignment is
+   **none** — latest shipped: `fix-touch-stream-resilience` as v0.3.1 (2026-07-16,
+   gesture stream recovery; field verification on the owner's second laptop still
+   pending) and `add-power-control` as v0.3.0 (2026-07-10), both archived under
+   `openspec/changes/archive/` with full design history. Start new work as a fresh
+   change folder. `openspec/specs/` is the current merged truth (scenarios =
+   required tests). The owner's verbatim original assignment is
    `archive/2026-07-04-add-tiler-mvp/brief.md`.
 3. New work starts as a new change folder (kebab-case) with proposal/design/tasks/spec
    deltas; update `tasks.md` checkboxes **as you work** and keep specs in sync with

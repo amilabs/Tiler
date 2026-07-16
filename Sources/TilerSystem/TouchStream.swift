@@ -13,6 +13,7 @@ public final class TouchStream: @unchecked Sendable {
     typealias RegisterCallbackFn = @convention(c) (TLMTDeviceRef, TLMTContactCallback?) -> Void
     typealias StartFn = @convention(c) (TLMTDeviceRef, Int32) -> Void
     typealias StopFn = @convention(c) (TLMTDeviceRef) -> Void
+    typealias GetDeviceIDFn = @convention(c) (TLMTDeviceRef, UnsafeMutablePointer<UInt64>) -> Int32
 
     public enum StreamError: Error, CustomStringConvertible {
         case frameworkUnavailable(String)
@@ -35,10 +36,18 @@ public final class TouchStream: @unchecked Sendable {
     private var deviceList: CFMutableArray?
     private var running = false
 
+    // Liveness/identity state for the stream guardian. Written from the C callback's
+    // MultitouchSupport thread and start(); read from the main actor — lock-guarded.
+    private let stateLock = NSLock()
+    private var lastFrameTime: CFAbsoluteTime?
+    private var startedTime: CFAbsoluteTime?
+    private var attachedIDs: [UInt64] = []
+
     private let createList: CreateListFn
     private let registerCallback: RegisterCallbackFn
     private let startDevice: StartFn
     private let stopDevice: StopFn
+    private let getDeviceID: GetDeviceIDFn?   // optional: absent symbol degrades drift to count-only
 
     /// `handler` is called on the stream's serial queue for every contact frame.
     public init(handler: @escaping @Sendable (TouchFrame) -> Void) throws {
@@ -60,6 +69,7 @@ public final class TouchStream: @unchecked Sendable {
         registerCallback = try sym("MTRegisterContactFrameCallback", RegisterCallbackFn.self)
         startDevice = try sym("MTDeviceStart", StartFn.self)
         stopDevice = try sym("MTDeviceStop", StopFn.self)
+        getDeviceID = dlsym(lib, "MTDeviceGetDeviceID").map { unsafeBitCast($0, to: GetDeviceIDFn.self) }
     }
 
     public func start() throws {
@@ -79,6 +89,13 @@ public final class TouchStream: @unchecked Sendable {
             startDevice(dev, 0)
         }
         running = true
+
+        let signature = signature(of: devices)
+        stateLock.lock()
+        attachedIDs = signature
+        startedTime = CFAbsoluteTimeGetCurrent()
+        lastFrameTime = nil
+        stateLock.unlock()
     }
 
     public func stop() {
@@ -97,10 +114,56 @@ public final class TouchStream: @unchecked Sendable {
         stop()
     }
 
+    // MARK: - Guardian support (identity + liveness)
+
+    /// Device signature: sorted real device IDs when `MTDeviceGetDeviceID` is
+    /// available, else the degenerate `[count]` (drift then means count change only).
+    private func signature(of devs: [TLMTDeviceRef]) -> [UInt64] {
+        guard let getDeviceID else { return [UInt64(devs.count)] }
+        return devs.compactMap { dev in
+            var id: UInt64 = 0
+            return getDeviceID(dev, &id) == 0 ? id : nil
+        }.sorted()
+    }
+
+    /// The signature captured by the last successful start().
+    public var attachedSignature: [UInt64] {
+        stateLock.lock(); defer { stateLock.unlock() }
+        return attachedIDs
+    }
+
+    /// Fresh enumeration, same encoding as `attachedSignature`; nil when the device
+    /// list cannot be built (no information — the policy never treats nil as drift).
+    public func currentSignature() -> [UInt64]? {
+        guard let listUnmanaged = createList() else { return nil }
+        let list = listUnmanaged.takeRetainedValue()
+        let count = CFArrayGetCount(list)
+        let devs = (0..<count).map { i in
+            TLMTDeviceRef(mutating: CFArrayGetValueAtIndex(list, i)!)
+        }
+        return signature(of: devs)
+    }
+
+    /// Seconds since the stream last delivered a contact frame — counted from the
+    /// last start() when no frame arrived yet, so a fresh stream is never
+    /// instantly "long silent". Nil before the first start().
+    public func silentSeconds(now: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> Double? {
+        stateLock.lock(); defer { stateLock.unlock() }
+        guard let reference = lastFrameTime ?? startedTime else { return nil }
+        return max(0, now - reference)
+    }
+
+    private func noteFrame() {
+        stateLock.lock()
+        lastFrameTime = CFAbsoluteTimeGetCurrent()
+        stateLock.unlock()
+    }
+
     // MARK: - C callback plumbing
 
     private static let contactCallback: TLMTContactCallback = { device, touches, numTouches, timestamp, _ in
         guard let stream = TouchStream.current else { return 0 }
+        stream.noteFrame()
         let deviceID = UInt64(UInt(bitPattern: device))
         var contacts: [Contact] = []
         if let touches, numTouches > 0 {

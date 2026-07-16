@@ -59,7 +59,11 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-10-add-power-control` (v0.3.0: Prevent Sleep sessions —
+Archived: `2026-07-16-fix-touch-stream-resilience` (v0.3.1: gesture stream
+recovery — the MT stream can die with no system sleep (field bug, second laptop);
+guardian rebuilds on wake/display change/device-ID drift/silence self-heal with
+full diagnostics; field verification on the second laptop pending),
+`2026-07-10-add-power-control` (v0.3.0: Prevent Sleep sessions —
 indefinite/timed/until-a-set-time, battery floor, lid-closed keep-awake via a
 foreground admin watchdog, Deep Sleep battery hibernate profile, opt-in power/
 gesture debug log; gate 4.2 passed over days of owner hands-on runs),
@@ -74,4 +78,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.0 (GitHub release with zip).
+`openspec/specs/` are current truth. Released: v0.3.1 (GitHub release with zip).

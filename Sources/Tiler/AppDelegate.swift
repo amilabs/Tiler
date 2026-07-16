@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.3.0"
+    static let version = "0.3.1"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -52,6 +52,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastLoggedPower: String?
     private var lastOnBattery = false
     private var debugStateTimer: DispatchSourceTimer?   // 30 s idle-state log while debug logging is on
+    // Touch-stream guardian (gesture stream recovery spec).
+    private var streamGuardTimer: DispatchSourceTimer?
+    private var displayChangeDebounce: DispatchWorkItem?
+    private var lastStreamRebuild = Date.distantPast
+    private var screenLockedNow = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpStatusItem()
@@ -65,10 +70,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         handleDebugWindowArgs()
     }
 
-    /// The MultitouchSupport contact stream goes stale across a real system sleep
-    /// (its device refs die), so gestures stop working until relaunch — observed in
-    /// the diagnostic log at gate 4.2. Rebuild the stream shortly after wake (a small
-    /// delay lets the HID stack re-enumerate the trackpad first).
+    /// The MultitouchSupport contact stream goes stale without the app crashing:
+    /// across a real system sleep (gate 4.2), and — observed in the field
+    /// 2026-07-15 — with no system sleep at all, after which v0.3.0's wake-only
+    /// recovery never fired and gestures stayed dead until relaunch. The guardian
+    /// rebuilds the stream on every trigger that can invalidate device refs (wake,
+    /// display reconfiguration) and detects silent death by evidence: device-ID
+    /// drift, or prolonged frame silence while the cursor is demonstrably moving
+    /// (StreamHealthPolicy decides; ~60 s watchdog).
     private func setUpTouchWakeRecovery() {
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
@@ -77,20 +86,104 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self?.reconcileStuckSleepDisabled()   // clear a leftover clamshell flag on wake
                 self?.logSleepBlockers("wake")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    self?.restartTouchStreamAfterWake()
+                    self?.rebuildTouchStream(reason: "wake")
                 }
             }
         }
+        // Dock/undock/resolution changes re-enumerate HID devices; the events come
+        // in bursts, so debounce before the (unconditional) rebuild.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.displayChangeDebounce?.cancel()
+                let work = DispatchWorkItem { [weak self] in
+                    guard let self else { return }
+                    self.plog("display change screens=\(NSScreen.screens.count)")
+                    self.rebuildTouchStream(reason: "display change")
+                }
+                self.displayChangeDebounce = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: work)
+            }
+        }
+        // Screen lock state feeds the self-heal policy; unlock also drift-checks
+        // (a topology change while locked would otherwise wait for the watchdog).
+        let dnc = DistributedNotificationCenter.default()
+        dnc.addObserver(forName: Notification.Name("com.apple.screenIsLocked"),
+                        object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.screenLockedNow = true }
+        }
+        dnc.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"),
+                        object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.screenLockedNow = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    self?.rebuildTouchStreamIfDrifted(context: "unlock")
+                }
+            }
+        }
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 60, repeating: 60)
+        timer.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.streamGuardTick() } }
+        timer.resume()
+        streamGuardTimer = timer
     }
 
-    private func restartTouchStreamAfterWake() {
+    /// One watchdog pass: a precise drift check first, then the silence heuristic.
+    private func streamGuardTick() {
+        guard let stream = touchStream else { return }   // no trackpad → nothing to guard
+        if rebuildTouchStreamIfDrifted(context: "watchdog") { return }
+        guard let silent = stream.silentSeconds() else { return }
+        let hidAgo = Self.secondsSinceHIDActivity()
+        if StreamHealthPolicy.shouldSelfHeal(
+            silentFor: silent,
+            hidAgo: hidAgo,
+            sinceLastRebuild: Date().timeIntervalSince(lastStreamRebuild),
+            screenLocked: screenLockedNow
+        ) {
+            plog("touch self-heal: silent=\(Int(silent))s hid=\(hidAgo.map { String(Int($0)) } ?? "?")s")
+            rebuildTouchStream(reason: "self-heal")
+        }
+    }
+
+    /// Seconds since the session last saw pointer/scroll HID activity — the
+    /// "user is at the machine" evidence for the self-heal policy.
+    private static func secondsSinceHIDActivity() -> Double? {
+        let types: [CGEventType] = [.mouseMoved, .scrollWheel]
+        let ages = types.map {
+            CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: $0)
+        }.filter { $0 >= 0 }
+        return ages.min()
+    }
+
+    /// Drift check: rebuild only when a fresh enumeration differs from the devices
+    /// the stream attached to. Returns true when a rebuild was performed.
+    @discardableResult
+    private func rebuildTouchStreamIfDrifted(context: String) -> Bool {
+        guard let stream = touchStream else { return false }
+        let attached = stream.attachedSignature
+        let current = stream.currentSignature()
+        guard StreamHealthPolicy.deviceDrift(attached: attached, current: current) else { return false }
+        plog("touch stream drift (\(context)): \(attached) -> \(current ?? [])")
+        rebuildTouchStream(reason: "device drift")
+        return true
+    }
+
+    /// Shared rebuild path for every trigger (wake / display change / drift /
+    /// self-heal): stop + start builds a fresh device list; on failure fall back to
+    /// a full pipeline rebuild.
+    private func rebuildTouchStream(reason: String) {
         guard let stream = touchStream else { return }   // no trackpad → nothing to do
+        lastStreamRebuild = Date()
         stream.stop()
         do {
-            try stream.start()   // start() builds a fresh device list
-            plog("touch stream restarted after wake")
+            try stream.start()
+            NSLog("Tiler: touch stream rebuilt (%@)", reason)
+            plog("touch stream rebuilt (\(reason)) devices=\(stream.attachedSignature)")
         } catch {
-            plog("touch stream restart failed, rebuilding pipeline: \(error)")
+            NSLog("Tiler: touch stream rebuild failed (%@): %@", reason, "\(error)")
+            plog("touch stream rebuild failed (\(reason)): \(error), rebuilding pipeline")
             startTouchPipeline()
         }
     }
@@ -288,6 +381,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
              + "power=\(power.percent.map(String.init) ?? "-")% \(power.onBattery ? "battery" : "AC") "
              + "lid=\(SystemPower.lidClosed() ? "closed" : "open") floor=\(settings.batteryFloorPercent) "
              + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
+        // The pipeline started before powerLog existed — record the stream identity now.
+        if let stream = touchStream { plog("touch stream devices=\(stream.attachedSignature)") }
         observeSystemPowerEvents()
         logSleepBlockers("launch")
         refreshDebugStateTimer()
@@ -745,6 +840,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             try stream.start()
             touchStream = stream
             NSLog("Tiler: touch stream started")
+            plog("touch stream started devices=\(stream.attachedSignature)")
         } catch {
             // No trackpad / framework change: gestures unavailable, app stays alive.
             NSLog("Tiler: touch stream unavailable: \(error)")

@@ -162,7 +162,15 @@ executed window move with its source (gesture / hotkey — so a window that move
 such line is provably not Tiler), and, at
 launch/wake/sleep transitions and after a session release, the full set of
 sleep-blocking assertion holders (`pmset -g assertions`, incl. non-Tiler holders) so
-"why won't it sleep" needs no manual command. Logging SHALL be event/heartbeat driven
+"why won't it sleep" needs no manual command. The log SHALL also record the
+touch-stream lifecycle (fix-touch-stream-resilience, v0.3.1) so a dead-gestures
+report is attributable from the log alone: device IDs at every successful stream
+start; every rebuild with its trigger reason and resulting device signature (and
+failures with the error); device drift with the old and new ID sets; debounced
+display-reconfiguration events with the screen count; and every silence self-heal
+decision with its evidence (silence age, HID age) — healthy watchdog ticks log
+nothing, and rebuild/failure lines are mirrored to NSLog (they matter even with
+debug logging off). Logging SHALL be event/heartbeat driven
 (no busy polling) and bounded on disk (rotate to one backup past ~100 MB, ≤ ~200 MB
 total — owner asked for detailed multi-day logging without disk worry, 2026-07-10) so
 it is safe to leave on for days. A "Reveal Log" affordance SHALL open the file in Finder.
@@ -171,3 +179,8 @@ it is safe to leave on for days. A "Reveal Log" affordance SHALL open the file i
 - WHEN debug logging is on and a lid-closed session runs with the lid shut for 20 min
 - THEN the log shows continuous ~15 s heartbeats with `lid=closed` across that span
   (proving the Mac stayed awake), and total size stays within the ~200 MB bound
+
+##### Scenario: Dead stream is attributable post-hoc
+- WHEN gestures stop being recognized on a machine with debug logging on
+- THEN the log names the recovery trigger that fired (or shows the last stream
+  start and the absence of frames) without needing a reproduction
