@@ -13,10 +13,12 @@ and recover gracefully when the permission is missing.
   **pro.amilabs.tilerx** — both are TCC-load-bearing, change neither (self-signed certs
   don't enroll in Accessibility on macOS 26; the original `pro.amilabs.tiler` TCC record
   is wedged on the owner's machine). Full recipe: README "TCC enrollment on macOS 26".
-- Deployment target: **macOS 15+, universal (arm64 + x86_64)** since v0.3.2 — the
-  owner reversed the brief's "macOS 26 only" on 2026-07-16 when a fleet laptop on
-  15.1.1 refused to launch ("не было такого правила"). Dev/verified configuration
-  remains macOS 26.5.1 / Xcode 26.6; older macOS is field-tested only.
+- OS policy (owner rule, 2026-07-16): **target & tested OS is macOS 26** (dev
+  machine 26.5.1, Xcode 26.6) — other versions are NOT tested (for now), but launch
+  on them must never be blocked. Hence since v0.3.2: launch floor
+  `LSMinimumSystemVersion`/platforms **15.0**, universal (arm64 + x86_64) binary.
+  Owner verbatim: "на других мы не тестим (пока), но это не значит что надо
+  запрещать запуск на них."
 - Private framework `MultitouchSupport.framework` is linked for raw trackpad contact frames.
   App Sandbox stays disabled (required for both MultitouchSupport and AX control).
 - No external dependencies without explicit owner approval.

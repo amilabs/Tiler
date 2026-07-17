@@ -59,8 +59,9 @@ Window-tiling hotkeys (⌃⇧ arrows) are **off by default** — turn them on in
 **Settings → General** if you want them alongside the gestures. The ⌃A lock-screen
 hotkey is on by default.
 
-Requires macOS 15 or later — universal binary (Apple Silicon + Intel). Developed
-and verified on macOS 26.5 (Apple Silicon); older versions are field-tested only.
+Requires macOS 15 or later — universal binary (Apple Silicon + Intel). Tiler
+targets macOS 26 and is verified on 26.5 (Apple Silicon); older versions can run
+it, but are untested for now.
 
 ## If gestures don't work well
 

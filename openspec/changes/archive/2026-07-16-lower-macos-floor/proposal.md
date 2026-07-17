@@ -44,3 +44,11 @@ app must run on the older machines too.
 None: no merged requirement encodes the floor (the app-shell footer requirement
 already anticipates "until another configuration passes acceptance"). README +
 project.md carry the decision; this folder protocols it.
+
+## Post-release clarification (owner, 2026-07-17)
+
+Precise rule, owner verbatim: "Target OS действительно 26, то есть на других мы не
+тестим (пока), но это не значит что надо запрещать запуск на них. Вот такое
+правило." — i.e. the TARGET (and only tested) OS remains macOS 26; this change
+removed only the launch prohibition on older versions, it did NOT move the target.
+project.md "OS policy" carries this as the standing rule.
