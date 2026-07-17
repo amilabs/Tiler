@@ -28,6 +28,10 @@ and recover gracefully when the permission is missing.
 - GitHub remote: `git@github.com:amilabs/Tiler.git`; `gh` CLI authenticated (alexnskcody,
   keyring) since 2026-07-05 — GitHub API/releases available. Releases: tag `vX.Y.Z` +
   `gh release create` with the zip from `ditto -c -k --keepParent build/Tiler.app`.
+  Every release ALSO installs locally right away (`Scripts/install.sh` + relaunch) —
+  owner standing order 2026-07-17 ("всегда обновляй локально"); no need to ask, but
+  report if a live Prevent Sleep session had to be killed, and remind about the
+  one-time Accessibility re-confirm after re-signing.
 - Node.js is NOT installed and must not be installed. The OpenSpec structure in this repo is
   maintained **manually by convention** (no `openspec` CLI). Keep it valid by hand.
 - License: Apache-2.0.
