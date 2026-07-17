@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.3.2"
+    static let version = "0.3.3"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -289,16 +289,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateStatusGlyph() {
         let trusted = permissionMonitor?.trusted ?? false
-        let alert = !trusted || conflictsPresent
+        // Conflict-driven marks only matter while gestures are on (owner gate
+        // 2026-07-17: not critical otherwise, don't distract).
+        let conflictAlert = conflictsPresent && settings.gesturesEnabled
+        let alert = !trusted || conflictAlert
         statusItem?.button?.title = alert ? " ⚠︎" : ""
         statusItem?.button?.toolTip = !trusted
             ? "Tiler: Accessibility permission missing"
-            : (conflictsPresent
+            : (conflictAlert
                 ? "Tiler: conflicting system trackpad gestures detected — see Tiler…"
                 : (powerPolicy.isActive ? "Tiler: Prevent Sleep active" : "Tiler"))
-        // Settings item carries the permission alert (stabilize-menu spec).
-        settingsMenuItem?.title = trusted ? "Settings" : "Settings ⚠︎"
+        // Settings item carries both alerts (stabilize-menu spec + conflict
+        // indicators gate): red ⚠ = permission (critical), orange ⚠ = gesture
+        // conflicts; permission wins when both apply.
+        settingsMenuItem?.attributedTitle = Self.settingsItemTitle(
+            mark: !trusted ? .systemRed : (conflictAlert ? .systemOrange : nil))
         updateSessionIndicator()
+    }
+
+    /// "Settings" with an optional colored ⚠ (SF symbol as a text attachment, so
+    /// the mark matches the approved mock's filled triangle).
+    private static func settingsItemTitle(mark: NSColor?) -> NSAttributedString {
+        let title = NSMutableAttributedString(
+            string: "Settings", attributes: [.font: NSFont.menuFont(ofSize: 0)])
+        guard let mark,
+              // Two palette layers: white exclamation over the colored triangle —
+              // one layer would flood the cutout and render a solid triangle.
+              let symbol = NSImage(systemSymbolName: "exclamationmark.triangle.fill",
+                                   accessibilityDescription: "warning")?
+                  .withSymbolConfiguration(.init(pointSize: 11, weight: .semibold)
+                      .applying(.init(paletteColors: [.white, mark])))
+        else { return title }
+        let attachment = NSTextAttachment()
+        attachment.image = symbol
+        attachment.bounds = CGRect(x: 0, y: -1.5, width: symbol.size.width, height: symbol.size.height)
+        title.append(NSAttributedString(string: " "))
+        title.append(NSAttributedString(attachment: attachment))
+        return title
     }
 
     /// Swap the status glyph for the active-session badge (gate 2.1 pick). Only
@@ -352,6 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self.engine?.stageTunables(store.effectiveTunables)
             self.powerApply(.setDisplayAwake(store.keepDisplayAwake))
             self.powerApply(.setFloor(store.batteryFloorPercent))
+            self.updateStatusGlyph()   // gesturesEnabled gates the conflict marks
         }
     }
 

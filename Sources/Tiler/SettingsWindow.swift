@@ -93,6 +93,10 @@ final class SettingsModel: ObservableObject {
         conflicts = ConflictDiagnostics().conflicts()
     }
 
+    /// Tab-item mark: conflicts matter only while gestures are enabled
+    /// (owner gate 2026-07-17 — don't distract otherwise).
+    var showsConflictMark: Bool { !conflicts.isEmpty && gesturesEnabled }
+
     private func applyLaunchAtLogin() {
         do {
             if launchAtLogin {
@@ -121,7 +125,11 @@ struct SettingsView: View {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
             gesturesTab
-                .tabItem { Label("Gestures", systemImage: "hand.point.up.left") }
+                // Conflict mark on the tab itself (owner gate 2026-07-17). macOS
+                // tab items can't be colored, so the ⚠︎ rides in the title; it
+                // only shows while gestures are on (off → conflicts not critical).
+                .tabItem { Label(model.showsConflictMark ? "Gestures ⚠︎" : "Gestures",
+                                 systemImage: "hand.point.up.left") }
             powerTab
                 .tabItem { Label("Power", systemImage: "bolt") }
         }

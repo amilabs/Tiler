@@ -64,7 +64,10 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-16-lower-macos-floor` (v0.3.2: launch floor macOS 26 → 15,
+Archived: `2026-07-17-add-conflict-indicators` (v0.3.3: colored menu alerts —
+red = permission, orange = gesture conflicts — plus a "Gestures ⚠︎" tab mark; all
+conflict marks gated on gesturesEnabled, mock-gated with the owner),
+`2026-07-16-lower-macos-floor` (v0.3.2: launch floor macOS 26 → 15,
 universal arm64+x86_64 binary; target/tested OS stays 26 — untested ≠ blocked;
 zero availability changes needed; field result 2026-07-17: full gesture matrix +
 calibration + conflict diagnostics confirmed working on the 15.1.1 laptop),
@@ -87,4 +90,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.2 (GitHub release with zip, universal, macOS 15+).
+`openspec/specs/` are current truth. Released: v0.3.3 (GitHub release with zip, universal, macOS 15+).
