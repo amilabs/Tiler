@@ -64,9 +64,10 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-16-lower-macos-floor` (v0.3.2: deployment floor macOS 26 → 15,
-universal arm64+x86_64 binary — owner reversed the brief's floor when a fleet
-laptop on 15.1.1 refused to launch; zero availability changes needed),
+Archived: `2026-07-16-lower-macos-floor` (v0.3.2: launch floor macOS 26 → 15,
+universal arm64+x86_64 binary; target/tested OS stays 26 — untested ≠ blocked;
+zero availability changes needed; field result 2026-07-17: full gesture matrix +
+calibration + conflict diagnostics confirmed working on the 15.1.1 laptop),
 `2026-07-16-fix-touch-stream-resilience` (v0.3.1: gesture stream
 recovery — the MT stream can die with no system sleep (field bug, second laptop);
 guardian rebuilds on wake/display change/device-ID drift/silence self-heal with
