@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Tiler",
-    platforms: [.macOS("26.0")],
+    platforms: [.macOS("15.0")],
     targets: [
         // Pure decision logic: gesture recognizer, tunables, models. No system imports.
         .target(name: "TilerCore"),

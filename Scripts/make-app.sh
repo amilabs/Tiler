@@ -13,15 +13,18 @@ cd "$(dirname "$0")/.."
 
 IDENTITY="Apple Development: alexnsk@gmail.com (PHYV972T38)"
 BUNDLE_ID="pro.amilabs.tilerx"
-VERSION="0.3.1"
+VERSION="0.3.2"
 BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 APP="build/Tiler.app"
 
-swift build -c release
+# Universal binary (arm64 + x86_64): the fleet includes older machines that may be
+# Intel (floor is macOS 15 since lower-macos-floor). Multi-arch products land in
+# .build/apple/Products/Release, not .build/release.
+swift build -c release --arch arm64 --arch x86_64
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/release/Tiler "$APP/Contents/MacOS/Tiler"
+cp .build/apple/Products/Release/Tiler "$APP/Contents/MacOS/Tiler"
 swift Scripts/make-icons.swift --icns "$APP/Contents/Resources/AppIcon.icns" > /dev/null
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -35,7 +38,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>1</string>
-    <key>LSMinimumSystemVersion</key><string>26.0</string>
+    <key>LSMinimumSystemVersion</key><string>15.0</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>TilerBuildDate</key><string>${BUILD_DATE}</string>
     <key>LSUIElement</key><true/>

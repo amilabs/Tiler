@@ -13,7 +13,10 @@ and recover gracefully when the permission is missing.
   **pro.amilabs.tilerx** — both are TCC-load-bearing, change neither (self-signed certs
   don't enroll in Accessibility on macOS 26; the original `pro.amilabs.tiler` TCC record
   is wedged on the owner's machine). Full recipe: README "TCC enrollment on macOS 26".
-- Deployment target: **macOS 26 only** (owner's machine: macOS 26.5.1, Xcode 26.6). Approved decision.
+- Deployment target: **macOS 15+, universal (arm64 + x86_64)** since v0.3.2 — the
+  owner reversed the brief's "macOS 26 only" on 2026-07-16 when a fleet laptop on
+  15.1.1 refused to launch ("не было такого правила"). Dev/verified configuration
+  remains macOS 26.5.1 / Xcode 26.6; older macOS is field-tested only.
 - Private framework `MultitouchSupport.framework` is linked for raw trackpad contact frames.
   App Sandbox stays disabled (required for both MultitouchSupport and AX control).
 - No external dependencies without explicit owner approval.
@@ -59,7 +62,10 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-16-fix-touch-stream-resilience` (v0.3.1: gesture stream
+Archived: `2026-07-16-lower-macos-floor` (v0.3.2: deployment floor macOS 26 → 15,
+universal arm64+x86_64 binary — owner reversed the brief's floor when a fleet
+laptop on 15.1.1 refused to launch; zero availability changes needed),
+`2026-07-16-fix-touch-stream-resilience` (v0.3.1: gesture stream
 recovery — the MT stream can die with no system sleep (field bug, second laptop);
 guardian rebuilds on wake/display change/device-ID drift/silence self-heal with
 full diagnostics; field verification on the second laptop pending),
@@ -78,4 +84,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.1 (GitHub release with zip).
+`openspec/specs/` are current truth. Released: v0.3.2 (GitHub release with zip, universal, macOS 15+).

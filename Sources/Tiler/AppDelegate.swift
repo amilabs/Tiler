@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.3.1"
+    static let version = "0.3.2"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
