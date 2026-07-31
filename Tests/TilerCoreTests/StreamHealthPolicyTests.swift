@@ -83,4 +83,33 @@ import Testing
         #expect(!StreamHealthPolicy.shouldSelfHeal(
             silentFor: 7200, hidAgo: 5, sinceLastRebuild: 599, screenLocked: false))
     }
+
+    // MARK: display-change rebuild politeness (fix-rebuild-gesture-loss)
+    // Rebuild only when it might be needed and cannot hurt: skip when a rebuild
+    // just happened (notification bursts) or frames arrived after the change
+    // (stream demonstrably alive — a rebuild would only risk eating a stroke).
+
+    @Test func idleStaleStreamRebuildsOnDisplayChange() {
+        #expect(StreamHealthPolicy.displayChangeRebuild(silentFor: 300, sinceLastRebuild: 3600))
+    }
+
+    @Test func recentFramesSkipTheRebuild() {
+        // 2026-07-31 incident: charger unplug fired display changes while the
+        // stream was alive — the rebuilds ate the owner's swipes.
+        #expect(!StreamHealthPolicy.displayChangeRebuild(silentFor: 0.4, sinceLastRebuild: 3600))
+    }
+
+    @Test func recentRebuildCoalescesTheBurst() {
+        // Two notifications 6 s apart must produce at most one rebuild.
+        #expect(!StreamHealthPolicy.displayChangeRebuild(silentFor: 300, sinceLastRebuild: 6))
+    }
+
+    @Test func displayChangeBoundaries() {
+        // At exactly the alive window the stream no longer counts as alive.
+        #expect(StreamHealthPolicy.displayChangeRebuild(silentFor: 1.0, sinceLastRebuild: 3600))
+        #expect(!StreamHealthPolicy.displayChangeRebuild(silentFor: 0.99, sinceLastRebuild: 3600))
+        // At exactly the coalesce horizon a new rebuild is allowed again.
+        #expect(StreamHealthPolicy.displayChangeRebuild(silentFor: 300, sinceLastRebuild: 10))
+        #expect(!StreamHealthPolicy.displayChangeRebuild(silentFor: 300, sinceLastRebuild: 9.9))
+    }
 }

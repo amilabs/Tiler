@@ -36,8 +36,10 @@ the system Accessibility pane.
 
 The Settings window SHALL gain a Power tab with: "Keep display awake" (default off),
 the battery floor picker (Off / 30% / 20% / 10%, default 20%), the "Deep Sleep on
-lid close" toggle with a short explanation (full hibernate on battery sleep, wake
-takes ~10–20 s, admin authorization on toggle), and a Diagnostics section with an
+battery" toggle (renamed from "…on lid close" by rename-deep-sleep-battery) with a
+short explanation stating that EVERY battery sleep hibernates — including idle
+sleep with the lid open — machine-wide for all users (wake takes ~10–20 s, admin
+authorization on toggle), and a Diagnostics section with an
 opt-in "Debug logging" toggle (default off) plus a "Reveal Log" button. All controls
 persist across relaunches and apply without restart, matching existing settings
 behavior. The tab SHALL fit without vertical scrolling (existing no-scroll rule).

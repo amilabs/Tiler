@@ -151,10 +151,11 @@ struct SettingsView: View {
                 }
             }
             Section("Deep Sleep") {
-                Toggle("Deep Sleep on lid close (battery)", isOn: $model.deepSleepOnBattery)
-                Text("Sleep on battery writes memory to disk and powers it off — "
-                     + "near-zero drain, wake takes 10–20 s. Changing this asks for "
-                     + "an administrator password.")
+                Toggle("Deep Sleep on battery", isOn: $model.deepSleepOnBattery)
+                Text("Every sleep on battery writes memory to disk and powers it off — "
+                     + "including idle sleep with the lid open, for all users of this "
+                     + "Mac. Near-zero drain; wake takes 10–20 s. Changing this asks "
+                     + "for an administrator password.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

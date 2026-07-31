@@ -68,7 +68,13 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-07-17-add-conflict-indicators` (v0.3.3: colored menu alerts —
+Archived: `2026-08-01-fix-rebuild-gesture-loss` (v0.3.4: polite display-change
+rebuilds — skip when frames prove the stream alive or a rebuild is <10 s old, after
+the 07-31 charger-unplug ate in-flight swipes; reject-candidate diagnostics naming
+the failed gate), `2026-08-01-rename-deep-sleep-battery` (v0.3.4: honest "Deep
+Sleep on battery" label + copy — every battery sleep hibernates, machine-wide;
+07-19 open-lid hibernate surprise), `2026-07-17-add-conflict-indicators`
+(v0.3.3: colored menu alerts —
 red = permission, orange = gesture conflicts — plus a "Gestures ⚠︎" tab mark; all
 conflict marks gated on gesturesEnabled, mock-gated with the owner),
 `2026-07-16-lower-macos-floor` (v0.3.2: launch floor macOS 26 → 15,
@@ -94,4 +100,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.3 (GitHub release with zip, universal, macOS 15+).
+`openspec/specs/` are current truth. Released: v0.3.4 (GitHub release with zip, universal, macOS 15+).

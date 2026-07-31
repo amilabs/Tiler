@@ -35,4 +35,21 @@ public enum StreamHealthPolicy {
         guard !screenLocked, let hidAgo else { return false }
         return silentFor >= minSilence && hidAgo <= maxHIDAge && sinceLastRebuild >= cooldown
     }
+
+    /// Display-change trigger (fix-rebuild-gesture-loss, 2026-07-31 incident: a
+    /// charger unplug fired display changes while the stream was alive, and the
+    /// unconditional rebuilds ate in-flight swipes). Rebuild only when it might be
+    /// needed and cannot hurt: a rebuild `< coalesce` ago means the burst is
+    /// already handled; a frame within `aliveWindow` proves the stream survived
+    /// the change (and fingers may be mid-stroke — a rebuild would eat it). An
+    /// idle-and-quiet stream rebuilds: possibly dead, and nothing is in flight.
+    public static func displayChangeRebuild(
+        silentFor: TimeInterval,
+        sinceLastRebuild: TimeInterval,
+        aliveWindow: TimeInterval = 1.0,
+        coalesce: TimeInterval = 10
+    ) -> Bool {
+        guard sinceLastRebuild >= coalesce else { return false }
+        return silentFor >= aliveWindow
+    }
 }

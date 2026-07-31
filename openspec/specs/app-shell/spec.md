@@ -193,7 +193,12 @@ pipeline rebuild) on EVERY one of these triggers:
 
 1. ~1.5 s after `NSWorkspace.didWakeNotification` (system wake);
 2. after a debounced display reconfiguration
-   (`didChangeScreenParametersNotification`) — dock/undock re-enumerates HID devices;
+   (`didChangeScreenParametersNotification`) — dock/undock re-enumerates HID
+   devices. This trigger is POLITE (fix-rebuild-gesture-loss, after the 2026-07-31
+   charger-unplug incident ate in-flight swipes): the rebuild is skipped when one
+   ran < 10 s ago (notification bursts) or when a frame arrived within the last
+   ~1 s — frames after the change prove the stream survived it, and a rebuild
+   would only risk dropping a live stroke. Skips are logged with the evidence;
 3. on device drift — the set of multitouch device IDs from a fresh enumeration
    differs from the IDs the stream attached to — checked shortly after screen unlock
    and by a periodic (~60 s) watchdog;
@@ -215,6 +220,12 @@ strictly less likely to confirm than the full stroke.
 ##### Scenario: Display topology change
 - WHEN an external display is connected or disconnected
 - THEN the stream is rebuilt within a few seconds and gestures keep working
+
+##### Scenario: Charger unplug during active use
+- WHEN display parameters change while the stream is delivering frames (e.g. a
+  power-source switch adjusts the display)
+- THEN no rebuild occurs, in-flight gestures are not interrupted, and the log
+  records the skip
 
 ##### Scenario: Healthy stream stays untouched
 - WHEN frames are flowing normally

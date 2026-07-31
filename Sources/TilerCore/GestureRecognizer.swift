@@ -22,9 +22,13 @@ public final class GestureRecognizer {
     private var pendingTunables: Tunables?
 
     /// Opt-in diagnostic side-channel (nil = zero cost): emits a concise line at every
-    /// confirmed decision so a false positive can be caught with its evidence (movement,
-    /// speed, finger count, modifiers). Does NOT affect recognition.
+    /// confirmed decision — and one `reject reason=…` line when an armed candidate
+    /// with real movement dies unconfirmed (so "gesture didn't fire" is attributable;
+    /// fix-rebuild-gesture-loss). Does NOT affect recognition.
     public var diagnostic: ((String) -> Void)?
+    /// Frame-time clock for the reject rate limit (≤ 1 line/s; resting lifts and
+    /// sub-intent movement never log).
+    private var lastRejectEmit: Double?
 
     // Phase and per-session bookkeeping. A "session" spans from the first contact
     // after a clean idle pad to full lift-off.
@@ -113,7 +117,13 @@ public final class GestureRecognizer {
         previousActiveCount = 0
         if zeroContactsSince == nil { zeroContactsSince = t }
         if phase == .tracking {
-            // Fingers vanished before confirmation: cancelled gesture.
+            // Fingers vanished before confirmation: cancelled gesture. Name the
+            // gate that was still failing at lift-off.
+            let progress = max(abs(peakDx), abs(peakDy))
+            let elapsed = t - armTimestamp
+            let reason = progress < tun.minDisplacement ? "short"
+                : (elapsed > 0 && progress / elapsed < tun.minMeanSpeed ? "slow" : "brief")
+            emitReject(reason, at: t, elapsed: elapsed, fingers: 3)
             lockoutNow()
         }
         if let z = zeroContactsSince, t - z >= tun.liftOffQuiet + tun.cooldown {
@@ -163,10 +173,13 @@ public final class GestureRecognizer {
                                  at t: Double, cmdHeld: Bool, shiftHeld: Bool) -> GestureAction? {
         let keys = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
         guard !palmPresent, active.count == 3, keys == trackedFingers else {
+            emitReject(palmPresent ? "palm" : "fingers", at: t,
+                       elapsed: t - armTimestamp, fingers: active.count)
             lockoutNow()
             return nil
         }
         guard t - armTimestamp <= tun.maxGestureDuration else {
+            emitReject("timeout", at: t, elapsed: t - armTimestamp, fingers: active.count)
             lockoutNow()
             return nil
         }
@@ -181,6 +194,7 @@ public final class GestureRecognizer {
         let (peak, current) = abs(peakDx) >= abs(peakDy) ? (peakDx, dx) : (peakDy, dy)
         let backtrack = peak >= 0 ? peak - current : current - peak
         if backtrack > tun.reversalTolerance * max(abs(peak), tun.minDisplacement) {
+            emitReject("reversal", at: t, elapsed: t - armTimestamp, fingers: active.count)
             lockoutNow()
             return nil
         }
@@ -198,6 +212,7 @@ public final class GestureRecognizer {
         } else if abs(dy) >= tun.verticalDominance * abs(dx) {
             direction = dy > 0 ? .up : .down
         } else {
+            emitReject("ambiguous", at: t, elapsed: t - armTimestamp, fingers: active.count)
             lockoutNow()
             return nil
         }
@@ -234,6 +249,22 @@ public final class GestureRecognizer {
         emitDiagnostic(direction, action: action, dx: dx, dy: dy, progress: progress,
                        elapsed: elapsed, fingers: active.count, cmdHeld: cmdHeld, shiftHeld: shiftHeld)
         return action
+    }
+
+    /// Reject line for an armed candidate that died unconfirmed. Uses the peak
+    /// displacement (the current frame may be empty at lift-off). Intent-filtered:
+    /// movement under half the displacement threshold (finger rests, micro-noise)
+    /// stays silent; at most one line per second of frame time.
+    private func emitReject(_ reason: String, at t: Double, elapsed: Double, fingers: Int) {
+        guard let diagnostic else { return }
+        let progress = max(abs(peakDx), abs(peakDy))
+        guard progress >= tun.minDisplacement * 0.5 else { return }
+        if let last = lastRejectEmit, t - last < 1.0 { return }
+        lastRejectEmit = t
+        func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
+        let speed = elapsed > 0 ? r(progress / elapsed) : 0
+        diagnostic("reject reason=\(reason) dx=\(r(peakDx)) dy=\(r(peakDy)) prog=\(r(progress)) "
+            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers)")
     }
 
     private func emitDiagnostic(_ direction: Direction, action: GestureAction?,

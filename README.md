@@ -45,8 +45,10 @@ The menu-bar icon turns red with a coffee-cup badge while a session runs.
   charge drops to the floor, with a notification and no surprise restart.
 - **Prevent sleep with the lid closed** runs the Mac folded; it needs an
   administrator password and gets hot — never leave it in a bag.
-- **Deep Sleep on lid close** (Settings → Power) switches the battery-side sleep
+- **Deep Sleep on battery** (Settings → Power) switches the battery-side sleep
   profile to full hibernation for near-zero drain; wake then takes ~10–20 s.
+  Note: *every* sleep on battery hibernates — including idle sleep with the lid
+  open — and the profile applies to the whole Mac (all users).
 
 ## Install
 

@@ -3,7 +3,7 @@
 **Start here every session:**
 1. Read `openspec/project.md` (context, environment, workflow rules).
 2. Check the active change listed in `openspec/project.md`. Currently:
-   **none** — latest shipped: `add-conflict-indicators` as v0.3.3 (2026-07-17,
+   **none** — latest shipped: `fix-rebuild-gesture-loss` + `rename-deep-sleep-battery` as v0.3.4 (2026-08-01, polite display-change rebuilds + reject diagnostics + honest Deep Sleep naming), `add-conflict-indicators` as v0.3.3 (2026-07-17,
    colored menu/tab conflict marks gated on gesturesEnabled), `lower-macos-floor`
    as v0.3.2 (launch floor 15 + universal; target/tested OS stays macOS 26 — owner
    rule: untested ≠ blocked), and `fix-touch-stream-resilience` as v0.3.1 (gesture

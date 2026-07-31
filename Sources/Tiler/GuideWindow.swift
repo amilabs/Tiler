@@ -319,7 +319,7 @@ struct GuideView: View {
                 powerRow("exclamationmark.triangle.fill", "Lid closed ⚠",
                          "“Prevent sleep with lid closed” needs an admin password and keeps the Mac awake folded — it gets hot, so never in a bag.")
                 powerRow("moon.zzz.fill", "Deep Sleep",
-                         "A battery-side hibernate profile: near-zero drain, but wake takes 10–20 s. Toggling needs an admin password.")
+                         "A battery-side hibernate profile: EVERY sleep on battery hibernates — even idle sleep with the lid open, for all users of this Mac. Near-zero drain, wake takes 10–20 s. Toggling needs an admin password.")
                 Text("Precedence: active session ≻ Deep Sleep profile ≻ system defaults.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -107,10 +107,16 @@ a warning alert carrying the heat/bag graphic.
 
 #### Requirement: Deep Sleep profile (battery)
 
-Tiler SHALL offer a persistent "Deep Sleep on lid close" toggle (Settings → Power)
+Tiler SHALL offer a persistent "Deep Sleep on battery" toggle (Settings → Power;
+renamed from "…on lid close" by rename-deep-sleep-battery after the 2026-07-19
+field surprise — the old label promised a lid-only scope pmset cannot deliver)
 switching the battery-side sleep profile to full hibernation: `hibernatemode 25` with
 Power Nap and TCP keep-alive disabled (and proximity wake where the key exists) — so
-sleep writes RAM to disk and powers it off. Writes are admin-authorized. Before the
+sleep writes RAM to disk and powers it off. `hibernatemode` is per POWER SOURCE, not
+per sleep cause: while the profile is on, EVERY battery sleep hibernates — lid close
+and plain idle sleep with the lid open alike — and the pmset profile is
+machine-wide (all macOS users). UI copy (Settings, Guide, README) SHALL state both
+facts plainly. Writes are admin-authorized. Before the
 first write Tiler SHALL snapshot the previous values and SHALL restore them verbatim
 on disable (missing snapshot → Apple portable defaults: hibernatemode 3, powernap 1,
 tcpkeepalive 1). AC-side sleep SHALL stay untouched. The profile persists across
@@ -158,6 +164,11 @@ and — while a session runs — a ~15 s liveness heartbeat (elapsed, power, lid
 assertions) so a real sleep shows as a heartbeat gap. For diagnosis it SHALL also log
 every confirmed gesture decision with its evidence (direction, movement, speed, finger
 count, modifiers — so a false positive is caught with data, not guesswork), every
+REJECTED armed 3-finger candidate with the failed gate and metrics (`reject
+reason=short|slow|brief|ambiguous|fingers|palm|reversal|timeout` — so a "gesture
+didn't fire" report is attributable too; intent-filtered at ≥ half the displacement
+threshold and rate-limited to one line per second of frame time, so resting fingers
+stay silent; fix-rebuild-gesture-loss), every
 executed window move with its source (gesture / hotkey — so a window that moves with no
 such line is provably not Tiler), and, at
 launch/wake/sleep transitions and after a session release, the full set of

@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.3.3"
+    static let version = "0.3.4"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -90,8 +90,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
         }
-        // Dock/undock/resolution changes re-enumerate HID devices; the events come
-        // in bursts, so debounce before the (unconditional) rebuild.
+        // Dock/undock/resolution/power-source changes re-enumerate HID devices; the
+        // events come in bursts, so debounce, then let the policy decide: a stream
+        // that delivered frames after the change survived it (a rebuild would only
+        // risk eating an in-flight stroke — the 2026-07-31 charger-unplug incident),
+        // and a rebuild moments ago already covered this burst.
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -100,8 +103,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self.displayChangeDebounce?.cancel()
                 let work = DispatchWorkItem { [weak self] in
                     guard let self else { return }
-                    self.plog("display change screens=\(NSScreen.screens.count)")
-                    self.rebuildTouchStream(reason: "display change")
+                    let screens = NSScreen.screens.count
+                    guard let stream = self.touchStream else { return }
+                    let silent = stream.silentSeconds() ?? .infinity
+                    if StreamHealthPolicy.displayChangeRebuild(
+                        silentFor: silent,
+                        sinceLastRebuild: Date().timeIntervalSince(self.lastStreamRebuild)
+                    ) {
+                        self.plog("display change screens=\(screens) -> rebuild")
+                        self.rebuildTouchStream(reason: "display change")
+                    } else {
+                        self.plog("display change screens=\(screens) -> skip "
+                            + "(silent=\(Int(silent))s)")
+                    }
                 }
                 self.displayChangeDebounce = work
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: work)
