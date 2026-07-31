@@ -30,6 +30,17 @@ public final class WindowActions {
     /// Last frame Tiler set per window — detects manual user moves in between.
     private var lastSetFrames: [WindowKey: CGRect] = [:]
 
+    /// Why the last perform() returned false (nil after a success) — logged by the
+    /// caller so an `ok=false` is attributable (2026-08-01: eight bare ok=false
+    /// lines got misread as a permission loss; the real cause — no focused
+    /// window — was invisible).
+    public enum ActionFailure: String {
+        case noFrontmostApp = "no-frontmost-app"
+        case noFocusedWindow = "no-focused-window"
+        case frameUnreadable = "frame-unreadable"
+    }
+    public private(set) var lastFailure: ActionFailure?
+
     public init() {}
 
     /// Acts on the focused window of the frontmost application.
@@ -37,11 +48,19 @@ public final class WindowActions {
     /// can feed PermissionMonitor.noteActionFailed().
     @discardableResult
     public func perform(_ command: TilingCommand) -> Bool {
+        lastFailure = nil
         if command == .lockScreen {
             lockScreen()
             return true
         }
-        guard let (app, window) = frontmostFocusedWindow() else {
+        guard let frontmost = NSWorkspace.shared.frontmostApplication else {
+            lastFailure = .noFrontmostApp
+            NSLog("Tiler: no frontmost application for \(command) — ignoring")
+            return false
+        }
+        let app = AXUIElementCreateApplication(frontmost.processIdentifier)
+        guard let window = copyElement(app, kAXFocusedWindowAttribute as String) else {
+            lastFailure = .noFocusedWindow
             NSLog("Tiler: no focused window for \(command) — ignoring")
             return false
         }
@@ -52,12 +71,14 @@ public final class WindowActions {
     /// the window by pid instead of relying on frontmost focus).
     @discardableResult
     public func perform(_ command: TilingCommand, app: AXUIElement, window: AXUIElement) -> Bool {
+        lastFailure = nil
         if command == .lockScreen {
             lockScreen()
             return true
         }
         trimStoresIfNeeded()
         guard let currentAX = frame(of: window) else {
+            lastFailure = .frameUnreadable
             NSLog("Tiler: cannot read window frame — ignoring \(command)")
             return false
         }
@@ -153,13 +174,6 @@ public final class WindowActions {
     }
 
     // MARK: - AX plumbing
-
-    private func frontmostFocusedWindow() -> (AXUIElement, AXUIElement)? {
-        guard let frontmost = NSWorkspace.shared.frontmostApplication else { return nil }
-        let app = AXUIElementCreateApplication(frontmost.processIdentifier)
-        guard let window = copyElement(app, kAXFocusedWindowAttribute as String) else { return nil }
-        return (app, window)
-    }
 
     public func frame(of window: AXUIElement) -> CGRect? {
         guard let position: CGPoint = copyValue(window, kAXPositionAttribute as String, .cgPoint),

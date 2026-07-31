@@ -165,12 +165,17 @@ assertions) so a real sleep shows as a heartbeat gap. For diagnosis it SHALL als
 every confirmed gesture decision with its evidence (direction, movement, speed, finger
 count, modifiers — so a false positive is caught with data, not guesswork), every
 REJECTED armed 3-finger candidate with the failed gate and metrics (`reject
-reason=short|slow|brief|ambiguous|fingers|palm|reversal|timeout` — so a "gesture
+reason=short|slow|brief|ambiguous|fingers|palm|reversal|timeout`, plus `raw=M` —
+the touching-contact count before the size filter, so `fingers=2 raw=3` proves a
+fingertip cut by minContactSize while `raw=2` proves a physical lift
+(improve-failure-attribution) — so a "gesture
 didn't fire" report is attributable too; intent-filtered at ≥ half the displacement
 threshold and rate-limited to one line per second of frame time, so resting fingers
 stay silent; fix-rebuild-gesture-loss), every
 executed window move with its source (gesture / hotkey — so a window that moves with no
-such line is provably not Tiler), and, at
+such line is provably not Tiler; failures carry
+`why=no-frontmost-app|no-focused-window|frame-unreadable` and the frontmost app's
+bundle id, so a bare desktop is never misread as a permission loss), and, at
 launch/wake/sleep transitions and after a session release, the full set of
 sleep-blocking assertion holders (`pmset -g assertions`, incl. non-Tiler holders) so
 "why won't it sleep" needs no manual command. The log SHALL also record the

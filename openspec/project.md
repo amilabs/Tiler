@@ -30,8 +30,10 @@ and recover gracefully when the permission is missing.
   `gh release create` with the zip from `ditto -c -k --keepParent build/Tiler.app`.
   Every release ALSO installs locally right away (`Scripts/install.sh` + relaunch) —
   owner standing order 2026-07-17 ("всегда обновляй локально"); no need to ask, but
-  report if a live Prevent Sleep session had to be killed, and remind about the
-  one-time Accessibility re-confirm after re-signing.
+  report if a live Prevent Sleep session had to be killed. The Accessibility grant
+  SURVIVES reinstalls (Apple Dev cert → stable designated requirement;
+  field-confirmed 2026-08-01) — do NOT tell the owner to re-confirm the toggle
+  after updates; that advice was self-signed-era folklore.
 - Node.js is NOT installed and must not be installed. The OpenSpec structure in this repo is
   maintained **manually by convention** (no `openspec` CLI). Keep it valid by hand.
 - License: Apache-2.0.
@@ -68,7 +70,11 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-08-01-fix-rebuild-gesture-loss` (v0.3.4: polite display-change
+Archived: `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
+`raw=` — size-filter vs physical-lift discriminator for the up-swipe issue;
+`window ok=false` carries `why=` + frontmost app id; stale "re-confirm AX after
+install" advice dropped everywhere — grant survives, field-confirmed),
+`2026-08-01-fix-rebuild-gesture-loss` (v0.3.4: polite display-change
 rebuilds — skip when frames prove the stream alive or a rebuild is <10 s old, after
 the 07-31 charger-unplug ate in-flight swipes; reject-candidate diagnostics naming
 the failed gate), `2026-08-01-rename-deep-sleep-battery` (v0.3.4: honest "Deep
@@ -100,4 +106,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.4 (GitHub release with zip, universal, macOS 15+).
+`openspec/specs/` are current truth. Released: v0.3.5 (GitHub release with zip, universal, macOS 15+).

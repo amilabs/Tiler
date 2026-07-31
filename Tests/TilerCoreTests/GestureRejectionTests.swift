@@ -63,19 +63,41 @@ import Testing
         #expect(rejects(lines).first?.contains("reason=ambiguous") == true)
     }
 
-    @Test func fingerDropNamesFingers() {
+    @Test func fingerDropNamesFingersWithRawCount() {
         var sim = Sim()
         var lines: [String] = []
         sim.recognizer.diagnostic = { lines.append($0) }
         sim.hold(fingers(3, at: 0.5, 0.5), frames: 5)
         sim.move(3, from: (0.5, 0.5), by: (dx: 0.06, dy: 0), frames: 6)
-        sim.feed(fingers(2, at: 0.56, 0.5))   // one finger vanishes mid-stroke
+        sim.feed(fingers(2, at: 0.56, 0.5))   // one finger PHYSICALLY vanishes
         sim.liftAll()
         #expect(sim.actions.isEmpty)
         #expect(rejects(lines).count == 1)
         let line = rejects(lines).first ?? ""
         #expect(line.contains("reason=fingers"))
         #expect(line.contains("fingers=2"))
+        #expect(line.contains("raw=2"))       // truly lifted — raw agrees
+    }
+
+    @Test func sizeFilteredFingerShowsRawThree() {
+        // The up-swipe-vs-scroll discriminator (owner report 2026-08-01): the third
+        // fingertip stays ON the pad but its contact drops below minContactSize —
+        // active=2, raw=3 proves the size filter (not a physical lift) cut it.
+        var sim = Sim()
+        var lines: [String] = []
+        sim.recognizer.diagnostic = { lines.append($0) }
+        sim.hold(fingers(3, at: 0.5, 0.5), frames: 5)
+        sim.move(3, from: (0.5, 0.5), by: (dx: 0, dy: 0.06), frames: 6)
+        // Same three fingers, but one now presses too lightly (size 0.02 < 0.05).
+        let light = fingers(2, at: 0.5, 0.56, idBase: 1)
+            + fingers(1, at: 0.56, 0.56, size: 0.02, idBase: 3)
+        sim.feed(light)
+        sim.liftAll()
+        #expect(sim.actions.isEmpty)
+        let line = rejects(lines).first ?? ""
+        #expect(line.contains("reason=fingers"))
+        #expect(line.contains("fingers=2"))
+        #expect(line.contains("raw=3"))       // still touching — the filter cut it
     }
 
     @Test func restingLiftStaysSilent() {

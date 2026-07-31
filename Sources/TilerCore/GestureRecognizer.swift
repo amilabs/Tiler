@@ -29,6 +29,11 @@ public final class GestureRecognizer {
     /// Frame-time clock for the reject rate limit (≤ 1 line/s; resting lifts and
     /// sub-intent movement never log).
     private var lastRejectEmit: Double?
+    /// Raw touching contacts in the current frame BEFORE the size filter — lets a
+    /// reject line distinguish a physical finger lift (raw drops too) from a
+    /// fingertip cut by minContactSize (raw stays 3). Tracked only while the
+    /// diagnostic channel is attached.
+    private var lastRawTouching = 0
 
     // Phase and per-session bookkeeping. A "session" spans from the first contact
     // after a clean idle pad to full lift-off.
@@ -82,6 +87,11 @@ public final class GestureRecognizer {
         }
         applyPendingTunablesIfIdle()
         lastFrameTimestamp = t
+        if diagnostic != nil {
+            lastRawTouching = frame.contacts.reduce(0) {
+                $0 + (($1.state == .making || $1.state == .touching) ? 1 : 0)
+            }
+        }
 
         let active = frame.contacts.filter { c in
             (c.state == .making || c.state == .touching)
@@ -264,7 +274,7 @@ public final class GestureRecognizer {
         func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
         let speed = elapsed > 0 ? r(progress / elapsed) : 0
         diagnostic("reject reason=\(reason) dx=\(r(peakDx)) dy=\(r(peakDy)) prog=\(r(progress)) "
-            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers)")
+            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) raw=\(lastRawTouching)")
     }
 
     private func emitDiagnostic(_ direction: Direction, action: GestureAction?,

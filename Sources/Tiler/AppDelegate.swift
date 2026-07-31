@@ -5,7 +5,7 @@ import TilerSystem
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let version = "0.3.4"
+    static let version = "0.3.5"
 
     private var statusItem: NSStatusItem?
     private var touchStream: TouchStream?
@@ -852,9 +852,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func execute(_ command: TilingCommand, source: String) {
         let ok = windowActions.perform(command)
         // Every Tiler window move goes through here (gesture OR hotkey) — so a window
-        // that moves with NO such line is provably not Tiler.
-        powerLog?.log("window \(command) src=\(source) ok=\(ok)")
-        if !ok {
+        // that moves with NO such line is provably not Tiler. Failures carry the why
+        // and the frontmost app, so a bare desktop is not misread as a permission loss.
+        if ok {
+            powerLog?.log("window \(command) src=\(source) ok=true")
+        } else {
+            let why = windowActions.lastFailure?.rawValue ?? "?"
+            let front = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "?"
+            powerLog?.log("window \(command) src=\(source) ok=false why=\(why) app=\(front)")
             // Failed AX action: cheap revocation/permission re-check.
             permissionMonitor?.noteActionFailed()
         }
