@@ -168,10 +168,14 @@ REJECTED armed 3-finger candidate with the failed gate and metrics (`reject
 reason=short|slow|brief|ambiguous|fingers|palm|reversal|timeout`, plus `raw=M` —
 the touching-contact count before the size filter, so `fingers=2 raw=3` proves a
 fingertip cut by minContactSize while `raw=2` proves a physical lift
-(improve-failure-attribution) — so a "gesture
+(improve-failure-attribution) — and `near=K`, driver-reported near-pad contacts,
+so a hovering finger (`raw=2 near=1`) differs from a gone one (add-noarm-
+diagnostics) — so a "gesture
 didn't fire" report is attributable too; intent-filtered at ≥ half the displacement
 threshold and rate-limited to one line per second of frame time, so resting fingers
-stay silent; fix-rebuild-gesture-loss), every
+stay silent; fix-rebuild-gesture-loss), every touch session that saw exactly-3
+fingers but never armed (one `noarm` line with streak/size/near evidence at
+attempt end — flickering and light-touch third fingers made visible), every
 executed window move with its source (gesture / hotkey — so a window that moves with no
 such line is provably not Tiler; failures carry
 `why=no-frontmost-app|no-focused-window|frame-unreadable` and the frontmost app's

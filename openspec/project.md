@@ -70,7 +70,7 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 - None. Start new work as a fresh change folder (kebab-case) with
   proposal/design/tasks/spec deltas.
 
-Archived: `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
+Archived: `2026-08-01-add-noarm-diagnostics` (v0.3.6: noarm lines for saw-3-never-armed sessions + near= hover counts in rejects — the never-arming attempts made visible), `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
 `raw=` — size-filter vs physical-lift discriminator for the up-swipe issue;
 `window ok=false` carries `why=` + frontmost app id; stale "re-confirm AX after
 install" advice dropped everywhere — grant survives, field-confirmed),
@@ -106,4 +106,4 @@ no-scroll layout, release 0.2.0 tooling), `2026-07-05-add-thirds-lock-help`
 (⇧+up → center-third), `2026-07-05-split-hotkey-groups` (independent window/utility
 hotkey toggles, window group OFF by default; calibration step sound),
 `2026-07-06-add-snap-glyphs` (cheat-sheet placement diagrams). Specs in
-`openspec/specs/` are current truth. Released: v0.3.5 (GitHub release with zip, universal, macOS 15+).
+`openspec/specs/` are current truth. Released: v0.3.6 (GitHub release with zip, universal, macOS 15+).

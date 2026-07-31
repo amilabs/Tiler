@@ -34,6 +34,16 @@ public final class GestureRecognizer {
     /// fingertip cut by minContactSize (raw stays 3). Tracked only while the
     /// diagnostic channel is attached.
     private var lastRawTouching = 0
+    /// Contacts the driver reports in near-pad states (starting/hovering/breaking/
+    /// lingering/leaving): a finger 1 mm off the pad shows here, a gone one doesn't.
+    private var lastNearTouching = 0
+    // Per-session no-arm evidence (add-noarm-diagnostics): attempts whose exact-3
+    // never stabilized used to log nothing. Gated on the diagnostic channel.
+    private var sessionFrames3 = 0
+    private var sessionMaxStreak = 0
+    private var sessionMinSize: Double?
+    private var sessionMaxNear = 0
+    private var sessionArmed = false
 
     // Phase and per-session bookkeeping. A "session" spans from the first contact
     // after a clean idle pad to full lift-off.
@@ -88,8 +98,14 @@ public final class GestureRecognizer {
         applyPendingTunablesIfIdle()
         lastFrameTimestamp = t
         if diagnostic != nil {
-            lastRawTouching = frame.contacts.reduce(0) {
-                $0 + (($1.state == .making || $1.state == .touching) ? 1 : 0)
+            lastRawTouching = 0
+            lastNearTouching = 0
+            for c in frame.contacts {
+                switch c.state {
+                case .making, .touching: lastRawTouching += 1
+                case .starting, .hovering, .breaking, .lingering, .leaving: lastNearTouching += 1
+                case .notTracking: break
+                }
             }
         }
 
@@ -108,6 +124,13 @@ public final class GestureRecognizer {
         zeroContactsSince = nil
 
         updateSession(activeCount: active.count, palmPresent: palmPresent, at: t)
+        if diagnostic != nil, active.count == 3 {
+            sessionFrames3 += 1
+            if let smallest = active.map(\.size).min() {
+                sessionMinSize = min(sessionMinSize ?? smallest, smallest)
+            }
+            sessionMaxNear = max(sessionMaxNear, lastNearTouching)
+        }
 
         switch phase {
         case .lockout:
@@ -125,7 +148,10 @@ public final class GestureRecognizer {
 
     private func processZeroContacts(at t: Double) -> GestureAction? {
         previousActiveCount = 0
-        if zeroContactsSince == nil { zeroContactsSince = t }
+        if zeroContactsSince == nil {
+            emitNoArmIfNeeded(at: t)   // the attempt just ended (all lifted)
+            zeroContactsSince = t
+        }
         if phase == .tracking {
             // Fingers vanished before confirmation: cancelled gesture. Name the
             // gate that was still failing at lift-off.
@@ -148,6 +174,11 @@ public final class GestureRecognizer {
             sessionStart = t
             sessionDirty = false
             firstThreeAt = nil
+            sessionFrames3 = 0
+            sessionMaxStreak = 0
+            sessionMinSize = nil
+            sessionMaxNear = 0
+            sessionArmed = false
         }
         if palmPresent { sessionDirty = true }
         if activeCount > 3 { sessionDirty = true }
@@ -167,8 +198,10 @@ public final class GestureRecognizer {
             return
         }
         armingStreak += 1
+        if diagnostic != nil { sessionMaxStreak = max(sessionMaxStreak, armingStreak) }
         guard armingStreak >= tun.stableArmFrames else { return }
 
+        sessionArmed = true
         phase = .tracking
         armTimestamp = t
         trackedFingers = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
@@ -274,7 +307,22 @@ public final class GestureRecognizer {
         func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
         let speed = elapsed > 0 ? r(progress / elapsed) : 0
         diagnostic("reject reason=\(reason) dx=\(r(peakDx)) dy=\(r(peakDy)) prog=\(r(progress)) "
-            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) raw=\(lastRawTouching)")
+            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) raw=\(lastRawTouching) "
+            + "near=\(lastNearTouching)")
+    }
+
+    /// A session that saw exactly-3 fingers but never armed used to vanish without
+    /// a trace — this names the arming blocker (flicker / light touch / hover) at
+    /// the moment the attempt ends (all fingers lifted). Shares the reject rate
+    /// limit; zero cost with diagnostics off.
+    private func emitNoArmIfNeeded(at t: Double) {
+        guard let diagnostic, firstThreeAt != nil, !sessionArmed, sessionFrames3 > 0 else { return }
+        if let last = lastRejectEmit, t - last < 1.0 { return }
+        lastRejectEmit = t
+        func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
+        diagnostic("noarm frames3=\(sessionFrames3) maxStreak=\(sessionMaxStreak) "
+            + "minSize=\(r(sessionMinSize ?? 0)) near=\(sessionMaxNear) dirty=\(sessionDirty)")
+        sessionFrames3 = 0   // one line per attempt
     }
 
     private func emitDiagnostic(_ direction: Direction, action: GestureAction?,
