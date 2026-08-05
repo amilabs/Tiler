@@ -1,15 +1,17 @@
 #!/bin/zsh
-# English-artifacts gate (public repo): no Cyrillic in tracked files or in the
-# messages of commits about to be pushed. Unicode-aware on purpose — byte-range
-# grep classes ([а-я] under BSD/git grep) false-positive on em-dashes and
-# arrows; python3 matches the real Cyrillic block.
+# English-artifacts gate (public repo), run before every push: no Cyrillic in
+# tracked files or in the messages of commits about to be pushed. Russian is
+# fine in LOCAL working docs — untracked files stay invisible to this gate,
+# and unpushed work only matters once it is about to go out. Unicode-aware on
+# purpose — byte-interpreted Cyrillic ranges under BSD/git grep
+# false-positive on em-dashes and arrows; python3 matches the real Cyrillic block.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 FAIL=0
 
 git ls-files -z | python3 -c '
 import sys, re
-pat = re.compile(r"[Ѐ-ӿ]")
+pat = re.compile("[\\u0400-\\u04FF]")
 bad = 0
 for raw in sys.stdin.buffer.read().split(b"\0"):
     if not raw:
@@ -29,7 +31,7 @@ sys.exit(1 if bad else 0)
 if git rev-parse --verify --quiet origin/main >/dev/null; then
     git log origin/main..HEAD --format='commit %h%n%s%n%b' | python3 -c '
 import sys, re
-pat = re.compile(r"[Ѐ-ӿ]")
+pat = re.compile("[\\u0400-\\u04FF]")
 bad = 0
 cur = ""
 for line in sys.stdin:
@@ -46,6 +48,6 @@ fi
 if [[ "$FAIL" == "0" ]]; then
     echo "PASS: no Cyrillic in tracked files or outgoing commit messages"
 else
-    echo "FAIL: Cyrillic found — translate before pushing (owner quotes: English, marked 'translated')" >&2
+    echo "FAIL: Cyrillic in the outgoing set — translate it (owner quotes: English, marked 'translated') or keep it local (untracked/unpushed) before pushing" >&2
 fi
 exit $FAIL
