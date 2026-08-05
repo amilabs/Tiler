@@ -7,7 +7,7 @@ floor was enforced via `Package.swift` `platforms: [.macOS("26.0")]` +
 `LSMinimumSystemVersion 26.0`. Fleet testing (2026-07-16) hit it in the field: a
 third laptop on macOS 15.1.1 (24B91) refuses to launch Tiler with "You can't use
 this version of the application". Owner reversed the floor decision same day:
-"а ты зачем запретил запуск на других версиях то? не было такого правила" — the
+(translated) "and why did you block launching on the other versions? there was no such rule" — the
 app must run on the older machines too.
 
 ## What
@@ -47,8 +47,8 @@ project.md carry the decision; this folder protocols it.
 
 ## Post-release clarification (owner, 2026-07-17)
 
-Precise rule, owner verbatim: "Target OS действительно 26, то есть на других мы не
-тестим (пока), но это не значит что надо запрещать запуск на них. Вот такое
-правило." — i.e. the TARGET (and only tested) OS remains macOS 26; this change
+Precise rule, owner (translated): "The target OS is indeed 26, i.e. we do not
+test on the others (for now), but that does not mean launching on them must be
+blocked. That is the rule." — i.e. the TARGET (and only tested) OS remains macOS 26; this change
 removed only the launch prohibition on older versions, it did NOT move the target.
 project.md "OS policy" carries this as the standing rule.

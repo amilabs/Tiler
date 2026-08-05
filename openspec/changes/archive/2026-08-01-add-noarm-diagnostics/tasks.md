@@ -1,6 +1,6 @@
 # Tasks — add-noarm-diagnostics
 
-Owner context 2026-08-01 ("надеюсь лог поможет"): armed candidates are fine;
+Owner context 2026-08-01 ("hope the log helps" — translated): armed candidates are fine;
 never-armed attempts are invisible. Diagnostic-only change.
 
 - [x] 1. TDD: `noarm` line for saw-3-never-armed sessions (flicker case), none

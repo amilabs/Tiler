@@ -2,8 +2,8 @@
 
 ## Why
 
-2026-08-01 ~01:00: owner reports poor recognition ("очень плохо ловит даже
-боковые, вертикальный почти не ловит"), yet the log shows every ARMED candidate
+2026-08-01 ~01:00: owner reports poor recognition (translated: "recognition is
+very poor even for the side swipes; the vertical one barely registers"), yet the log shows every ARMED candidate
 either fired (16 window moves, all ok=true, 10 of them up→maximize) or rejected
 with `raw=2/1` — the pad physically losing fingers at driver level. The failing
 attempts that never ARM (third finger absent/hovering from the start, or exact-3

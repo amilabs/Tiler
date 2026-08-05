@@ -1,6 +1,6 @@
 # Tasks — fix-rebuild-gesture-loss
 
-Owner go-ahead 2026-08-01 ("добро") on the two-part proposal from the 07-31 log
+Owner go-ahead 2026-08-01 ("approved" — translated) on the two-part proposal from the 07-31 log
 diagnosis. No user gates (no UI).
 
 - [x] 1. TDD `StreamHealthPolicy.displayChangeRebuild` (coalesce <10 s, alive

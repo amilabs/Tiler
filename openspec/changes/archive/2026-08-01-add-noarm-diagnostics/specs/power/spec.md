@@ -11,7 +11,7 @@ distinguishable from a fully lifted one (`raw=2 near=0`). Touch sessions that sa
 exactly-3 active fingers at least once but never ARMED SHALL emit one
 `noarm frames3=… maxStreak=… minSize=… near=… dirty=…` line when the attempt ends
 (all fingers lifted) — making flickering/light/hovering third fingers visible
-(the dark matter behind "почти не ловит" reports, 2026-08-01). Same 1-line/s
+(the dark matter behind the "barely registers" reports — owner, translated; 2026-08-01). Same 1-line/s
 rate limit and nil-channel zero cost.
 
 ##### Scenario: A flickering third finger is visible

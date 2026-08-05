@@ -121,7 +121,7 @@
       restore + auto-sleep (5.18/6.4), promptless restore across stop/expiry/
       force-quit (5.17), screen-lock with an active session keeping the system
       awake. No power-feature anomalies in the ~16 h + subsequent logs (6.x
-      diagnosis). Owner sign-off = "надо релиз выложить" (release it for testing
+      diagnosis). Owner sign-off, translated = "we need to publish a release" (release it for testing
       on other laptops).
 - [x] 4.3 Merge spec deltas into `openspec/specs/`, archive change, bump
       `AppDelegate.version`, release v0.3.0 (`gh release`).
@@ -156,7 +156,7 @@
       reviewed for anomalies. Gate 4.2 stays open until that review.
 - [x] 5.3 Top row click stops the session; submenu marks the running start choice
       (✓ on until-stopped / the chosen duration). Spec app-shell updated.
-- [x] 5.4 Richer diagnostics (owner: "не скромничай"): ~15 s liveness heartbeat while
+- [x] 5.4 Richer diagnostics (owner, translated: "don't hold back"): ~15 s liveness heartbeat while
       active (elapsed/power/lid/held — a gap = real sleep), system + screen sleep/wake
       with lid state (`SystemPower.lidClosed()` via IORegistry `AppleClamshellState`),
       held summary on acquire, richer launch line; size cap raised to ~5 MB × 3 backups
@@ -184,7 +184,7 @@
       and woke cleanly, disable restored without error, no stale sleepDisabled at any
       launch, screen-lock with an active session kept the system awake (display only
       slept), battery never neared the floor. Clamshell/floor paths not exercised yet.
-- [x] 5.9 Clamshell never started (owner: "не сработало с закрытой крышкой"). Log
+- [x] 5.9 Clamshell never started (owner, translated: "it didn't work with the lid closed"). Log
       root cause: EVERY start was `clamshell=false` — the "with lid closed" checkbox
       closed the menu, so it could not be set together with a duration; the
       disablesleep+watchdog path was never invoked (Mac correctly slept on a

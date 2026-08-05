@@ -17,8 +17,8 @@ and recover gracefully when the permission is missing.
   machine 26.5.1, Xcode 26.6) — other versions are NOT tested (for now), but launch
   on them must never be blocked. Hence since v0.3.2: launch floor
   `LSMinimumSystemVersion`/platforms **15.0**, universal (arm64 + x86_64) binary.
-  Owner verbatim: "на других мы не тестим (пока), но это не значит что надо
-  запрещать запуск на них."
+  Owner (translated): "we do not test on the others (for now), but that does
+  not mean launching on them must be blocked."
 - Private framework `MultitouchSupport.framework` is linked for raw trackpad contact frames.
   App Sandbox stays disabled (required for both MultitouchSupport and AX control).
 - No external dependencies without explicit owner approval.
@@ -29,7 +29,7 @@ and recover gracefully when the permission is missing.
   keyring) since 2026-07-05 — GitHub API/releases available. Releases: tag `vX.Y.Z` +
   `gh release create` with the zip from `ditto -c -k --keepParent build/Tiler.app`.
   Every release ALSO installs locally right away (`Scripts/install.sh` + relaunch) —
-  owner standing order 2026-07-17 ("всегда обновляй локально"); no need to ask, but
+  owner standing order 2026-07-17 ("always update the local install" — translated); no need to ask, but
   report if a live Prevent Sleep session had to be killed. The Accessibility grant
   SURVIVES reinstalls (Apple Dev cert → stable designated requirement;
   field-confirmed 2026-08-01) — do NOT tell the owner to re-confirm the toggle

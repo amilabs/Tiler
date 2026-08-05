@@ -1,42 +1,79 @@
-# Owner's original assignment (verbatim, 2026-07-04)
+# Owner's original assignment (2026-07-04, translated)
 
-Preserved word-for-word as the source of truth behind the spec deltas. Russian is the
-owner's working language.
+The owner's working language is Russian; the assignment was originally recorded
+here verbatim. Translated to English 2026-08-05 under the public-repo
+English-artifacts rule, content preserved faithfully. This file remains the
+source of truth behind the spec deltas.
 
 ---
 
-Использовать https://github.com/Fission-AI/openspec, все задачи и задания протоколировать и обновлять при любых изменениях.
+Use https://github.com/Fission-AI/openspec; protocol every task and assignment
+and update them on any change.
 
-Изучить средства для самостоятельной отладки, тестирования и приемки, по возможности меньше привлекать юзера при разработке, но не в ущерб качеству.
+Research the means for self-service debugging, testing, and acceptance; involve
+the user as little as possible during development, but never at the expense of
+quality.
 
-Продукт: macOS menu-bar utility для управления активным окном через фиксированные хоткеи и точные жесты трекпада. Приложение должно перемещать и изменять размер текущего активного окна, работать через Accessibility permission, не падать и не отключать навсегда ввод при отсутствии разрешения. Если Accessibility не выдан, Tiler не двигает окна, но остается живым, показывает предупреждение и восстанавливается без перезапуска после выдачи разрешения.
+Product: a macOS menu-bar utility for controlling the active window via fixed
+hotkeys and precise trackpad gestures. The app must move and resize the
+currently active window, work through the Accessibility permission, and neither
+crash nor permanently disable input when the permission is absent. If
+Accessibility is not granted, Tiler does not move windows but stays alive,
+shows a warning, and recovers without a restart once the permission is granted.
 
-Обязательные действия:
+Required actions:
 
-| Ввод | Действие |
+| Input | Action |
 |---|---|
-| Ctrl + Shift + ← | окно в левую половину текущего видимого экрана |
-| Ctrl + Shift + → | окно в правую половину текущего видимого экрана |
-| Ctrl + Shift + ↑ | maximize на текущем видимом экране |
-| двойное Ctrl + Shift + ↑ | окно на полную высоту, по центру, ширина 1/3 экрана |
-| Ctrl + Shift + ↓ | восстановить предыдущий размер/позицию |
-| Cmd + Ctrl + Shift + ←/→ | то же действие, но на другом/следующем мониторе |
-| свайп ровно тремя пальцами влево/вправо/вверх | left half / right half / maximize |
-| удержанный Cmd при трехпальцевом свайпе left/right | действие на другом/следующем мониторе |
+| Ctrl + Shift + ← | window to the left half of the current visible screen |
+| Ctrl + Shift + → | window to the right half of the current visible screen |
+| Ctrl + Shift + ↑ | maximize on the current visible screen |
+| double Ctrl + Shift + ↑ | window at full height, centered, 1/3 of the screen width |
+| Ctrl + Shift + ↓ | restore the previous size/position |
+| Cmd + Ctrl + Shift + ←/→ | the same action, but on the other/next monitor |
+| swipe with exactly three fingers left/right/up | left half / right half / maximize |
+| Cmd held during a three-finger left/right swipe | the action on the other/next monitor |
 
-Это ориентировочное описание, обдумай его, предложи улучшения если нужно, особенно по технической части реализации. Изучи лучшие практики, которые сейчас есть. Например BetterTouch BTT приложение немало в тикетах и форумах описывает проблем и решений.
+This is an approximate description — think it through and propose improvements
+where needed, especially on the technical side of the implementation. Research
+the best practices that exist today. For example, the BetterTouchTool (BTT)
+app documents plenty of problems and solutions in its tickets and forums.
 
-Трехпальцевый свайп вниз не реализовывать. Жесты двумя и четырьмя пальцами не должны выполнять действия.
+Do not implement the three-finger swipe down. Two- and four-finger gestures
+must not trigger actions.
 
-Ключевое требование — надежный детект ровно трех активных касаний. Нельзя считать жест валидным только потому, что callback сообщил fingerCount = 3: нужно исключать неактивные/устаревшие контакты, в том числе контакты с size = 0 и завершенные состояния. Жест должен приниматься только после устойчивого движения: минимум несколько стабильных сэмплов, короткая задержка подтверждения, один action на один физический жест, повторные callback'и после срабатывания игнорируются до полного отпускания пальцев и cooldown.
+The key requirement is reliable detection of exactly three active touches. A
+gesture must not be considered valid merely because the callback reported
+fingerCount = 3: inactive/stale contacts must be excluded, including contacts
+with size = 0 and completed states. A gesture is accepted only after sustained
+movement: at least several stable samples, a short confirmation delay, one
+action per physical gesture; repeated callbacks after firing are ignored until
+all fingers fully lift off, plus a cooldown.
 
-В режиме ожидания, если тачпад не задействован - cpu процесса не должно превышать 1%.
+When idle, with the trackpad untouched, the process CPU must not exceed 1%.
 
-Направления распознавать строго. Горизонтальный свайп валиден только при явном доминировании X над Y: ориентир |dx| >= 2.0 * |dy|, то есть примерно до 26–27° отклонения от горизонтали. Вертикальный свайп вверх валиден при доминировании Y над X: ориентир |dy| >= 1.6 * |dx|, то есть примерно до 32° от вертикали. Диагональные движения, особенно около 30° для горизонтального свайпа, должны считаться неоднозначными и не запускать действие. Слишком короткие, слишком медленные, рваные, изменившие направление или отмененные до подтверждения жесты игнорируются.
+Recognize directions strictly. A horizontal swipe is valid only with clear
+X-over-Y dominance: guideline |dx| >= 2.0 * |dy|, i.e. roughly up to 26–27°
+deviation from horizontal. An upward vertical swipe is valid with Y-over-X
+dominance: guideline |dy| >= 1.6 * |dx|, i.e. roughly up to 32° from vertical.
+Diagonal movements — especially near 30° for the horizontal swipe — must be
+treated as ambiguous and trigger no action. Gestures that are too short, too
+slow, jerky, direction-reversing, or cancelled before confirmation are ignored.
 
-Ложные срабатывания считать blocker'ом. Tiler не должен двигать окна при двухпальцевом вертикальном, горизонтальном или диагональном скролле в Safari/Chrome/Firefox, Finder, TextEdit и других обычных приложениях; при momentum/inertial scroll; при случайном добавлении третьего пальца во время двухпальцевого скролла; при переходах 2 → 3 → 2, 3 → 2, 3 → 4; при возврате к трем пальцам без полного lift-off; при stale third contact после отпускания пальца. Также не должно быть повторного действия от одного и того же жеста.
+False positives are a blocker. Tiler must not move windows during two-finger
+vertical, horizontal, or diagonal scrolling in Safari/Chrome/Firefox, Finder,
+TextEdit, and other ordinary apps; during momentum/inertial scroll; when a
+third finger is accidentally added during a two-finger scroll; on 2 → 3 → 2,
+3 → 2, 3 → 4 transitions; when returning to three fingers without a full
+lift-off; on a stale third contact after a finger lifts. There must also be no
+repeated action from one and the same gesture.
 
-Возможные системные конфликты macOS: Mission Control, App Exposé, Spaces, Trackpad > More Gestures и Accessibility > Three Finger Drag. Вероятно Tiler не должен использовать двухпальцевый scrollWheel/Public NSEvent как источник action'ов в нормальном режиме. Конфликтные системные настройки должны быть описаны в диагностике/инструкции; чистая приемка жестов проводится с отключенными конфликтующими системными three-finger gestures.
+Possible macOS system conflicts: Mission Control, App Exposé, Spaces,
+Trackpad > More Gestures, and Accessibility > Three Finger Drag. Tiler
+probably must not use the two-finger scrollWheel/public NSEvent as an action
+source in normal mode. Conflicting system settings must be described in the
+diagnostics/instructions; clean gesture acceptance is performed with the
+conflicting system three-finger gestures disabled.
 
 ---
 

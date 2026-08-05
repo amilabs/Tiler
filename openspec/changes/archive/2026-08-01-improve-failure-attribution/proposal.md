@@ -2,7 +2,7 @@
 
 ## Why
 
-Two 2026-08-01 diagnosis gaps, both owner-hit ("дописать лог" approved):
+Two 2026-08-01 diagnosis gaps, both owner-hit ("extend the log" approved — translated):
 
 1. Eight `window … ok=false` lines after the 0.3.4 install were misattributed (by
    me) to a dropped Accessibility grant; the owner refuted it — he never touched

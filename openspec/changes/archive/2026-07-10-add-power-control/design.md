@@ -85,7 +85,7 @@ branch in v0.3 (YAGNI; revisit only if the prompt annoys).
 Safety: lid-closed awake in a bag = heat. UI copy carries ⚠ and Help explains; the
 clamshell option deliberately resets to OFF for every new session (opt-in friction).
 
-### Deep Sleep ("заснуть намертво")
+### Deep Sleep (owner's ask, translated: "sleep like the dead")
 
 `pmset -g custom` / `man pmset` facts:
 

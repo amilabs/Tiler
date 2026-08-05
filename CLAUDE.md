@@ -32,7 +32,11 @@ back to `main` and push when a phase completes.
 - No new system-wide installs or external dependencies without asking the owner.
 - Minimize owner involvement: batch questions; the only owner touchpoints are the
   `[USER GATE]` items in tasks.md.
-- Owner communicates in Russian; repo artifacts are in English.
+- Owner communicates in Russian; repo artifacts are in English — this repo is
+  **public**. No Cyrillic in tracked files or commit messages (owner rule,
+  re-confirmed 2026-08-05); owner quotes are recorded as English translations
+  marked "translated". Gate: `Scripts/check-english.sh` (tracked files +
+  unpushed commit messages) — run it before every push.
 - Required plugins: `flow@flow-skeleton` + `superpowers` (its dependency). If `/flow:`
   skills are missing at session start, tell the owner before starting (the desktop GUI
   is known to silently drop third-party-marketplace plugins; reinstall + restart cures)

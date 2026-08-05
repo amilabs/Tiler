@@ -3,7 +3,7 @@
 ## Why
 
 Owner feedback after add-onboarding-guide: About should tell the product story
-("о чём, зачем, какие жесты") in a marketing-quality way, with animation, and About
+("what it is, why, which gestures" — owner, translated) in a marketing-quality way, with animation, and About
 and Shortcuts & Help should be ONE window rather than two overlapping ones.
 
 ## What Changes

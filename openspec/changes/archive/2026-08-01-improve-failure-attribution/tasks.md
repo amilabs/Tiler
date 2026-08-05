@@ -1,6 +1,6 @@
 # Tasks — improve-failure-attribution
 
-Owner 2026-08-01: "дописать лог" + refutation of the permission theory (never
+Owner 2026-08-01, translated: "extend the log" + refutation of the permission theory (never
 re-granted; grant survives installs).
 
 - [x] 1. TDD: reject lines carry `raw=M`; new test — a sub-size third contact

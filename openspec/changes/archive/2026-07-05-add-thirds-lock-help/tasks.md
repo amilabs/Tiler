@@ -8,5 +8,5 @@
 - [x] 1.3 GestureEngine ⇧ snapshot; route mapping; HotkeyController ⌃A binding.
 - [x] 1.4 Menu label Help; Guide cheat sheet rows for new bindings.
 - [x] 1.5 103 tests green (incl. live thirds geometry); owner verified thirds, ⌃A
-      and the Help label («работает»).
+      and the Help label (owner: "works" — translated).
 - [x] 1.6 Merged, archived; released as v0.2.1.

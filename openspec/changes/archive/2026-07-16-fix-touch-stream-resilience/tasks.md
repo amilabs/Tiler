@@ -1,6 +1,6 @@
 # Tasks — fix-touch-stream-resilience
 
-Owner go-ahead 2026-07-16: "да, делай, не жалей отладки - больше наловим" (fix
+Owner go-ahead 2026-07-16 (translated): "yes, go ahead, don't skimp on debug logging — we'll catch more" (fix
 approved; be generous with diagnostics). No user gates — bugfix change; field
 verification happens on the second laptop after the v0.3.1 release.
 

@@ -32,7 +32,7 @@ its killer.
    frame-silent for ≥ 10 min while system HID activity (cursor/scroll) is recent,
    rate-limited to one self-heal per 10 min so an external-mouse user doesn't churn.
    Decision logic is pure (`StreamHealthPolicy` in TilerCore, TDD).
-4. **Diagnostics** (owner: "не жалей отладки — больше наловим") — the debug log
+4. **Diagnostics** (owner, translated: "don't skimp on debug logging — we'll catch more") — the debug log
    gains: device IDs at every stream start, every rebuild with reason and device
    delta, drift details (old → new IDs), display-change events with screen count,
    and self-heal decisions with their evidence (silence age, HID age).

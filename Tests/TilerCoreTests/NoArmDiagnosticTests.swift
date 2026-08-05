@@ -3,7 +3,7 @@ import Testing
 
 // No-arm session diagnostics (add-noarm-diagnostics): attempts whose third finger
 // flickers or hovers never arm and used to log nothing — the dark matter behind
-// "почти не ловит" reports. A session that saw exactly-3 active at least once but
+// "barely registers" reports. A session that saw exactly-3 active at least once but
 // never armed emits one `noarm` line; reject lines carry `near=` so a hovering
 // finger is distinguishable from a fully lifted one.
 @Suite("No-arm diagnostic") struct NoArmDiagnosticTests {

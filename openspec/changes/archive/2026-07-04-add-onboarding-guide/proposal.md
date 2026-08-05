@@ -5,7 +5,7 @@
 Tiler works, but is mute about itself: the fixed hotkeys and gestures are not shown
 anywhere in the app, a new user gets no explanation of what it does, and the
 permission flow (bare Settings window) doesn't explain what's happening or what to
-do. Owner request 2026-07-04: "оформим приложение красиво" — description, visible
+do. Owner request 2026-07-04 (translated): "let's make the app look beautiful" — description, visible
 hotkey/gesture reference, calibration path when gestures underperform, and a clear
 startup permission experience.
 

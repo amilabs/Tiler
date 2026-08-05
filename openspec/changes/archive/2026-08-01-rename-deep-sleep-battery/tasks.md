@@ -1,6 +1,6 @@
 # Tasks — rename-deep-sleep-battery
 
-Owner-approved wording 2026-08-01 ("добро"): toggle "Deep Sleep on battery";
+Owner-approved wording 2026-08-01 ("approved" — translated): toggle "Deep Sleep on battery";
 copy states any-battery-sleep + machine-wide explicitly.
 
 - [x] 1. Settings Power tab: label + explanation; Guide power section; README.

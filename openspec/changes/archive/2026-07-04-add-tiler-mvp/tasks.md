@@ -131,7 +131,7 @@ Every phase ends with a commit + push. `[USER GATE]` = the only points needing t
       at the 26.6° horizontal boundary — retunable via `horizontalDominance` if
       acceptance shows too many misses. New tool: `swift run TraceCheck <trace>`
       replays any recording with per-segment action reporting.
-- [x] 8.3 **[USER GATE #4 PASSED]** (2026-07-04 late evening, owner: «все круто») —
+- [x] 8.3 **[USER GATE #4 PASSED]** (2026-07-04 late evening, owner, translated: "all great") —
       hotkeys, gestures, permission lifecycle accepted on the granted ~/Applications
       build. One carry-over defect, explicitly NOT a blocker (false negative, not
       false positive): **right swipe still under-detects** for the owner's hand even
