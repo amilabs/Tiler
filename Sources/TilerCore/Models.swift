@@ -23,8 +23,10 @@ public struct Contact: Codable, Sendable, Equatable {
     public var x: Double
     public var y: Double
 
-    public init(deviceID: UInt64, fingerID: Int32, state: ContactState,
-                size: Double, x: Double, y: Double) {
+    public init(
+        deviceID: UInt64, fingerID: Int32, state: ContactState,
+        size: Double, x: Double, y: Double
+    ) {
         self.deviceID = deviceID
         self.fingerID = fingerID
         self.state = state

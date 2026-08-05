@@ -15,14 +15,17 @@ import TilerCore
 
     public func start() {
         let context = Unmanaged.passUnretained(self).toOpaque()
-        guard let unmanaged = IOPSNotificationCreateRunLoopSource({ ctx in
-            guard let ctx else { return }
-            let monitor = Unmanaged<PowerSourceMonitor>.fromOpaque(ctx).takeUnretainedValue()
-            // Registered on the main run loop, so the callback fires on the main thread.
-            MainActor.assumeIsolated {
-                monitor.onChange?(PowerSourceMonitor.read())
-            }
-        }, context) else {
+        guard
+            let unmanaged = IOPSNotificationCreateRunLoopSource(
+                { ctx in
+                    guard let ctx else { return }
+                    let monitor = Unmanaged<PowerSourceMonitor>.fromOpaque(ctx).takeUnretainedValue()
+                    // Registered on the main run loop, so the callback fires on the main thread.
+                    MainActor.assumeIsolated {
+                        monitor.onChange?(PowerSourceMonitor.read())
+                    }
+                }, context)
+        else {
             NSLog("Tiler: power-source notifier unavailable")
             return
         }
@@ -34,12 +37,12 @@ import TilerCore
 
     public static func read() -> PowerStatus {
         guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
-              let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef],
-              let source = list.first,
-              let desc = IOPSGetPowerSourceDescription(info, source)?
+            let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef],
+            let source = list.first,
+            let desc = IOPSGetPowerSourceDescription(info, source)?
                 .takeUnretainedValue() as? [String: Any]
         else {
-            return PowerStatus(percent: nil, onBattery: false)   // desktop / no battery
+            return PowerStatus(percent: nil, onBattery: false)  // desktop / no battery
         }
         let percent = desc[kIOPSCurrentCapacityKey] as? Int
         let onBattery = (desc[kIOPSPowerSourceStateKey] as? String) == kIOPSBatteryPowerValue

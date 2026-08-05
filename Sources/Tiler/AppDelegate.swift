@@ -35,23 +35,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var powerProfile: PowerProfileController?
     private weak var powerHeaderItem: NSMenuItem?
     private weak var powerStopItem: NSMenuItem?
-    private weak var powerTopItem: NSMenuItem?         // prominent active-state row at the menu top
+    private weak var powerTopItem: NSMenuItem?  // prominent active-state row at the menu top
     private weak var powerTopSeparator: NSMenuItem?
-    private var powerStartItems: [NSMenuItem] = []      // normal starts (tag 0 = indefinite, else minutes)
-    private weak var powerClamshellItem: NSMenuItem?    // "…with lid closed" → opens the start dialog
-    private var powerDialogWindow: NSWindow?   // transient clamshell / until-time dialog
-    private var activeMinutes: Int?                     // which start choice is running (for the ✓)
+    private var powerStartItems: [NSMenuItem] = []  // normal starts (tag 0 = indefinite, else minutes)
+    private weak var powerClamshellItem: NSMenuItem?  // "…with lid closed" → opens the start dialog
+    private var powerDialogWindow: NSWindow?  // transient clamshell / until-time dialog
+    private var activeMinutes: Int?  // which start choice is running (for the ✓)
     private var activeIsIndefinite = false
-    private var sessionStart: Date?                     // for the heartbeat elapsed field
+    private var sessionStart: Date?  // for the heartbeat elapsed field
     private var heartbeatTicks = 0
-    private var menuTick: DispatchSourceTimer?          // live countdown, only while the menu is open
+    private var menuTick: DispatchSourceTimer?  // live countdown, only while the menu is open
     // Status indicator is re-rendered only when the active state or appearance changes.
     private var lastIndicatorActive: Bool?
     private var lastIndicatorAppearance: NSAppearance.Name?
     private var powerLog: PowerDebugLog?
     private var lastLoggedPower: String?
     private var lastOnBattery = false
-    private var debugStateTimer: DispatchSourceTimer?   // 30 s idle-state log while debug logging is on
+    private var debugStateTimer: DispatchSourceTimer?  // 30 s idle-state log while debug logging is on
     // Touch-stream guardian (gesture stream recovery spec).
     private var streamGuardTimer: DispatchSourceTimer?
     private var displayChangeDebounce: DispatchWorkItem?
@@ -83,7 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.reconcileStuckSleepDisabled()   // clear a leftover clamshell flag on wake
+                self?.reconcileStuckSleepDisabled()  // clear a leftover clamshell flag on wake
                 self?.logSleepBlockers("wake")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     self?.rebuildTouchStream(reason: "wake")
@@ -113,8 +113,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         self.plog("display change screens=\(screens) -> rebuild")
                         self.rebuildTouchStream(reason: "display change")
                     } else {
-                        self.plog("display change screens=\(screens) -> skip "
-                            + "(silent=\(Int(silent))s)")
+                        self.plog(
+                            "display change screens=\(screens) -> skip "
+                                + "(silent=\(Int(silent))s)")
                     }
                 }
                 self.displayChangeDebounce = work
@@ -124,12 +125,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Screen lock state feeds the self-heal policy; unlock also drift-checks
         // (a topology change while locked would otherwise wait for the watchdog).
         let dnc = DistributedNotificationCenter.default()
-        dnc.addObserver(forName: Notification.Name("com.apple.screenIsLocked"),
-                        object: nil, queue: .main) { [weak self] _ in
+        dnc.addObserver(
+            forName: Notification.Name("com.apple.screenIsLocked"),
+            object: nil, queue: .main
+        ) { [weak self] _ in
             MainActor.assumeIsolated { self?.screenLockedNow = true }
         }
-        dnc.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"),
-                        object: nil, queue: .main) { [weak self] _ in
+        dnc.addObserver(
+            forName: Notification.Name("com.apple.screenIsUnlocked"),
+            object: nil, queue: .main
+        ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.screenLockedNow = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -146,7 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// One watchdog pass: a precise drift check first, then the silence heuristic.
     private func streamGuardTick() {
-        guard let stream = touchStream else { return }   // no trackpad → nothing to guard
+        guard let stream = touchStream else { return }  // no trackpad → nothing to guard
         if rebuildTouchStreamIfDrifted(context: "watchdog") { return }
         guard let silent = stream.silentSeconds() else { return }
         let hidAgo = Self.secondsSinceHIDActivity()
@@ -188,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// self-heal): stop + start builds a fresh device list; on failure fall back to
     /// a full pipeline rebuild.
     private func rebuildTouchStream(reason: String) {
-        guard let stream = touchStream else { return }   // no trackpad → nothing to do
+        guard let stream = touchStream else { return }  // no trackpad → nothing to do
         lastStreamRebuild = Date()
         stream.stop()
         do {
@@ -214,7 +219,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // Power acceptance hooks: `--power-start 30m|2h|inf`, `--power-stop`.
         if let i = args.firstIndex(of: "--power-start"), args.indices.contains(i + 1) {
-            let d: TimeInterval? = args[i + 1] == "inf" ? nil
+            let d: TimeInterval? =
+                args[i + 1] == "inf"
+                ? nil
                 : Double(args[i + 1].dropLast()).map { args[i + 1].hasSuffix("h") ? $0 * 3600 : $0 * 60 }
             powerApply(.start(clamshell: false, duration: d))
         }
@@ -239,8 +246,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self else { return }
             if let result {
                 self.settings.tunablesOverride = result.suggested
-                NSLog("Tiler: calibration applied (horizontal %.2f, vertical %.2f)",
-                      result.suggested.horizontalDominance, result.suggested.verticalDominance)
+                NSLog(
+                    "Tiler: calibration applied (horizontal %.2f, vertical %.2f)",
+                    result.suggested.horizontalDominance, result.suggested.verticalDominance)
             }
             self.calibrationActive = false
             self.calibrationWindow?.close()
@@ -308,7 +316,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let conflictAlert = conflictsPresent && settings.gesturesEnabled
         let alert = !trusted || conflictAlert
         statusItem?.button?.title = alert ? " ⚠︎" : ""
-        statusItem?.button?.toolTip = !trusted
+        statusItem?.button?.toolTip =
+            !trusted
             ? "Tiler: Accessibility permission missing"
             : (conflictAlert
                 ? "Tiler: conflicting system trackpad gestures detected — see Tiler…"
@@ -327,12 +336,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let title = NSMutableAttributedString(
             string: "Settings", attributes: [.font: NSFont.menuFont(ofSize: 0)])
         guard let mark,
-              // Two palette layers: white exclamation over the colored triangle —
-              // one layer would flood the cutout and render a solid triangle.
-              let symbol = NSImage(systemSymbolName: "exclamationmark.triangle.fill",
-                                   accessibilityDescription: "warning")?
-                  .withSymbolConfiguration(.init(pointSize: 11, weight: .semibold)
-                      .applying(.init(paletteColors: [.white, mark])))
+            // Two palette layers: white exclamation over the colored triangle —
+            // one layer would flood the cutout and render a solid triangle.
+            let symbol = NSImage(
+                systemSymbolName: "exclamationmark.triangle.fill",
+                accessibilityDescription: "warning")?
+                .withSymbolConfiguration(
+                    .init(pointSize: 11, weight: .semibold)
+                        .applying(.init(paletteColors: [.white, mark])))
         else { return title }
         let attachment = NSTextAttachment()
         attachment.image = symbol
@@ -380,20 +391,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         controller.handler = { [weak self] command in
             self?.execute(command, source: "hotkey")
         }
-        controller.apply(windowTiling: settings.windowHotkeysEnabled,
-                         utility: settings.utilityHotkeysEnabled)
+        controller.apply(
+            windowTiling: settings.windowHotkeysEnabled,
+            utility: settings.utilityHotkeysEnabled)
         hotkeys = controller
     }
 
     private func setUpSettingsWiring() {
         settings.onChange = { [weak self] store in
             guard let self else { return }
-            self.hotkeys?.apply(windowTiling: store.windowHotkeysEnabled,
-                                utility: store.utilityHotkeysEnabled)
+            self.hotkeys?.apply(
+                windowTiling: store.windowHotkeysEnabled,
+                utility: store.utilityHotkeysEnabled)
             self.engine?.stageTunables(store.effectiveTunables)
             self.powerApply(.setDisplayAwake(store.keepDisplayAwake))
             self.powerApply(.setFloor(store.batteryFloorPercent))
-            self.updateStatusGlyph()   // gesturesEnabled gates the conflict marks
+            self.updateStatusGlyph()  // gesturesEnabled gates the conflict marks
         }
     }
 
@@ -401,28 +414,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setUpPower() {
         powerLog = PowerDebugLog(enabled: settings.powerDebugLogging)
-        powerPolicy = PowerPolicy(displayAwake: settings.keepDisplayAwake,
-                                  floorPercent: settings.batteryFloorPercent)
+        powerPolicy = PowerPolicy(
+            displayAwake: settings.keepDisplayAwake,
+            floorPercent: settings.batteryFloorPercent)
         awake = AwakeController()
         let monitor = PowerSourceMonitor()
         monitor.onChange = { [weak self] status in self?.powerApply(.power(status)) }
         monitor.start()
         powerMonitor = monitor
         governor = DisableSleepGovernor(adminRun: { try AdminShell.runPrivileged($0) })
-        reconcileStuckSleepDisabled()   // offer to clear a leftover SleepDisabled flag at launch
+        reconcileStuckSleepDisabled()  // offer to clear a leftover SleepDisabled flag at launch
 
-        let profile = PowerProfileController(store: settings,
-                                             adminRun: { try AdminShell.runPrivileged($0) })
+        let profile = PowerProfileController(
+            store: settings,
+            adminRun: { try AdminShell.runPrivileged($0) })
         let deepSleepActive = profile.isDeepSleepActive()
-        settings.deepSleepOnBattery = deepSleepActive               // reality wins over stored intent
+        settings.deepSleepOnBattery = deepSleepActive  // reality wins over stored intent
         powerProfile = profile
 
         let power = PowerSourceMonitor.read()
         lastOnBattery = power.onBattery
-        plog("launch v\(AppDelegate.version) — deepSleep=\(deepSleepActive) "
-             + "power=\(power.percent.map(String.init) ?? "-")% \(power.onBattery ? "battery" : "AC") "
-             + "lid=\(SystemPower.lidClosed() ? "closed" : "open") floor=\(settings.batteryFloorPercent) "
-             + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
+        plog(
+            "launch v\(AppDelegate.version) — deepSleep=\(deepSleepActive) "
+                + "power=\(power.percent.map(String.init) ?? "-")% \(power.onBattery ? "battery" : "AC") "
+                + "lid=\(SystemPower.lidClosed() ? "closed" : "open") floor=\(settings.batteryFloorPercent) "
+                + "display=\(settings.keepDisplayAwake) sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow())")
         // The pipeline started before powerLog existed — record the stream identity now.
         if let stream = touchStream { plog("touch stream devices=\(stream.attachedSignature)") }
         observeSystemPowerEvents()
@@ -452,10 +468,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let p = PowerSourceMonitor.read()
         let lidClosed = SystemPower.lidClosed()
         let blockers = SystemPower.sleepBlockers()
-        powerLog?.log("state lid=\(lidClosed ? "closed" : "open") "
-            + "power=\(p.percent.map(String.init) ?? "-")% \(p.onBattery ? "battery" : "AC") "
-            + "sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow()) blockers=\(blockers.count)")
-        if lidClosed { for b in blockers { powerLog?.log("  · \(b)") } }   // lid closed + awake = the puzzle
+        powerLog?.log(
+            "state lid=\(lidClosed ? "closed" : "open") "
+                + "power=\(p.percent.map(String.init) ?? "-")% \(p.onBattery ? "battery" : "AC") "
+                + "sleepDisabled=\(DisableSleepGovernor.sleepDisabledNow()) blockers=\(blockers.count)")
+        if lidClosed { for b in blockers { powerLog?.log("  · \(b)") } }  // lid closed + awake = the puzzle
     }
 
     /// Log system sleep/wake and screen sleep/wake — with the lid state — so a
@@ -476,8 +493,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // Screen lock/unlock arrives as distributed notifications (incl. the ⌃A hotkey).
         let dnc = DistributedNotificationCenter.default()
-        for (name, tag) in [("com.apple.screenIsLocked", "screen locked"),
-                            ("com.apple.screenIsUnlocked", "screen unlocked")] {
+        for (name, tag) in [
+            ("com.apple.screenIsLocked", "screen locked"),
+            ("com.apple.screenIsUnlocked", "screen unlocked"),
+        ] {
             dnc.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.logSystemEvent(tag) }
             }
@@ -485,8 +504,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func logSystemEvent(_ tag: String) {
-        plog("\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
-            + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
+        plog(
+            "\(tag) lid=\(SystemPower.lidClosed() ? "closed" : "open") "
+                + "active=\(powerPolicy.isActive) held=\(awake?.heldSummary ?? "?")")
         // On any sleep/wake transition, capture who is (still) blocking sleep.
         if tag.contains("Sleep") || tag.contains("didWake") { logSleepBlockers(tag) }
     }
@@ -496,12 +516,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// heat/bag graphic) and offer a one-click restore.
     private func reconcileStuckSleepDisabled() {
         guard let governor,
-              DisableSleepGovernor.sleepDisabledNow(),
-              !(powerPolicy.isActive && powerPolicy.clamshell) else { return }
+            DisableSleepGovernor.sleepDisabledNow(),
+            !(powerPolicy.isActive && powerPolicy.clamshell)
+        else { return }
         let alert = NSAlert()
         alert.icon = clamshellWarningNSImage()
         alert.messageText = "Sleep is still disabled"
-        alert.informativeText = "A “Prevent sleep with lid closed” session left sleep disabled — "
+        alert.informativeText =
+            "A “Prevent sleep with lid closed” session left sleep disabled — "
             + "the Mac won't sleep and can overheat or drain (never leave it closed in a bag). "
             + "Restore normal sleep?"
         alert.addButton(withTitle: "Restore normal sleep")
@@ -572,7 +594,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // A lid-closed session that ended on its own (timer/floor, not a user Stop)
         // won't re-trigger lid-close sleep — put the Mac to sleep as intended.
         if endedClamshell, endReason == .expired || endReason == .batteryFloor,
-           SystemPower.lidClosed() {
+            SystemPower.lidClosed()
+        {
             plog("clamshell ended (\(endReason?.rawValue ?? "?")) with lid closed → will sleep once restored")
             sleepAfterClamshellRestore(tries: 0)
         }
@@ -606,7 +629,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         switch command {
         case let .start(clamshell, duration):
             let d = duration.map { "\(Int($0 / 60))m" } ?? "indefinite"
-            plog("start clamshell=\(clamshell) duration=\(d) floor=\(settings.batteryFloorPercent) display=\(settings.keepDisplayAwake)")
+            plog(
+                "start clamshell=\(clamshell) duration=\(d) floor=\(settings.batteryFloorPercent) display=\(settings.keepDisplayAwake)"
+            )
         case .stop:
             plog("stop (user)")
         case let .power(status):
@@ -620,16 +645,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case let .setDisplayAwake(value): plog("setDisplayAwake=\(value)")
         case let .setFloor(value): plog("setFloor=\(value)")
         case .clamshellArmFailed: plog("clamshellArmFailed")
-        case .tick: break                 // never logged (noise)
+        case .tick: break  // never logged (noise)
         }
     }
 
     private func perform(_ effect: PowerEffect) {
         switch effect {
         case let .acquire(spec):
-            powerNotifier.requestAuthOnce()   // lazy, once, on first session start
+            powerNotifier.requestAuthOnce()  // lazy, once, on first session start
             awake?.apply(spec)
-            plog("acquire display=\(spec.displayAwake) system=\(spec.systemSleepBlock) held=\(awake?.heldSummary ?? "?")")
+            plog(
+                "acquire display=\(spec.displayAwake) system=\(spec.systemSleepBlock) held=\(awake?.heldSummary ?? "?")"
+            )
         case let .release(reason):
             awake?.apply(nil)
             plog("release \(reason.rawValue)")
@@ -642,7 +669,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self?.powerApply(.clamshellArmFailed)
             }
         case .disarmClamshell:
-            governor?.disarm()   // promptless — the foreground watchdog restores the flag
+            governor?.disarm()  // promptless — the foreground watchdog restores the flag
             plog("clamshell disarm")
         case let .notifyFloorStop(percent):
             powerNotifier.floorStop(percent: percent)
@@ -679,7 +706,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Dump every sleep-blocking assertion holder to the debug log (file only) so the
     /// "why didn't it sleep" question needs no manual `pmset -g assertions`.
     private func logSleepBlockers(_ context: String) {
-        guard powerLog?.isEnabled == true else { return }   // skip the subprocess when off
+        guard powerLog?.isEnabled == true else { return }  // skip the subprocess when off
         let blockers = SystemPower.sleepBlockers()
         let flag = DisableSleepGovernor.sleepDisabledNow()
         if blockers.isEmpty {
@@ -694,9 +721,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let p = PowerSourceMonitor.read()
         let elapsed = sessionStart.map { Int(Date().timeIntervalSince($0)) } ?? 0
         // File-only (no NSLog spam): dense enough to catch a sleep gap.
-        powerLog?.log("alive +\(elapsed)s power=\(p.percent.map(String.init) ?? "-")% "
-            + "\(p.onBattery ? "battery" : "AC") lid=\(SystemPower.lidClosed() ? "closed" : "open") "
-            + "held=\(awake?.heldSummary ?? "?")")
+        powerLog?.log(
+            "alive +\(elapsed)s power=\(p.percent.map(String.init) ?? "-")% "
+                + "\(p.onBattery ? "battery" : "AC") lid=\(SystemPower.lidClosed() ? "closed" : "open") "
+                + "held=\(awake?.heldSummary ?? "?")")
     }
 
     // MARK: Prevent Sleep menu actions
@@ -706,7 +734,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func duration(for item: NSMenuItem) -> TimeInterval? {
-        item.tag == 0 ? nil : TimeInterval(item.tag) * 60   // tag 0 = indefinite
+        item.tag == 0 ? nil : TimeInterval(item.tag) * 60  // tag 0 = indefinite
     }
 
     /// Lid-closed start: a help-styled modal dialog (centered card) picks the duration
@@ -717,12 +745,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let fixed: Set<Int> = [10, 30, 60, 120, 300, 600, 1440]
         let preselect: Int
         if powerPolicy.isActive {
-            if activeIsIndefinite { preselect = 0 }
-            else if let m = activeMinutes, fixed.contains(m) { preselect = m }
-            else { preselect = 120 }
-        } else { preselect = 120 }
-        let model = ClamshellDialogModel(preselectTag: preselect,
-                                         defaultEnd: Date().addingTimeInterval(2 * 3600))
+            if activeIsIndefinite {
+                preselect = 0
+            } else if let m = activeMinutes, fixed.contains(m) {
+                preselect = m
+            } else {
+                preselect = 120
+            }
+        } else {
+            preselect = 120
+        }
+        let model = ClamshellDialogModel(
+            preselectTag: preselect,
+            defaultEnd: Date().addingTimeInterval(2 * 3600))
         model.onFinish = { [weak self] in
             guard let self else { return }
             self.powerDialogWindow?.close(); self.powerDialogWindow = nil
@@ -795,10 +830,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let fixedTags: Set<Int> = [10, 30, 60, 120, 300, 600, 1440]
         for item in powerStartItems {
             let on: Bool
-            if !active { on = false }
-            else if item.tag == 0 { on = activeIsIndefinite }
-            else if item.tag == -1 { on = !activeIsIndefinite && !fixedTags.contains(activeMinutes ?? -2) }
-            else { on = activeMinutes == item.tag }
+            if !active {
+                on = false
+            } else if item.tag == 0 {
+                on = activeIsIndefinite
+            } else if item.tag == -1 {
+                on = !activeIsIndefinite && !fixedTags.contains(activeMinutes ?? -2)
+            } else {
+                on = activeMinutes == item.tag
+            }
             item.state = on ? .on : .off
         }
 
@@ -820,9 +860,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func boldMenuTitle(_ s: String) -> NSAttributedString {
-        NSAttributedString(string: s, attributes: [
-            .font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize),
-        ])
+        NSAttributedString(
+            string: s,
+            attributes: [
+                .font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            ])
     }
 
     /// Live countdown while the menu is open (timed sessions only); stopped on close.
@@ -871,7 +913,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let engine = GestureEngine(
             recorder: makeRecorderIfRequested(),
             tunables: settings.effectiveTunables,
-            onDiagnostic: { [weak self] line in       // gesture-decision logging (debug log)
+            onDiagnostic: { [weak self] line in  // gesture-decision logging (debug log)
                 Task { @MainActor in self?.powerLog?.log("gesture \(line)") }
             }
         ) { [weak self] action in
@@ -896,18 +938,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func route(_ action: GestureAction) {
         guard settings.gesturesEnabled, !calibrationActive else {
-            powerLog?.log("gesture ignored (gesturesEnabled=\(settings.gesturesEnabled) calibrating=\(calibrationActive))")
+            powerLog?.log(
+                "gesture ignored (gesturesEnabled=\(settings.gesturesEnabled) calibrating=\(calibrationActive))")
             return
         }
         NSLog("Tiler: gesture %@ nextDisplay=%d", action.direction.rawValue, action.nextDisplay ? 1 : 0)
         let command: TilingCommand
         switch action.direction {
         case .left:
-            command = action.thirdWidth
+            command =
+                action.thirdWidth
                 ? .leftThird(nextDisplay: action.nextDisplay)
                 : .leftHalf(nextDisplay: action.nextDisplay)
         case .right:
-            command = action.thirdWidth
+            command =
+                action.thirdWidth
                 ? .rightThird(nextDisplay: action.nextDisplay)
                 : .rightHalf(nextDisplay: action.nextDisplay)
         case .up:
@@ -919,7 +964,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func makeRecorderIfRequested() -> TraceRecorder? {
         let args = CommandLine.arguments
         guard let flagIndex = args.firstIndex(of: "--record-touches"),
-              args.indices.contains(flagIndex + 1) else { return nil }
+            args.indices.contains(flagIndex + 1)
+        else { return nil }
         let path = args[flagIndex + 1]
         do {
             let recorder = try TraceRecorder(path: path)
@@ -941,7 +987,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         item.button?.imagePosition = .imageLeft
 
         let menu = NSMenu()
-        menu.autoenablesItems = false     // we manage the top indicator + Stop enabled state
+        menu.autoenablesItems = false  // we manage the top indicator + Stop enabled state
 
         // Prominent active-state row at the very top (hidden while inactive). Bold, with
         // the red cup mark and a live countdown; clicking it stops the session after a
@@ -966,13 +1012,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(settingsItem)
         settingsMenuItem = settingsItem
         menu.addItem(.separator())
-        menu.addItem(makePreventSleepMenu())   // power section, between primaries and Quit
+        menu.addItem(makePreventSleepMenu())  // power section, between primaries and Quit
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(
-            title: "Quit Tiler",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
-        ))
+        menu.addItem(
+            NSMenuItem(
+                title: "Quit Tiler",
+                action: #selector(NSApplication.terminate(_:)),
+                keyEquivalent: "q"
+            ))
 
         menu.delegate = self
         item.menu = menu
@@ -983,7 +1030,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// checkbox refresh in `menuWillOpen`.
     private func makePreventSleepMenu() -> NSMenuItem {
         let submenu = NSMenu()
-        submenu.autoenablesItems = false       // Stop is enabled by session state, not target
+        submenu.autoenablesItems = false  // Stop is enabled by session state, not target
 
         let header = NSMenuItem(title: "Off", action: nil, keyEquivalent: "")
         header.isEnabled = false
@@ -994,7 +1041,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Normal starts (system stays awake with the lid open).
         powerStartItems = addStartItems(to: submenu, selector: #selector(powerStart(_:)))
         let untilTime = makeItem("Until a specific time…", #selector(promptUntilTimeStart))
-        untilTime.tag = -1                 // custom end date/time (opens a dialog)
+        untilTime.tag = -1  // custom end date/time (opens a dialog)
         submenu.addItem(untilTime)
         powerStartItems.append(untilTime)
         submenu.addItem(.separator())
@@ -1037,8 +1084,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// The plain, template menu-bar glyph (adapts to light/dark automatically).
     private func plainHandImage() -> NSImage? {
         let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .regular)
-        let image = NSImage(systemSymbolName: "hand.pinch.fill",
-                            accessibilityDescription: "Tiler")?
+        let image = NSImage(
+            systemSymbolName: "hand.pinch.fill",
+            accessibilityDescription: "Tiler")?
             .withSymbolConfiguration(config)
         image?.isTemplate = true
         return image
@@ -1107,15 +1155,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         func write<V: View>(_ name: String, _ view: V) {
-            let wrapped = view
+            let wrapped =
+                view
                 .background(Color(nsColor: .windowBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             let renderer = ImageRenderer(content: wrapped)
             renderer.scale = 2
             guard let image = renderer.nsImage,
-                  let tiff = image.tiffRepresentation,
-                  let rep = NSBitmapImageRep(data: tiff),
-                  let png = rep.representation(using: .png, properties: [:]) else {
+                let tiff = image.tiffRepresentation,
+                let rep = NSBitmapImageRep(data: tiff),
+                let png = rep.representation(using: .png, properties: [:])
+            else {
                 NSLog("Tiler: render-shots failed for %@", name)
                 return
             }

@@ -7,12 +7,14 @@ public enum SystemPower {
     /// Whether the built-in lid is currently closed (`AppleClamshellState` on
     /// IOPMrootDomain). Absent key (desktops) reads as false.
     public static func lidClosed() -> Bool {
-        let service = IOServiceGetMatchingService(kIOMainPortDefault,
-                                                  IOServiceMatching("IOPMrootDomain"))
+        let service = IOServiceGetMatchingService(
+            kIOMainPortDefault,
+            IOServiceMatching("IOPMrootDomain"))
         guard service != 0 else { return false }
         defer { IOObjectRelease(service) }
-        let value = IORegistryEntryCreateCFProperty(service, "AppleClamshellState" as CFString,
-                                                    kCFAllocatorDefault, 0)
+        let value = IORegistryEntryCreateCFProperty(
+            service, "AppleClamshellState" as CFString,
+            kCFAllocatorDefault, 0)
         return (value?.takeRetainedValue() as? Bool) ?? false
     }
 
@@ -47,6 +49,6 @@ public enum SystemPower {
         process.arguments = ["-e", "tell application \"System Events\" to sleep"]
         process.standardOutput = Pipe()
         process.standardError = Pipe()
-        try? process.run()   // do not wait — the machine is about to sleep
+        try? process.run()  // do not wait — the machine is about to sleep
     }
 }

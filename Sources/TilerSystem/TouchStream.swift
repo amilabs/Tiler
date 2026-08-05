@@ -47,16 +47,18 @@ public final class TouchStream: @unchecked Sendable {
     private let registerCallback: RegisterCallbackFn
     private let startDevice: StartFn
     private let stopDevice: StopFn
-    private let getDeviceID: GetDeviceIDFn?   // optional: absent symbol degrades drift to count-only
+    private let getDeviceID: GetDeviceIDFn?  // optional: absent symbol degrades drift to count-only
 
     /// `handler` is called on the stream's serial queue for every contact frame.
     public init(handler: @escaping @Sendable (TouchFrame) -> Void) throws {
         self.handler = handler
 
-        guard let lib = dlopen(
-            "/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport",
-            RTLD_NOW
-        ) else {
+        guard
+            let lib = dlopen(
+                "/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport",
+                RTLD_NOW
+            )
+        else {
             throw StreamError.frameworkUnavailable(dlerror().map { String(cString: $0) } ?? "dlopen failed")
         }
         func sym<T>(_ name: String, _ type: T.Type) throws -> T {
@@ -76,7 +78,7 @@ public final class TouchStream: @unchecked Sendable {
         guard !running else { return }
         guard let listUnmanaged = createList() else { throw StreamError.noDevices }
         let list = listUnmanaged.takeRetainedValue()
-        deviceList = list // keep devices alive while running
+        deviceList = list  // keep devices alive while running
         let count = CFArrayGetCount(list)
         guard count > 0 else { throw StreamError.noDevices }
 
@@ -170,14 +172,15 @@ public final class TouchStream: @unchecked Sendable {
             contacts.reserveCapacity(Int(numTouches))
             for i in 0..<Int(numTouches) {
                 let raw = touches[i]
-                contacts.append(Contact(
-                    deviceID: deviceID,
-                    fingerID: raw.identifier,
-                    state: ContactState(rawValue: Int(raw.state)) ?? .notTracking,
-                    size: Double(raw.zTotal),
-                    x: Double(raw.normalized.position.x),
-                    y: Double(raw.normalized.position.y)
-                ))
+                contacts.append(
+                    Contact(
+                        deviceID: deviceID,
+                        fingerID: raw.identifier,
+                        state: ContactState(rawValue: Int(raw.state)) ?? .notTracking,
+                        size: Double(raw.zTotal),
+                        x: Double(raw.normalized.position.x),
+                        y: Double(raw.normalized.position.y)
+                    ))
             }
         }
         let frame = TouchFrame(timestamp: timestamp, contacts: contacts)

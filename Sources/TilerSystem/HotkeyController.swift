@@ -41,7 +41,7 @@ public final class HotkeyController {
         }
     }
 
-    private let signature: OSType = 0x54494C52 // 'TILR'
+    private let signature: OSType = 0x54494C52  // 'TILR'
     private var resolver: DoublePressResolver
     private var registered: [Group: [EventHotKeyRef]] = [:]
     private var eventHandler: EventHandlerRef?
@@ -60,8 +60,9 @@ public final class HotkeyController {
     public func apply(windowTiling: Bool, utility: Bool) {
         setGroup(.windowTiling, enabled: windowTiling)
         setGroup(.utility, enabled: utility)
-        NSLog("Tiler: hotkeys configured (window: %@, utility: %@)",
-              windowTiling ? "on" : "off", utility ? "on" : "off")
+        NSLog(
+            "Tiler: hotkeys configured (window: %@, utility: %@)",
+            windowTiling ? "on" : "off", utility ? "on" : "off")
     }
 
     private func setGroup(_ group: Group, enabled: Bool) {
@@ -72,8 +73,9 @@ public final class HotkeyController {
             for key in Key.allCases where key.group == group {
                 var ref: EventHotKeyRef?
                 let hotkeyID = EventHotKeyID(signature: signature, id: key.rawValue)
-                let status = RegisterEventHotKey(key.keyCode, key.modifiers, hotkeyID,
-                                                 GetApplicationEventTarget(), 0, &ref)
+                let status = RegisterEventHotKey(
+                    key.keyCode, key.modifiers, hotkeyID,
+                    GetApplicationEventTarget(), 0, &ref)
                 if status != noErr {
                     NSLog("Tiler: RegisterEventHotKey failed for \(key) (status \(status))")
                 } else if let ref {
@@ -93,14 +95,16 @@ public final class HotkeyController {
 
     private func installEventHandlerIfNeeded() {
         guard eventHandler == nil else { return }
-        var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
-                                      eventKind: UInt32(kEventHotKeyPressed))
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed))
         let callback: EventHandlerUPP = { _, event, userData in
             guard let event, let userData else { return noErr }
             var hotkeyID = EventHotKeyID()
-            let status = GetEventParameter(event, EventParamName(kEventParamDirectObject),
-                                           EventParamType(typeEventHotKeyID), nil,
-                                           MemoryLayout<EventHotKeyID>.size, nil, &hotkeyID)
+            let status = GetEventParameter(
+                event, EventParamName(kEventParamDirectObject),
+                EventParamType(typeEventHotKeyID), nil,
+                MemoryLayout<EventHotKeyID>.size, nil, &hotkeyID)
             guard status == noErr else { return status }
             let controller = Unmanaged<HotkeyController>.fromOpaque(userData).takeUnretainedValue()
             // Carbon dispatches on the main thread.
@@ -109,8 +113,9 @@ public final class HotkeyController {
             }
             return noErr
         }
-        InstallEventHandler(GetApplicationEventTarget(), callback, 1, &eventType,
-                            Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
+        InstallEventHandler(
+            GetApplicationEventTarget(), callback, 1, &eventType,
+            Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
     }
 
     private func handlePress(id: UInt32) {

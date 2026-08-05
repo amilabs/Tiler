@@ -128,8 +128,11 @@ struct SettingsView: View {
                 // Conflict mark on the tab itself (owner gate 2026-07-17). macOS
                 // tab items can't be colored, so the ⚠︎ rides in the title; it
                 // only shows while gestures are on (off → conflicts not critical).
-                .tabItem { Label(model.showsConflictMark ? "Gestures ⚠︎" : "Gestures",
-                                 systemImage: "hand.point.up.left") }
+                .tabItem {
+                    Label(
+                        model.showsConflictMark ? "Gestures ⚠︎" : "Gestures",
+                        systemImage: "hand.point.up.left")
+                }
             powerTab
                 .tabItem { Label("Power", systemImage: "bolt") }
         }
@@ -152,12 +155,14 @@ struct SettingsView: View {
             }
             Section("Deep Sleep") {
                 Toggle("Deep Sleep on battery", isOn: $model.deepSleepOnBattery)
-                Text("Every sleep on battery writes memory to disk and powers it off — "
-                     + "including idle sleep with the lid open, for all users of this "
-                     + "Mac. Near-zero drain; wake takes 10–20 s. Changing this asks "
-                     + "for an administrator password.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "Every sleep on battery writes memory to disk and powers it off — "
+                        + "including idle sleep with the lid open, for all users of this "
+                        + "Mac. Near-zero drain; wake takes 10–20 s. Changing this asks "
+                        + "for an administrator password."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Section("Diagnostics") {
                 Toggle("Debug logging", isOn: $model.debugLogging)
@@ -189,9 +194,11 @@ struct SettingsView: View {
     private var gesturesTab: some View {
         Form {
             Section("Calibration") {
-                LabeledContent(model.isCalibrated
-                    ? "Personal gesture thresholds active"
-                    : "Tune gesture thresholds to your hand") {
+                LabeledContent(
+                    model.isCalibrated
+                        ? "Personal gesture thresholds active"
+                        : "Tune gesture thresholds to your hand"
+                ) {
                     Button("Calibrate…") { model.startCalibration() }
                 }
                 if model.isCalibrated {
@@ -232,8 +239,9 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Button("Open Accessibility Settings…") {
-                    NSWorkspace.shared.open(URL(
-                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    NSWorkspace.shared.open(
+                        URL(
+                            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
                 }
             }
             .padding(.vertical, 4)

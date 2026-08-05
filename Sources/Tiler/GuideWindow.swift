@@ -58,22 +58,31 @@ enum GuideContent {
     static let tagline = "Put any window exactly where you want it — without touching the mouse."
 
     static let values: [ValueRow] = [
-        ValueRow(symbol: "hand.raised.fill",
-                 title: "A swipe you can trust",
-                 text: "An action fires only when exactly three fingers move decisively in one direction. Scrolling, resting palms, and stray touches never move your windows."),
-        ValueRow(symbol: "person.fill.checkmark",
-                 title: "Tuned to your hand",
-                 text: "Everyone swipes differently. One-minute calibration adapts the recognition angles to your strokes — within provably safe bounds."),
-        ValueRow(symbol: "bolt.fill",
-                 title: "Featherweight and unbreakable",
-                 text: "Event-driven engine: under 1% CPU at idle, no input hooks, instant recovery when permissions change."),
+        ValueRow(
+            symbol: "hand.raised.fill",
+            title: "A swipe you can trust",
+            text:
+                "An action fires only when exactly three fingers move decisively in one direction. Scrolling, resting palms, and stray touches never move your windows."
+        ),
+        ValueRow(
+            symbol: "person.fill.checkmark",
+            title: "Tuned to your hand",
+            text:
+                "Everyone swipes differently. One-minute calibration adapts the recognition angles to your strokes — within provably safe bounds."
+        ),
+        ValueRow(
+            symbol: "bolt.fill",
+            title: "Featherweight and unbreakable",
+            text: "Event-driven engine: under 1% CPU at idle, no input hooks, instant recovery when permissions change."
+        ),
     ]
 
     static let hotkeys: [HotkeyRow] = [
         HotkeyRow(keys: ["⌃", "⇧", "←"], glyph: .leftHalf, action: "Left half of the current screen"),
         HotkeyRow(keys: ["⌃", "⇧", "→"], glyph: .rightHalf, action: "Right half of the current screen"),
         HotkeyRow(keys: ["⌃", "⇧", "↑"], glyph: .maximize, action: "Maximize (after a 0.3 s pause)"),
-        HotkeyRow(keys: ["⌃", "⇧", "↑", "↑"], glyph: .centerThird, action: "Full height, centered, ⅓ width — double press"),
+        HotkeyRow(
+            keys: ["⌃", "⇧", "↑", "↑"], glyph: .centerThird, action: "Full height, centered, ⅓ width — double press"),
         HotkeyRow(keys: ["⌃", "⇧", "↓"], glyph: .restore, action: "Restore the window's previous frame"),
         HotkeyRow(keys: ["⌘", "⌃", "⇧", "←"], glyph: .leftHalfNext, action: "Left half on the next display"),
         HotkeyRow(keys: ["⌘", "⌃", "⇧", "→"], glyph: .rightHalfNext, action: "Right half on the next display"),
@@ -86,7 +95,8 @@ enum GuideContent {
         GestureRow(direction: .up, cmd: false, glyph: .maximize, action: "Maximize"),
         GestureRow(direction: .left, cmd: false, shift: true, glyph: .leftThird, action: "Left third"),
         GestureRow(direction: .right, cmd: false, shift: true, glyph: .rightThird, action: "Right third"),
-        GestureRow(direction: .up, cmd: false, shift: true, glyph: .centerThird, action: "Full height, centered, ⅓ width"),
+        GestureRow(
+            direction: .up, cmd: false, shift: true, glyph: .centerThird, action: "Full height, centered, ⅓ width"),
         GestureRow(direction: .left, cmd: true, glyph: .leftHalfNext, action: "Left half on the next display"),
         GestureRow(direction: .right, cmd: true, glyph: .rightHalfNext, action: "Right half on the next display"),
     ]
@@ -218,8 +228,9 @@ struct GuideView: View {
             VStack(alignment: .trailing, spacing: 6) {
                 HeroDemoView()
                     .frame(width: 92, height: 50)
-                    .background(Color.accentColor.opacity(0.07),
-                                in: RoundedRectangle(cornerRadius: 12))
+                    .background(
+                        Color.accentColor.opacity(0.07),
+                        in: RoundedRectangle(cornerRadius: 12))
                 Button {
                     model.onOpenSettings?()
                 } label: {
@@ -259,14 +270,18 @@ struct GuideView: View {
     private var permissionCard: some View {
         if !model.accessibilityGranted {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Tiler needs the Accessibility permission",
-                      systemImage: "exclamationmark.triangle.fill")
-                    .font(.headline)
-                    .foregroundStyle(.red)
-                Text("Without it hotkeys and gestures are recognized but windows won't move. Enable Tiler in the list — this card turns green by itself, no relaunch needed.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Label(
+                    "Tiler needs the Accessibility permission",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.headline)
+                .foregroundStyle(.red)
+                Text(
+                    "Without it hotkeys and gestures are recognized but windows won't move. Enable Tiler in the list — this card turns green by itself, no relaunch needed."
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
                 Button("Open Accessibility Settings…") {
                     model.onOpenAccessibility?()
                 }
@@ -312,14 +327,22 @@ struct GuideView: View {
     private var powerGuide: some View {
         section("Prevent Sleep & Deep Sleep") {
             VStack(alignment: .leading, spacing: 7) {
-                powerRow("bolt.fill", "Prevent Sleep",
-                         "Keep the Mac awake — indefinitely or 10 min to 24 h. The display may still sleep unless you turn on “Keep display awake” in Settings.")
-                powerRow("battery.25percent", "Battery floor",
-                         "On battery a session auto-stops at your floor (default 20%) with a notification. No auto-restart on recharge.")
-                powerRow("exclamationmark.triangle.fill", "Lid closed ⚠",
-                         "“Prevent sleep with lid closed” needs an admin password and keeps the Mac awake folded — it gets hot, so never in a bag.")
-                powerRow("moon.zzz.fill", "Deep Sleep",
-                         "A battery-side hibernate profile: EVERY sleep on battery hibernates — even idle sleep with the lid open, for all users of this Mac. Near-zero drain, wake takes 10–20 s. Toggling needs an admin password.")
+                powerRow(
+                    "bolt.fill", "Prevent Sleep",
+                    "Keep the Mac awake — indefinitely or 10 min to 24 h. The display may still sleep unless you turn on “Keep display awake” in Settings."
+                )
+                powerRow(
+                    "battery.25percent", "Battery floor",
+                    "On battery a session auto-stops at your floor (default 20%) with a notification. No auto-restart on recharge."
+                )
+                powerRow(
+                    "exclamationmark.triangle.fill", "Lid closed ⚠",
+                    "“Prevent sleep with lid closed” needs an admin password and keeps the Mac awake folded — it gets hot, so never in a bag."
+                )
+                powerRow(
+                    "moon.zzz.fill", "Deep Sleep",
+                    "A battery-side hibernate profile: EVERY sleep on battery hibernates — even idle sleep with the lid open, for all users of this Mac. Near-zero drain, wake takes 10–20 s. Toggling needs an admin password."
+                )
                 Text("Precedence: active session ≻ Deep Sleep profile ≻ system defaults.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -444,8 +467,10 @@ struct HoverDemo: View {
     var body: some View {
         GestureDemoView(direction: direction, animated: hovered)
             .frame(width: 76, height: 34)
-            .background(Color.secondary.opacity(0.08),
-                        in: RoundedRectangle(cornerRadius: 8))
+            .background(
+                Color.secondary.opacity(0.08),
+                in: RoundedRectangle(cornerRadius: 8)
+            )
             .onHover { inside in
                 hovered = inside
                 guard inside else { return }

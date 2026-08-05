@@ -28,8 +28,7 @@ import Foundation
     /// Toggle logging; the transition itself is always recorded so runs are delimited.
     public func setEnabled(_ on: Bool) {
         guard on != isEnabled else { return }
-        if on { isEnabled = true; write("logging enabled") }
-        else { write("logging disabled"); isEnabled = false }
+        if on { isEnabled = true; write("logging enabled") } else { write("logging disabled"); isEnabled = false }
     }
 
     public func log(_ line: String) {
@@ -46,17 +45,20 @@ import Foundation
             _ = try? handle.seekToEnd()
             try? handle.write(contentsOf: data)
         } else {
-            try? data.write(to: fileURL)   // first write / file absent
+            try? data.write(to: fileURL)  // first write / file absent
         }
     }
 
     private func rotateIfNeeded() {
-        guard let size = (try? FileManager.default
-            .attributesOfItem(atPath: fileURL.path)[.size]) as? Int, size > maxBytes else { return }
+        guard
+            let size =
+                (try? FileManager.default
+                .attributesOfItem(atPath: fileURL.path)[.size]) as? Int, size > maxBytes
+        else { return }
         let fm = FileManager.default
-        let base = fileURL.deletingPathExtension()   // …/power-debug
+        let base = fileURL.deletingPathExtension()  // …/power-debug
         func backup(_ n: Int) -> URL { base.appendingPathExtension("\(n).log") }
-        try? fm.removeItem(at: backup(backups))       // drop the oldest
+        try? fm.removeItem(at: backup(backups))  // drop the oldest
         for n in stride(from: backups - 1, through: 1, by: -1) {
             try? fm.moveItem(at: backup(n), to: backup(n + 1))
         }

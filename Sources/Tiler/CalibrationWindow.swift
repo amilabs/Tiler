@@ -149,8 +149,9 @@ struct CalibrationView: View {
                 .padding(.horizontal, 9)
                 .background(Color.secondary.opacity(0.12), in: Capsule())
         }
-        ProgressBar(value: (Double(model.stepNumber - 1) + model.stepFraction)
-            / Double(max(1, model.stepCount)))
+        ProgressBar(
+            value: (Double(model.stepNumber - 1) + model.stepFraction)
+                / Double(max(1, model.stepCount)))
         GestureDemoView(direction: prompt.gesture)
             .frame(height: 110)
         Text("Swipe with exactly three fingers, \(prompt.attemptsRequired) times.")
@@ -173,8 +174,9 @@ struct CalibrationView: View {
                 .font(.caption)
                 .foregroundStyle(.orange)
         }
-        ProgressBar(value: model.accuracySoFar,
-                    tint: model.accuracySoFar > 0.7 ? .green : .orange)
+        ProgressBar(
+            value: model.accuracySoFar,
+            tint: model.accuracySoFar > 0.7 ? .green : .orange)
         Text("Accuracy \(Int(model.accuracySoFar * 100)) %")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -186,7 +188,8 @@ struct CalibrationView: View {
         Text("Calibration complete")
             .font(.title3.weight(.medium))
         Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 6) {
-            ForEach(Array(result.stepAccuracies.keys).sorted(by: { $0.rawValue < $1.rawValue }), id: \.self) { gesture in
+            ForEach(Array(result.stepAccuracies.keys).sorted(by: { $0.rawValue < $1.rawValue }), id: \.self) {
+                gesture in
                 GridRow {
                     Text(title(for: gesture)).foregroundStyle(.secondary)
                     Text("\(Int((result.stepAccuracies[gesture] ?? 0) * 100)) %")
@@ -256,37 +259,40 @@ struct GestureDemoView: View {
     }
 
     private func demoCanvas(phase: CGFloat) -> some View {
-            Canvas { canvas, size in
-                let progress = min(1, max(0, (phase - 0.15) / 0.6))
-                let travel: CGFloat = 66
-                let offset: CGVector
-                switch direction {
-                case .left: offset = CGVector(dx: -travel * progress, dy: 0)
-                case .right: offset = CGVector(dx: travel * progress, dy: 0)
-                case .up: offset = CGVector(dx: 0, dy: -travel * progress)
-                }
-                let center = CGPoint(x: size.width / 2 - offset.dx / 2,
-                                     y: size.height / 2 - offset.dy / 2)
-                let spread: CGFloat = 20
-                let fade = phase > 0.8 ? 1 - (phase - 0.8) / 0.2 : 1
-                for i in -1...1 {
-                    let base: CGPoint
-                    switch direction {
-                    case .left, .right:
-                        base = CGPoint(x: center.x, y: center.y + CGFloat(i) * spread)
-                    case .up:
-                        base = CGPoint(x: center.x + CGFloat(i) * spread, y: center.y)
-                    }
-                    let dot = CGPoint(x: base.x + offset.dx, y: base.y + offset.dy)
-                    // Trail
-                    var trail = Path()
-                    trail.move(to: base)
-                    trail.addLine(to: dot)
-                    canvas.stroke(trail, with: .color(.accentColor.opacity(0.25 * fade)),
-                                  style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    canvas.fill(Path(ellipseIn: CGRect(x: dot.x - 7, y: dot.y - 7, width: 14, height: 14)),
-                                with: .color(.accentColor.opacity(fade)))
-                }
+        Canvas { canvas, size in
+            let progress = min(1, max(0, (phase - 0.15) / 0.6))
+            let travel: CGFloat = 66
+            let offset: CGVector
+            switch direction {
+            case .left: offset = CGVector(dx: -travel * progress, dy: 0)
+            case .right: offset = CGVector(dx: travel * progress, dy: 0)
+            case .up: offset = CGVector(dx: 0, dy: -travel * progress)
             }
+            let center = CGPoint(
+                x: size.width / 2 - offset.dx / 2,
+                y: size.height / 2 - offset.dy / 2)
+            let spread: CGFloat = 20
+            let fade = phase > 0.8 ? 1 - (phase - 0.8) / 0.2 : 1
+            for i in -1...1 {
+                let base: CGPoint
+                switch direction {
+                case .left, .right:
+                    base = CGPoint(x: center.x, y: center.y + CGFloat(i) * spread)
+                case .up:
+                    base = CGPoint(x: center.x + CGFloat(i) * spread, y: center.y)
+                }
+                let dot = CGPoint(x: base.x + offset.dx, y: base.y + offset.dy)
+                // Trail
+                var trail = Path()
+                trail.move(to: base)
+                trail.addLine(to: dot)
+                canvas.stroke(
+                    trail, with: .color(.accentColor.opacity(0.25 * fade)),
+                    style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                canvas.fill(
+                    Path(ellipseIn: CGRect(x: dot.x - 7, y: dot.y - 7, width: 14, height: 14)),
+                    with: .color(.accentColor.opacity(fade)))
+            }
+        }
     }
 }

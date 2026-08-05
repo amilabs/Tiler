@@ -37,26 +37,29 @@ public struct ConflictDiagnostics: Sendable {
         var found: [SystemConflict] = []
 
         if anyDomain("TrackpadThreeFingerDrag", matches: { $0 == 1 }) {
-            found.append(SystemConflict(
-                title: "Three Finger Drag is enabled",
-                guidance: "System Settings → Accessibility → Pointer Control → "
-                    + "Trackpad Options: turn off three-finger drag — it consumes "
-                    + "3-finger movements before Tiler sees them."
-            ))
+            found.append(
+                SystemConflict(
+                    title: "Three Finger Drag is enabled",
+                    guidance: "System Settings → Accessibility → Pointer Control → "
+                        + "Trackpad Options: turn off three-finger drag — it consumes "
+                        + "3-finger movements before Tiler sees them."
+                ))
         }
         if anyDomain("TrackpadThreeFingerHorizSwipeGesture", matches: { $0 != 0 }) {
-            found.append(SystemConflict(
-                title: "System 3-finger horizontal swipes are enabled",
-                guidance: "System Settings → Trackpad → More Gestures: set “Swipe "
-                    + "between full-screen applications” to four fingers or off."
-            ))
+            found.append(
+                SystemConflict(
+                    title: "System 3-finger horizontal swipes are enabled",
+                    guidance: "System Settings → Trackpad → More Gestures: set “Swipe "
+                        + "between full-screen applications” to four fingers or off."
+                ))
         }
         if anyDomain("TrackpadThreeFingerVertSwipeGesture", matches: { $0 != 0 }) {
-            found.append(SystemConflict(
-                title: "Mission Control / App Exposé 3-finger swipes are enabled",
-                guidance: "System Settings → Trackpad → More Gestures: set Mission "
-                    + "Control and App Exposé to four fingers or off."
-            ))
+            found.append(
+                SystemConflict(
+                    title: "Mission Control / App Exposé 3-finger swipes are enabled",
+                    guidance: "System Settings → Trackpad → More Gestures: set Mission "
+                        + "Control and App Exposé to four fingers or off."
+                ))
         }
         return found
     }

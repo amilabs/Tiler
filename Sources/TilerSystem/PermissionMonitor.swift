@@ -6,16 +6,18 @@ import Foundation
 @MainActor
 public final class PermissionMonitor {
     public private(set) var trusted: Bool
-    var isPolling: Bool { timer != nil } // internal for tests
+    var isPolling: Bool { timer != nil }  // internal for tests
 
     private let pollInterval: TimeInterval
     private let check: () -> Bool
     private let onChange: (Bool) -> Void
     private var timer: Timer?
 
-    public init(pollInterval: TimeInterval,
-                check: @escaping () -> Bool,
-                onChange: @escaping (Bool) -> Void) {
+    public init(
+        pollInterval: TimeInterval,
+        check: @escaping () -> Bool,
+        onChange: @escaping (Bool) -> Void
+    ) {
         self.pollInterval = pollInterval
         self.check = check
         self.onChange = onChange

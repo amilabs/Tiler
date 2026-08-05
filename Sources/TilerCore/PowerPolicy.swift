@@ -37,8 +37,8 @@ public enum PowerCommand: Equatable, Sendable {
     case tick
     case power(PowerStatus)
     case setDisplayAwake(Bool)
-    case setFloor(Int)              // 0 = off
-    case clamshellArmFailed         // auth cancelled / arm error
+    case setFloor(Int)  // 0 = off
+    case clamshellArmFailed  // auth cancelled / arm error
 }
 
 public enum PowerEffect: Equatable, Sendable {
@@ -80,7 +80,7 @@ public struct PowerPolicy: Sendable {
         switch command {
         case let .start(clamshell, duration):
             var effects: [PowerEffect] = []
-            if isActive {                        // replacement: tear the old one down first
+            if isActive {  // replacement: tear the old one down first
                 if self.clamshell { effects.append(.disarmClamshell) }
                 effects.append(.release(.user))
             }
@@ -102,7 +102,8 @@ public struct PowerPolicy: Sendable {
 
         case let .power(status):
             guard isActive, !floorTripped, status.onBattery, floorPercent > 0,
-                  let percent = status.percent, percent <= floorPercent else { return [] }
+                let percent = status.percent, percent <= floorPercent
+            else { return [] }
             floorTripped = true
             var effects = endSession(reason: .batteryFloor)
             effects.append(.notifyFloorStop(percent: percent))
@@ -110,16 +111,16 @@ public struct PowerPolicy: Sendable {
 
         case let .setDisplayAwake(value):
             displayAwake = value
-            guard isActive else { return [] }    // off: store only, applies on next start
+            guard isActive else { return [] }  // off: store only, applies on next start
             return [.acquire(currentSpec)]
 
         case let .setFloor(value):
-            floorPercent = value                 // evaluated on the next power event
+            floorPercent = value  // evaluated on the next power event
             return []
 
         case .clamshellArmFailed:
             guard isActive, clamshell else { return [] }
-            return endSession(reason: .user)     // never run a half-armed clamshell session
+            return endSession(reason: .user)  // never run a half-armed clamshell session
         }
     }
 

@@ -39,8 +39,9 @@ import UserNotifications
         content.title = "Prevent Sleep stopped"
         content.body = "Battery at \(percent)% — reached the floor."
         content.sound = .default
-        let request = UNNotificationRequest(identifier: "tiler.floorStop.\(UUID().uuidString)",
-                                            content: content, trigger: nil)
+        let request = UNNotificationRequest(
+            identifier: "tiler.floorStop.\(UUID().uuidString)",
+            content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request) { error in
             if let error {
                 NSLog("Tiler: floor notification failed: %@", error.localizedDescription)

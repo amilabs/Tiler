@@ -13,7 +13,7 @@ public enum PmsetCustomParser {
         for rawLine in output.split(separator: "\n", omittingEmptySubsequences: false) {
             let line = String(rawLine)
             if line.isEmpty { continue }
-            if !line.hasPrefix(" ") && !line.hasPrefix("\t") {   // section header
+            if !line.hasPrefix(" ") && !line.hasPrefix("\t") {  // section header
                 inBattery = line.trimmingCharacters(in: .whitespaces) == "Battery Power:"
                 continue
             }

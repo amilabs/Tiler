@@ -28,17 +28,22 @@ import TilerCore
     }
 
     public func apply(_ spec: AssertionSpec?) {
-        setAssertion(&idle, want: spec != nil,
-                     type: "PreventUserIdleSystemSleep", name: "Tiler Keep Awake (idle)")
-        setAssertion(&display, want: spec?.displayAwake ?? false,
-                     type: "PreventUserIdleDisplaySleep", name: "Tiler Keep Awake (display)")
-        setAssertion(&system, want: spec?.systemSleepBlock ?? false,
-                     type: "PreventSystemSleep", name: "Tiler Keep Awake (system)")
+        setAssertion(
+            &idle, want: spec != nil,
+            type: "PreventUserIdleSystemSleep", name: "Tiler Keep Awake (idle)")
+        setAssertion(
+            &display, want: spec?.displayAwake ?? false,
+            type: "PreventUserIdleDisplaySleep", name: "Tiler Keep Awake (display)")
+        setAssertion(
+            &system, want: spec?.systemSleepBlock ?? false,
+            type: "PreventSystemSleep", name: "Tiler Keep Awake (system)")
         NSLog("Tiler: keep-awake %@", heldSummary)
     }
 
-    private func setAssertion(_ id: inout IOPMAssertionID?, want: Bool,
-                              type: String, name: String) {
+    private func setAssertion(
+        _ id: inout IOPMAssertionID?, want: Bool,
+        type: String, name: String
+    ) {
         if want, id == nil {
             id = create(type: type, name: name)
         } else if !want, let held = id {
@@ -54,8 +59,10 @@ import TilerCore
             "AssertName": name,
             "AssertLevel": 255,
         ]
-        guard IOPMAssertionCreateWithProperties(props as CFDictionary, &id)
-            == kIOReturnSuccess else {
+        guard
+            IOPMAssertionCreateWithProperties(props as CFDictionary, &id)
+                == kIOReturnSuccess
+        else {
             NSLog("Tiler: power assertion FAILED: %@", type)
             return nil
         }

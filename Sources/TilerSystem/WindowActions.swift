@@ -87,7 +87,7 @@ public final class WindowActions {
         if command == .restore {
             guard let original = originalFrames[key] else {
                 NSLog("Tiler: no restore history for this window")
-                return true // defined no-op, not an AX failure
+                return true  // defined no-op, not an AX failure
             }
             setFrame(original, window: window, app: app)
             lastSetFrames[key] = original
@@ -116,19 +116,22 @@ public final class WindowActions {
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return nil }
         let cocoaFrame = axToCocoa(currentAXFrame)
-        let current = screens.max(by: { area($0.frame.intersection(cocoaFrame)) < area($1.frame.intersection(cocoaFrame)) })
+        let current =
+            screens.max(by: { area($0.frame.intersection(cocoaFrame)) < area($1.frame.intersection(cocoaFrame)) })
             ?? screens[0]
 
         func half(of screen: NSScreen, left: Bool) -> CGRect {
             let vf = screen.visibleFrame
-            return CGRect(x: left ? vf.minX : vf.minX + vf.width / 2, y: vf.minY,
-                          width: vf.width / 2, height: vf.height)
+            return CGRect(
+                x: left ? vf.minX : vf.minX + vf.width / 2, y: vf.minY,
+                width: vf.width / 2, height: vf.height)
         }
 
         func third(of screen: NSScreen, left: Bool) -> CGRect {
             let vf = screen.visibleFrame
-            return CGRect(x: left ? vf.minX : vf.minX + vf.width * 2 / 3, y: vf.minY,
-                          width: vf.width / 3, height: vf.height)
+            return CGRect(
+                x: left ? vf.minX : vf.minX + vf.width * 2 / 3, y: vf.minY,
+                width: vf.width / 3, height: vf.height)
         }
 
         switch command {
@@ -177,7 +180,8 @@ public final class WindowActions {
 
     public func frame(of window: AXUIElement) -> CGRect? {
         guard let position: CGPoint = copyValue(window, kAXPositionAttribute as String, .cgPoint),
-              let size: CGSize = copyValue(window, kAXSizeAttribute as String, .cgSize) else {
+            let size: CGSize = copyValue(window, kAXSizeAttribute as String, .cgSize)
+        else {
             return nil
         }
         return CGRect(origin: position, size: size)
@@ -235,14 +239,16 @@ public final class WindowActions {
     private func copyElement(_ element: AXUIElement, _ attribute: String) -> AXUIElement? {
         var raw: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &raw) == .success,
-              let raw, CFGetTypeID(raw) == AXUIElementGetTypeID() else { return nil }
+            let raw, CFGetTypeID(raw) == AXUIElementGetTypeID()
+        else { return nil }
         return (raw as! AXUIElement)
     }
 
     private func copyValue<T>(_ element: AXUIElement, _ attribute: String, _ type: AXValueType) -> T? {
         var raw: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &raw) == .success,
-              let raw, CFGetTypeID(raw) == AXValueGetTypeID() else { return nil }
+            let raw, CFGetTypeID(raw) == AXValueGetTypeID()
+        else { return nil }
         let axValue = raw as! AXValue
         switch type {
         case .cgPoint:
@@ -261,7 +267,8 @@ public final class WindowActions {
     private func boolAttribute(_ element: AXUIElement, _ attribute: String) -> Bool? {
         var raw: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &raw) == .success,
-              let raw, CFGetTypeID(raw) == CFBooleanGetTypeID() else { return nil }
+            let raw, CFGetTypeID(raw) == CFBooleanGetTypeID()
+        else { return nil }
         return CFBooleanGetValue((raw as! CFBoolean))
     }
 
@@ -274,14 +281,16 @@ public final class WindowActions {
     private func lockScreen() {
         typealias LockFn = @convention(c) () -> Int32
         if let handle = dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_NOW),
-           let sym = dlsym(handle, "SACLockScreenImmediate") {
+            let sym = dlsym(handle, "SACLockScreenImmediate")
+        {
             _ = unsafeBitCast(sym, to: LockFn.self)()
             NSLog("Tiler: screen locked (SACLockScreenImmediate)")
             return
         }
         let task = Process()
-        task.executableURL = URL(fileURLWithPath:
-            "/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession")
+        task.executableURL = URL(
+            fileURLWithPath:
+                "/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession")
         task.arguments = ["-suspend"]
         do {
             try task.run()

@@ -66,9 +66,11 @@ public final class CalibrationSession {
     private var requiredVerticalDominance: [Double] = []
     private var accuracies: [GestureDirection: Double] = [:]
 
-    public init(gestures: [GestureDirection] = [.left, .right, .up],
-                attemptsPerGesture: Int = 5,
-                tunables: Tunables = .default) {
+    public init(
+        gestures: [GestureDirection] = [.left, .right, .up],
+        attemptsPerGesture: Int = 5,
+        tunables: Tunables = .default
+    ) {
         steps = gestures.map { Step(gesture: $0, attemptsRequired: attemptsPerGesture) }
         baseTunables = tunables
         recognizer = GestureRecognizer(tunables: tunables)
@@ -133,8 +135,10 @@ public final class CalibrationSession {
             recognizedInStep += 1
             events.append(.attemptRecognized(step: step.gesture, attempt: attemptNumber))
         } else {
-            events.append(.attemptMissed(step: step.gesture, attempt: attemptNumber,
-                                         measuredAngle: vector.map(angleDegrees)))
+            events.append(
+                .attemptMissed(
+                    step: step.gesture, attempt: attemptNumber,
+                    measuredAngle: vector.map(angleDegrees)))
         }
         collectEvidence(for: step.gesture, vector: vector)
 

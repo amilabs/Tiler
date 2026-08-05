@@ -68,14 +68,17 @@ struct UntilTimeDialogView: View {
             Image(systemName: "clock.badge.checkmark")
                 .font(.system(size: 40)).foregroundStyle(Color.accentColor)
             Text("Prevent sleep until a set time").font(.headline)
-            DatePicker("Ends:", selection: $model.endDate, in: Date()...,
-                       displayedComponents: [.date, .hourAndMinute])
-                .datePickerStyle(.field)
-                .fixedSize()
+            DatePicker(
+                "Ends:", selection: $model.endDate, in: Date()...,
+                displayedComponents: [.date, .hourAndMinute]
+            )
+            .datePickerStyle(.field)
+            .fixedSize()
             Text(fromNowDescription(model.endDate))
                 .font(.callout).foregroundStyle(.secondary)
-            dialogButtons(cancel: { model.finish(confirmed: false) },
-                          start: { model.finish(confirmed: true) })
+            dialogButtons(
+                cancel: { model.finish(confirmed: false) },
+                start: { model.finish(confirmed: true) })
         }
         .padding(24).frame(width: 340)
     }
@@ -108,15 +111,19 @@ struct ClamshellDialogView: View {
             ClamshellWarningImage().frame(width: 76, height: 76)
             Text("Prevent sleep with the lid closed")
                 .font(.headline).multilineTextAlignment(.center)
-            Text("The Mac keeps running folded — it gets hot, so never leave it in a bag. "
-                 + "Starting this asks for an administrator password.")
-                .font(.callout).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            Label("When a timer ends, the Mac is put to sleep for you — the first time, "
-                  + "macOS may ask to allow Tiler to control System Events.",
-                  systemImage: "exclamationmark.triangle.fill")
-                .font(.caption).foregroundStyle(.orange)
-                .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+            Text(
+                "The Mac keeps running folded — it gets hot, so never leave it in a bag. "
+                    + "Starting this asks for an administrator password."
+            )
+            .font(.callout).foregroundStyle(.secondary)
+            .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            Label(
+                "When a timer ends, the Mac is put to sleep for you — the first time, "
+                    + "macOS may ask to allow Tiler to control System Events.",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+            .font(.caption).foregroundStyle(.orange)
+            .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Text("Keep awake for:")
                 Picker("", selection: $model.selectedTag) {
@@ -125,14 +132,17 @@ struct ClamshellDialogView: View {
                 .labelsHidden().frame(width: 160)
             }
             if model.selectedTag == PowerDuration.untilTimeTag {
-                DatePicker("Ends:", selection: $model.endDate, in: Date()...,
-                           displayedComponents: [.date, .hourAndMinute])
-                    .datePickerStyle(.field).fixedSize()
+                DatePicker(
+                    "Ends:", selection: $model.endDate, in: Date()...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.field).fixedSize()
                 Text(fromNowDescription(model.endDate))
                     .font(.caption).foregroundStyle(.secondary)
             }
-            dialogButtons(cancel: { model.finish(confirmed: false) },
-                          start: { model.finish(confirmed: true) })
+            dialogButtons(
+                cancel: { model.finish(confirmed: false) },
+                start: { model.finish(confirmed: true) })
         }
         .padding(24).frame(width: 360)
     }

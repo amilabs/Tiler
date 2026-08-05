@@ -22,7 +22,9 @@ back to `main` and push when a phase completes.
 
 **Hard rules:**
 - False gesture positives are release blockers (see gestures spec).
-- TDD for recognizer/window logic; run `swift build && swift test` before claiming done.
+- TDD for recognizer/window logic; run `swift build && swift test` before claiming done,
+  plus `swift format lint --recursive --strict Sources` — must be clean (config in
+  `.swift-format`; swift-format ships with the Swift 6 toolchain, zero install).
 - Sign every .app build with the Apple Development identity and keep bundle id
   `pro.amilabs.tilerx` (constants in Scripts/make-app.sh — change neither: self-signed
   certs never enroll in Accessibility on macOS 26, and the original id's TCC record is
@@ -31,6 +33,10 @@ back to `main` and push when a phase completes.
 - Minimize owner involvement: batch questions; the only owner touchpoints are the
   `[USER GATE]` items in tasks.md.
 - Owner communicates in Russian; repo artifacts are in English.
+- Required plugins: `flow@flow-skeleton` + `superpowers` (its dependency). If `/flow:`
+  skills are missing at session start, tell the owner before starting (the desktop GUI
+  is known to silently drop third-party-marketplace plugins; reinstall + restart cures)
+  and follow the OpenSpec lifecycle manually — it is fully described above.
 
 **Environment:** macOS 26.5 / Xcode 26.6 / Swift 6.3; push via SSH to
 `git@github.com:amilabs/Tiler.git`; `gh` CLI authenticated (alexnskcody) since

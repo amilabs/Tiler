@@ -8,9 +8,9 @@ public final class GestureRecognizer {
     }
 
     private enum Phase {
-        case idle       // waiting for a clean exact-3 session to stabilize
-        case tracking   // armed: accumulating centroid movement from baseline
-        case lockout    // fired or aborted: dead until full lift-off + cooldown
+        case idle  // waiting for a clean exact-3 session to stabilize
+        case tracking  // armed: accumulating centroid movement from baseline
+        case lockout  // fired or aborted: dead until full lift-off + cooldown
     }
 
     private enum Direction {
@@ -86,8 +86,10 @@ public final class GestureRecognizer {
 
     /// Process one frame. `cmdHeld`/`shiftHeld` are modifier snapshots at frame time.
     /// Returns an action only at the exact moment a gesture is confirmed.
-    public func process(_ frame: TouchFrame, cmdHeld: Bool = false,
-                        shiftHeld: Bool = false) -> GestureAction? {
+    public func process(
+        _ frame: TouchFrame, cmdHeld: Bool = false,
+        shiftHeld: Bool = false
+    ) -> GestureAction? {
         let t = frame.timestamp
 
         // Stream silence implies zero contacts for the whole gap: if the gap covers
@@ -139,8 +141,9 @@ public final class GestureRecognizer {
             processIdle(active: active, palmPresent: palmPresent, at: t)
             return nil
         case .tracking:
-            return processTracking(active: active, palmPresent: palmPresent, at: t,
-                                   cmdHeld: cmdHeld, shiftHeld: shiftHeld)
+            return processTracking(
+                active: active, palmPresent: palmPresent, at: t,
+                cmdHeld: cmdHeld, shiftHeld: shiftHeld)
         }
     }
 
@@ -149,7 +152,7 @@ public final class GestureRecognizer {
     private func processZeroContacts(at t: Double) -> GestureAction? {
         previousActiveCount = 0
         if zeroContactsSince == nil {
-            emitNoArmIfNeeded(at: t)   // the attempt just ended (all lifted)
+            emitNoArmIfNeeded(at: t)  // the attempt just ended (all lifted)
             zeroContactsSince = t
         }
         if phase == .tracking {
@@ -157,14 +160,16 @@ public final class GestureRecognizer {
             // gate that was still failing at lift-off.
             let progress = max(abs(peakDx), abs(peakDy))
             let elapsed = t - armTimestamp
-            let reason = progress < tun.minDisplacement ? "short"
+            let reason =
+                progress < tun.minDisplacement
+                ? "short"
                 : (elapsed > 0 && progress / elapsed < tun.minMeanSpeed ? "slow" : "brief")
             emitReject(reason, at: t, elapsed: elapsed, fingers: 3)
             lockoutNow()
         }
         if let z = zeroContactsSince, t - z >= tun.liftOffQuiet + tun.cooldown {
             resetToCleanIdle()
-            zeroContactsSince = z // still zero; keep the quiet clock running
+            zeroContactsSince = z  // still zero; keep the quiet clock running
         }
         return nil
     }
@@ -212,12 +217,15 @@ public final class GestureRecognizer {
         pendingDirection = nil
     }
 
-    private func processTracking(active: [Contact], palmPresent: Bool,
-                                 at t: Double, cmdHeld: Bool, shiftHeld: Bool) -> GestureAction? {
+    private func processTracking(
+        active: [Contact], palmPresent: Bool,
+        at t: Double, cmdHeld: Bool, shiftHeld: Bool
+    ) -> GestureAction? {
         let keys = Set(active.map { FingerKey(device: $0.deviceID, finger: $0.fingerID) })
         guard !palmPresent, active.count == 3, keys == trackedFingers else {
-            emitReject(palmPresent ? "palm" : "fingers", at: t,
-                       elapsed: t - armTimestamp, fingers: active.count)
+            emitReject(
+                palmPresent ? "palm" : "fingers", at: t,
+                elapsed: t - armTimestamp, fingers: active.count)
             lockoutNow()
             return nil
         }
@@ -279,18 +287,23 @@ public final class GestureRecognizer {
         let action: GestureAction?
         switch direction {
         case .down:
-            action = nil // deliberately not implemented
+            action = nil  // deliberately not implemented
         case .up:
             // ⇧+up = center-third (the double-press ↑ analog); ⌘+up stays silent.
-            action = cmdHeld ? nil : GestureAction(direction: .up, nextDisplay: false,
-                                                   thirdWidth: shiftHeld)
+            action =
+                cmdHeld
+                ? nil
+                : GestureAction(
+                    direction: .up, nextDisplay: false,
+                    thirdWidth: shiftHeld)
         case .left:
             action = GestureAction(direction: .left, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         case .right:
             action = GestureAction(direction: .right, nextDisplay: cmdHeld, thirdWidth: shiftHeld)
         }
-        emitDiagnostic(direction, action: action, dx: dx, dy: dy, progress: progress,
-                       elapsed: elapsed, fingers: active.count, cmdHeld: cmdHeld, shiftHeld: shiftHeld)
+        emitDiagnostic(
+            direction, action: action, dx: dx, dy: dy, progress: progress,
+            elapsed: elapsed, fingers: active.count, cmdHeld: cmdHeld, shiftHeld: shiftHeld)
         return action
     }
 
@@ -306,9 +319,10 @@ public final class GestureRecognizer {
         lastRejectEmit = t
         func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
         let speed = elapsed > 0 ? r(progress / elapsed) : 0
-        diagnostic("reject reason=\(reason) dx=\(r(peakDx)) dy=\(r(peakDy)) prog=\(r(progress)) "
-            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) raw=\(lastRawTouching) "
-            + "near=\(lastNearTouching)")
+        diagnostic(
+            "reject reason=\(reason) dx=\(r(peakDx)) dy=\(r(peakDy)) prog=\(r(progress)) "
+                + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) raw=\(lastRawTouching) "
+                + "near=\(lastNearTouching)")
     }
 
     /// A session that saw exactly-3 fingers but never armed used to vanish without
@@ -320,21 +334,27 @@ public final class GestureRecognizer {
         if let last = lastRejectEmit, t - last < 1.0 { return }
         lastRejectEmit = t
         func r(_ v: Double) -> Double { (v * 100).rounded() / 100 }
-        diagnostic("noarm frames3=\(sessionFrames3) maxStreak=\(sessionMaxStreak) "
-            + "minSize=\(r(sessionMinSize ?? 0)) near=\(sessionMaxNear) dirty=\(sessionDirty)")
-        sessionFrames3 = 0   // one line per attempt
+        diagnostic(
+            "noarm frames3=\(sessionFrames3) maxStreak=\(sessionMaxStreak) "
+                + "minSize=\(r(sessionMinSize ?? 0)) near=\(sessionMaxNear) dirty=\(sessionDirty)")
+        sessionFrames3 = 0  // one line per attempt
     }
 
-    private func emitDiagnostic(_ direction: Direction, action: GestureAction?,
-                                dx: Double, dy: Double, progress: Double, elapsed: Double,
-                                fingers: Int, cmdHeld: Bool, shiftHeld: Bool) {
+    private func emitDiagnostic(
+        _ direction: Direction, action: GestureAction?,
+        dx: Double, dy: Double, progress: Double, elapsed: Double,
+        fingers: Int, cmdHeld: Bool, shiftHeld: Bool
+    ) {
         guard let diagnostic else { return }
         func r(_ v: Double) -> Double { (v * 10).rounded() / 10 }
         let speed = elapsed > 0 ? r(progress / elapsed) : 0
         let dir = "\(direction)"
-        let act = action.map { "\($0.direction.rawValue)\($0.thirdWidth ? "-third" : "")\($0.nextDisplay ? "-next" : "")" } ?? "none"
-        diagnostic("fire dir=\(dir) action=\(act) dx=\(r(dx)) dy=\(r(dy)) prog=\(r(progress)) "
-            + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) cmd=\(cmdHeld) shift=\(shiftHeld)")
+        let act =
+            action.map { "\($0.direction.rawValue)\($0.thirdWidth ? "-third" : "")\($0.nextDisplay ? "-next" : "")" }
+            ?? "none"
+        diagnostic(
+            "fire dir=\(dir) action=\(act) dx=\(r(dx)) dy=\(r(dy)) prog=\(r(progress)) "
+                + "dt=\(r(elapsed)) speed=\(speed) fingers=\(fingers) cmd=\(cmdHeld) shift=\(shiftHeld)")
     }
 
     // MARK: - State transitions

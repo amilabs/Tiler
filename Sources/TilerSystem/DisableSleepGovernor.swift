@@ -57,7 +57,8 @@ import Foundation
     public func arm(deadline: Date?, onArmFailed: @escaping @MainActor () -> Void) {
         FileManager.default.createFile(atPath: Self.sentinelPath, contents: Data())
         try? FileManager.default.removeItem(atPath: Self.startedPath)
-        let script = "do shell script \(AdminShell.appleScriptLiteral(Self.armCommand(deadline: deadline)))"
+        let script =
+            "do shell script \(AdminShell.appleScriptLiteral(Self.armCommand(deadline: deadline)))"
             + " with administrator privileges"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
@@ -127,8 +128,9 @@ import Foundation
         timer.schedule(deadline: .now() + 10, repeating: 10)
         timer.setEventHandler {
             MainActor.assumeIsolated {
-                try? FileManager.default.setAttributes([.modificationDate: Date()],
-                                                       ofItemAtPath: Self.sentinelPath)
+                try? FileManager.default.setAttributes(
+                    [.modificationDate: Date()],
+                    ofItemAtPath: Self.sentinelPath)
             }
         }
         timer.resume()

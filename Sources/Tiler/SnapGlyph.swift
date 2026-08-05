@@ -85,8 +85,11 @@ enum SnapGlyphRenderer {
         if dots && r.width > 14 * f {
             NSColor.white.withAlphaComponent(0.92).setFill()
             for i in 0..<2 {
-                NSBezierPath(ovalIn: NSRect(x: r.minX + 4 * f + CGFloat(i) * 4.5 * f - 1.4 * f,
-                                            y: r.maxY - barH / 2 - 1.4 * f, width: 2.8 * f, height: 2.8 * f)).fill()
+                NSBezierPath(
+                    ovalIn: NSRect(
+                        x: r.minX + 4 * f + CGFloat(i) * 4.5 * f - 1.4 * f,
+                        y: r.maxY - barH / 2 - 1.4 * f, width: 2.8 * f, height: 2.8 * f)
+                ).fill()
             }
         }
     }
@@ -96,7 +99,8 @@ enum SnapGlyphRenderer {
         let i = inset(r, f); return NSRect(x: i.minX, y: i.minY, width: i.width * fr - 1 * f, height: i.height)
     }
     private static func rightFrac(_ r: NSRect, _ fr: CGFloat, _ f: CGFloat) -> NSRect {
-        let i = inset(r, f); return NSRect(x: i.maxX - i.width * fr + 1 * f, y: i.minY, width: i.width * fr - 1 * f, height: i.height)
+        let i = inset(r, f);
+        return NSRect(x: i.maxX - i.width * fr + 1 * f, y: i.minY, width: i.width * fr - 1 * f, height: i.height)
     }
     private static func centerFrac(_ r: NSRect, _ f: CGFloat) -> NSRect {
         let i = inset(r, f); return NSRect(x: i.minX + i.width / 3, y: i.minY, width: i.width / 3, height: i.height)
@@ -131,7 +135,9 @@ enum SnapGlyphRenderer {
         let b = NSRect(x: r.midX - bw / 2, y: r.midY - bh / 2 - 1 * f, width: bw, height: bh)
         accent.setFill(); rr(b, 3.5 * f).fill()
         let sh = NSBezierPath()
-        sh.appendArc(withCenter: NSPoint(x: b.midX, y: b.maxY), radius: bw * 0.32, startAngle: 0, endAngle: 180, clockwise: false)
+        sh.appendArc(
+            withCenter: NSPoint(x: b.midX, y: b.maxY), radius: bw * 0.32, startAngle: 0, endAngle: 180, clockwise: false
+        )
         accent.setStroke(); sh.lineWidth = 3.2 * f; sh.lineCapStyle = .round; sh.stroke()
         NSColor.white.withAlphaComponent(0.92).setFill()
         NSBezierPath(ovalIn: NSRect(x: b.midX - 1.6 * f, y: b.midY - 2.3 * f, width: 3.2 * f, height: 3.2 * f)).fill()
@@ -147,8 +153,9 @@ enum SnapGlyphRenderer {
         panelC.setFill(); rr(tgt, 4 * f).fill()
         screen(tgt, f)
         let ti = tgt.insetBy(dx: 3 * f, dy: 3 * f)
-        let half = NSRect(x: right ? ti.maxX - ti.width / 2 + 0.5 * f : ti.minX,
-                          y: ti.minY, width: ti.width / 2 - 0.5 * f, height: ti.height)
+        let half = NSRect(
+            x: right ? ti.maxX - ti.width / 2 + 0.5 * f : ti.minX,
+            y: ti.minY, width: ti.width / 2 - 0.5 * f, height: ti.height)
         pane(half, f, dots: true)
     }
 }

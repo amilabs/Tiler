@@ -6,9 +6,10 @@ import Foundation
 enum MTProbe {
     typealias MTDeviceRef = UnsafeMutableRawPointer
     // int callback(MTDeviceRef, MTTouch*, int numTouches, double timestamp, int frame)
-    typealias MTContactCallback = @convention(c) (
-        MTDeviceRef?, UnsafeMutableRawPointer?, Int32, Double, Int32
-    ) -> Int32
+    typealias MTContactCallback =
+        @convention(c) (
+            MTDeviceRef?, UnsafeMutableRawPointer?, Int32, Double, Int32
+        ) -> Int32
     typealias MTDeviceCreateListFn = @convention(c) () -> Unmanaged<CFMutableArray>?
     typealias MTRegisterContactFrameCallbackFn = @convention(c) (MTDeviceRef, MTContactCallback?) -> Void
     typealias MTDeviceStartFn = @convention(c) (MTDeviceRef, Int32) -> Void
@@ -17,10 +18,12 @@ enum MTProbe {
     nonisolated(unsafe) static var framesReceived = 0
 
     static func run(seconds: UInt32) {
-        guard let handle = dlopen(
-            "/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport",
-            RTLD_NOW
-        ) else {
+        guard
+            let handle = dlopen(
+                "/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport",
+                RTLD_NOW
+            )
+        else {
             let err = dlerror().map { String(cString: $0) } ?? "unknown"
             print("MT-PROBE: dlopen FAILED: \(err)")
             exit(1)

@@ -5,7 +5,7 @@ import Foundation
 /// password/Touch-ID prompt; the owner's daily user has no sudo, so this is the only
 /// sanctioned privileged path. Never call `sudo`.
 public enum AdminShellError: Error, Equatable {
-    case cancelled                                  // user dismissed the auth dialog
+    case cancelled  // user dismissed the auth dialog
     case failed(status: Int32, message: String)
 }
 
@@ -15,7 +15,8 @@ public enum AdminShell {
     /// inside AppleScript literals and pass through unescaped (the watchdog script is
     /// multi-line).
     public static func appleScriptLiteral(_ shell: String) -> String {
-        let escaped = shell
+        let escaped =
+            shell
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         return "\"\(escaped)\""

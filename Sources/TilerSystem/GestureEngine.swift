@@ -15,12 +15,14 @@ public final class GestureEngine: @unchecked Sendable {
     private var stagedTunables: Tunables?
     private var frameTap: (@Sendable (TouchFrame) -> Void)?
 
-    public init(recorder: TraceRecorder?,
-                tunables: Tunables = .default,
-                onDiagnostic: (@Sendable (String) -> Void)? = nil,
-                onAction: @escaping @Sendable (GestureAction) -> Void) {
+    public init(
+        recorder: TraceRecorder?,
+        tunables: Tunables = .default,
+        onDiagnostic: (@Sendable (String) -> Void)? = nil,
+        onAction: @escaping @Sendable (GestureAction) -> Void
+    ) {
         recognizer = GestureRecognizer(tunables: tunables)
-        recognizer.diagnostic = onDiagnostic   // opt-in gesture-decision logging
+        recognizer.diagnostic = onDiagnostic  // opt-in gesture-decision logging
         self.recorder = recorder
         self.onAction = onAction
     }
@@ -55,9 +57,11 @@ public final class GestureEngine: @unchecked Sendable {
 
         recorder?.append(frame)
         let flags = CGEventSource.flagsState(.hidSystemState)
-        if let action = recognizer.process(frame,
-                                           cmdHeld: flags.contains(.maskCommand),
-                                           shiftHeld: flags.contains(.maskShift)) {
+        if let action = recognizer.process(
+            frame,
+            cmdHeld: flags.contains(.maskCommand),
+            shiftHeld: flags.contains(.maskShift))
+        {
             onAction(action)
         }
     }
