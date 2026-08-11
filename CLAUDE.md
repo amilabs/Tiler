@@ -39,9 +39,10 @@ back to `main` and push when a phase completes.
   translations marked "translated". Gate before every push:
   `Scripts/check-english.sh` (tracked files + unpushed commit messages).
 - Required plugins: `flow@flow-skeleton` + `superpowers` (its dependency). If `/flow:`
-  skills are missing at session start, tell the owner before starting (the desktop GUI
-  is known to silently drop third-party-marketplace plugins; reinstall + restart cures)
-  and follow the OpenSpec lifecycle manually — it is fully described above.
+  skills are missing at session start, tell the owner before starting (current desktop
+  builds drop third-party-marketplace plugins from sessions — known upstream bug;
+  terminal `claude` sessions load flow fine) and follow the OpenSpec lifecycle
+  manually — it is fully described above.
 
 **Environment:** macOS 26.5 / Xcode 26.6 / Swift 6.3; push via SSH to
 `git@github.com:amilabs/Tiler.git`; `gh` CLI authenticated (alexnskcody) since
