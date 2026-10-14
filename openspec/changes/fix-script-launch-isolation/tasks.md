@@ -73,10 +73,15 @@ Global constraints (every task includes them):
       assertions (idle + display); `launch v` lines 88 → 88 (the only new
       non-heartbeat line, `power 32% battery`, is the installed copy's); the
       `pro.amilabs.tilerx` export hash identical; no build copy left running.
-- [ ] 6. Non-interactive verification of `Scripts/record-golden.sh`: 12 newlines
+- [x] 6. Non-interactive verification of `Scripts/record-golden.sh`: 12 newlines
       on stdin, output path in the scratch dir. Pass = it reaches `Recorded N
       frames` (N may be 0 without touches), the trace file exists, no own copy
       runs afterwards, and the task 5 log/plist/installed-copy checks hold.
+      Verified 2026-10-14 13:45Z: exit 0, all 12 steps prompted, `Recorded 0
+      frames` (no touches), the empty trace file exists, no build copy left; the
+      installed copy kept PID 90834 and both assertions; `launch v` 88 → 88 (the
+      only new non-heartbeat line, `power 30% battery`, is the installed copy's);
+      settings export identical.
 - [ ] 7. Gates: `swift build && swift test`; `swift format lint --recursive
       --strict Sources`; `zsh -n` on the four scripts; `Scripts/lib/build-copy-test.zsh`;
       `Scripts/check-english.sh`.
