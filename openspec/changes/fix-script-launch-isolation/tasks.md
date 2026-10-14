@@ -52,7 +52,7 @@ Global constraints (every task includes them):
       and the script refuses (exit 2) while sleep is disabled. Checks, labels,
       timings and `kill "$PID"` lines unchanged. `zsh -n` clean.
       Consumes: task 2.
-- [ ] 4. `Scripts/record-golden.sh`: source the helper; guard before the build;
+- [x] 4. `Scripts/record-golden.sh`: source the helper; guard before the build;
       launch `"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" --record-touches "$OUT"`;
       stop via `tiler_stop_build`; print `This copy only records (gestures off):
       windows move only if your installed Tiler is running.` before the steps.

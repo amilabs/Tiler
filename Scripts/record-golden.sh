@@ -2,20 +2,27 @@
 # USER GATE #3 helper: records a golden touch trace (tasks.md 8.1).
 # Launches Tiler with --record-touches and walks the owner through the gesture set.
 # The resulting JSONL becomes frozen test fixtures.
+# Isolated from the owner's Tiler (fix-script-launch-isolation): the recording copy is
+# this checkout's build with debug logging and gestures off — it records every frame
+# but moves no window (the installed copy, if running, acts as usual and is never
+# touched) — and is stopped by its exact path only. Refuses (exit 2) while sleep is
+# disabled.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source Scripts/lib/build-copy.zsh
+tiler_require_sleep_enabled
 
 OUT="${1:-Tests/TilerCoreTests/Fixtures/golden-$(date +%Y%m%d-%H%M%S).jsonl}"
 mkdir -p "$(dirname "$OUT")"
-BIN="build/Tiler.app/Contents/MacOS/Tiler"
 
 Scripts/make-app.sh > /dev/null
-pkill -f "$BIN" 2>/dev/null; sleep 0.5
+tiler_stop_build
 
-"$BIN" --record-touches "$OUT" > /dev/null 2>&1 &
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" --record-touches "$OUT" > /dev/null 2>&1 &
 PID=$!
 sleep 2
 echo "Recording to: $OUT"
+echo "This copy only records (gestures off): windows move only if your installed Tiler is running."
 echo "Perform each step ON THE TRACKPAD, press Enter here after each one."
 echo ""
 steps=(
