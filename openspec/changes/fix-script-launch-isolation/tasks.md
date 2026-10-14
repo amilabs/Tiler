@@ -58,7 +58,7 @@ Global constraints (every task includes them):
       windows move only if your installed Tiler is running.` before the steps.
       Steps, prompts, output-path argument and final line unchanged. `zsh -n` clean.
       Consumes: task 2.
-- [ ] 5. Live verification of `Scripts/run-acceptance.sh` with the owner's
+- [x] 5. Live verification of `Scripts/run-acceptance.sh` with the owner's
       installed copy running (`IDLE_SECONDS=20` is enough; 20 s is the documented
       minimum window). Record before/after: the installed copy's PID; whether it
       holds a power assertion (`pmset -g assertions`); the count of `launch v`
@@ -68,6 +68,11 @@ Global constraints (every task includes them):
       session ending on its own schedule), no new `launch v` line, identical hash
       (any difference is diffed and reported). The refusal path is covered by
       task 1 (sleep is never disabled on purpose for this).
+      Verified 2026-10-14 13:42–13:44Z: `ACCEPTANCE: ALL PASS` (exit 0, 1:47
+      incl. build); the installed copy kept PID 90834 and both its Prevent Sleep
+      assertions (idle + display); `launch v` lines 88 → 88 (the only new
+      non-heartbeat line, `power 32% battery`, is the installed copy's); the
+      `pro.amilabs.tilerx` export hash identical; no build copy left running.
 - [ ] 6. Non-interactive verification of `Scripts/record-golden.sh`: 12 newlines
       on stdin, output path in the scratch dir. Pass = it reaches `Recorded N
       frames` (N may be 0 without touches), the trace file exists, no own copy
