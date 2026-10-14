@@ -4,12 +4,16 @@
 #   2. idle CPU budget: every sample < 1% (IDLE_SECONDS env, default 60)
 #   3. kill -9 resilience: no orphans, clean relaunch
 # Exits non-zero on any failure. Run with the trackpad untouched.
+# Isolated from the owner's Tiler (fix-script-launch-isolation): the copy under test
+# is this checkout's build, launched with debug logging and gestures off (nothing in
+# the owner's power-debug.log, no window moves), stopped by its exact path only; the
+# installed copy is never touched. Refuses (exit 2) while sleep is disabled.
 set -uo pipefail
 cd "$(dirname "$0")/.."
+source Scripts/lib/build-copy.zsh
 
 IDLE_SECONDS="${IDLE_SECONDS:-60}"
 LOG="$(mktemp -t tiler-acceptance)"
-BIN="build/Tiler.app/Contents/MacOS/Tiler"
 FAIL=0
 
 say_result() { # $1 = 0/1, $2 = label
@@ -35,13 +39,15 @@ measure_util() { # $1 = pid, $2 = seconds; echoes percent, returns 0 if < 1%
     awk -v p="$pct" 'BEGIN{ exit (p < 1.0) ? 0 : 1 }'
 }
 
+tiler_require_sleep_enabled
+
 echo "== Building signed app bundle"
 Scripts/make-app.sh > /dev/null || { echo "FAIL: build"; exit 1; }
 
-pkill -f "$BIN" 2>/dev/null; sleep 0.5
+tiler_stop_build
 
 echo "== 1. Launch health"
-"$BIN" > "$LOG" 2>&1 &
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" > "$LOG" 2>&1 &
 PID=$!
 sleep 4
 kill -0 "$PID" 2>/dev/null; say_result $? "process alive after launch"
@@ -60,15 +66,15 @@ echo "  idle utilization: ${PCT}%"
 say_result $CPU_OK "idle CPU < 1% (measured ${PCT}%)"
 
 echo "== 3. idle CPU with the UI window OPEN and after close"
-pkill -f "$BIN" 2>/dev/null; sleep 0.5
-"$BIN" --show-guide > /dev/null 2>&1 &
+tiler_stop_build
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" --show-guide > /dev/null 2>&1 &
 PID=$!
 sleep 5
 PCT=$(measure_util "$PID" 20); OPEN_OK=$?
 echo "  open-window utilization: ${PCT}%"
 say_result $OPEN_OK "idle CPU < 1% with the window open"
-pkill -f "$BIN" 2>/dev/null; sleep 0.5
-"$BIN" --exercise-ui > /dev/null 2>&1 &
+tiler_stop_build
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" --exercise-ui > /dev/null 2>&1 &
 PID=$!
 sleep 8   # window opens, closes at 2 s, settle
 PCT=$(measure_util "$PID" 20); UI_OK=$?
@@ -77,13 +83,13 @@ say_result $UI_OK "idle CPU < 1% after opening and closing the UI"
 kill "$PID" 2>/dev/null; sleep 0.5
 
 echo "== 4. kill -9 resilience"
-"$BIN" > /dev/null 2>&1 &
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" > /dev/null 2>&1 &
 PID=$!
 sleep 2
 kill -9 "$PID" 2>/dev/null
 sleep 1
-pgrep -f "$BIN" > /dev/null && say_result 1 "no orphan after kill -9" || say_result 0 "no orphan after kill -9"
-"$BIN" > "$LOG" 2>&1 &
+tiler_build_running && say_result 1 "no orphan after kill -9" || say_result 0 "no orphan after kill -9"
+"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" > "$LOG" 2>&1 &
 PID=$!
 sleep 3
 kill -0 "$PID" 2>/dev/null; say_result $? "clean relaunch after kill -9"

@@ -42,7 +42,7 @@ Global constraints (every task includes them):
       `-powerDebugLogging <false/>` mirrors
       `TilerCopies.isolatedLaunchArguments`. Task 1 green.
       Consumes: task 1. Produces: the names above for tasks 3–4.
-- [ ] 3. `Scripts/run-acceptance.sh`: source the helper after the `cd`; call
+- [x] 3. `Scripts/run-acceptance.sh`: source the helper after the `cd`; call
       `tiler_require_sleep_enabled` before `make-app.sh`; replace `BIN` with
       `TILER_BUILD_BIN`; launch every instance as
       `"$TILER_BUILD_BIN" "${TILER_ISOLATED_ARGS[@]}" [app flags]`; replace each
