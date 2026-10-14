@@ -18,13 +18,15 @@ BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 APP="build/Tiler.app"
 
 # Universal binary (arm64 + x86_64): the fleet includes older machines that may be
-# Intel (floor is macOS 15 since lower-macos-floor). Multi-arch products land in
-# .build/apple/Products/Release, not .build/release.
+# Intel (floor is macOS 15 since lower-macos-floor). Multi-arch products do not land
+# in .build/release, and the directory moved between toolchains (Swift 6.3:
+# .build/apple/Products/Release; Swift 6.4: .build/out/Products/Release) — ask SwiftPM.
 swift build -c release --arch arm64 --arch x86_64
+BIN_DIR="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/apple/Products/Release/Tiler "$APP/Contents/MacOS/Tiler"
+cp "$BIN_DIR/Tiler" "$APP/Contents/MacOS/Tiler"
 swift Scripts/make-icons.swift --icns "$APP/Contents/Resources/AppIcon.icns" > /dev/null
 
 cat > "$APP/Contents/Info.plist" <<PLIST
