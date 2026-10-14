@@ -15,7 +15,7 @@ Global constraints (every task includes them):
 - No new installs or dependencies.
 - Commit locally; push only on the owner's go-ahead.
 
-- [ ] 1. Self-test first: `Scripts/lib/build-copy-test.zsh` (red while the helper
+- [x] 1. Self-test first: `Scripts/lib/build-copy-test.zsh` (red while the helper
       is absent). Builds a sleeper decoy with `cc` in a `mktemp -d` dir (removed by
       a trap) and copies it to `<tmp>/t.e+s(t) x/build/Tiler.app/Contents/MacOS/Tiler`
       (regex metacharacters and a space in the path), `<tmp>/other/build/…`, and
