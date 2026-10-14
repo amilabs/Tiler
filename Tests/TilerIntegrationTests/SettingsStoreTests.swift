@@ -7,22 +7,18 @@ import TilerCore
 @MainActor
 @Suite("Settings store") struct SettingsStoreTests {
 
-    private func freshDefaults() -> UserDefaults {
-        let name = "tiler-tests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
-    }
+    // A fresh, empty suite per test (one suite instance per test), removed with it.
+    private let scratch = TemporaryDefaults()
+    private var defaults: UserDefaults { scratch.defaults }
 
     @Test func defaultsSplitByGroup() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         #expect(store.gesturesEnabled)
         #expect(!store.windowHotkeysEnabled, "window tiling hotkeys are OFF by default")
         #expect(store.utilityHotkeysEnabled, "utility hotkeys (lock screen) are ON by default")
     }
 
     @Test func togglesPersistAcrossInstances() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         store.gesturesEnabled = false
         store.windowHotkeysEnabled = true
@@ -35,7 +31,7 @@ import TilerCore
     }
 
     @Test func changesNotifyObserver() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         var events: [String] = []
         store.onChange = { events.append("\($0.windowHotkeysEnabled)/\($0.utilityHotkeysEnabled)") }
         store.windowHotkeysEnabled = true
@@ -45,7 +41,7 @@ import TilerCore
     }
 
     @Test func settingSameValueDoesNotNotify() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         var count = 0
         store.onChange = { _ in count += 1 }
         store.gesturesEnabled = true   // already true
@@ -53,7 +49,6 @@ import TilerCore
     }
 
     @Test func tunablesOverridePersistsAndClears() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         #expect(store.tunablesOverride == nil)
 
@@ -70,7 +65,6 @@ import TilerCore
     }
 
     @Test func hasSeenGuideDefaultsFalseAndPersists() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         var notified = 0
         store.onChange = { _ in notified += 1 }
@@ -81,7 +75,7 @@ import TilerCore
     }
 
     @Test func tunablesOverrideNotifies() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         var count = 0
         store.onChange = { _ in count += 1 }
         store.tunablesOverride = Tunables()
@@ -92,7 +86,7 @@ import TilerCore
     // MARK: power keys (add-power-control)
 
     @Test func powerKeysDefault() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         #expect(!store.keepDisplayAwake)
         #expect(store.batteryFloorPercent == 20)
         #expect(!store.deepSleepOnBattery)
@@ -100,7 +94,6 @@ import TilerCore
     }
 
     @Test func powerKeysPersistAcrossInstances() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         store.keepDisplayAwake = true
         store.batteryFloorPercent = 10
@@ -115,7 +108,6 @@ import TilerCore
     }
 
     @Test func powerSnapshotClears() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         store.powerSnapshot = ["hibernatemode": "25"]
         #expect(SettingsStore(defaults: defaults).powerSnapshot == ["hibernatemode": "25"])
@@ -124,7 +116,7 @@ import TilerCore
     }
 
     @Test func powerTogglesNotifyExceptSnapshot() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         var count = 0
         store.onChange = { _ in count += 1 }
         store.keepDisplayAwake = true       // notify
@@ -135,7 +127,7 @@ import TilerCore
     }
 
     @Test func powerSettingSameValueDoesNotNotify() {
-        let store = SettingsStore(defaults: freshDefaults())
+        let store = SettingsStore(defaults: defaults)
         var count = 0
         store.onChange = { _ in count += 1 }
         store.keepDisplayAwake = false      // already false
@@ -145,7 +137,6 @@ import TilerCore
     }
 
     @Test func debugLoggingDefaultsFalsePersistsAndDoesNotNotify() {
-        let defaults = freshDefaults()
         let store = SettingsStore(defaults: defaults)
         var notified = 0
         store.onChange = { _ in notified += 1 }
