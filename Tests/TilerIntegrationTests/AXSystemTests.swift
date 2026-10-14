@@ -18,14 +18,17 @@ struct AXSystemTests {
         let running: NSRunningApplication
         let axApp: AXUIElement
         let window: AXUIElement
+        let document: URL
 
         /// Terminate and wait — LaunchServices errors with procNotFound (-600) if the
-        /// next open() races a dying TextEdit instance.
+        /// next open() races a dying TextEdit instance. The document goes too: a
+        /// force-killed TextEdit would otherwise reopen it at its next launch.
         func terminate() {
             running.forceTerminate()
             for _ in 0..<20 where !running.isTerminated {
                 usleep(100_000)
             }
+            try? FileManager.default.removeItem(at: document)
         }
     }
 
@@ -49,6 +52,9 @@ struct AXSystemTests {
         let config = NSWorkspace.OpenConfiguration()
         config.activates = activate
         config.createsNewApplicationInstance = true
+        // No window restoration: with "close windows when quitting" off, a force-killed
+        // TextEdit reopens earlier windows ~1 s after launch, and one may take focus.
+        config.arguments = ["-ApplePersistenceIgnoreState", "YES"]
         let running = try await NSWorkspace.shared.open(
             [doc],
             withApplicationAt: URL(fileURLWithPath: "/System/Applications/TextEdit.app"),
@@ -59,7 +65,7 @@ struct AXSystemTests {
             if let window = focusedOrFirstWindow(of: axApp) {
                 if activate { running.activate() }
                 try? await Task.sleep(nanoseconds: 400_000_000)
-                return TextEditTarget(running: running, axApp: axApp, window: window)
+                return TextEditTarget(running: running, axApp: axApp, window: window, document: doc)
             }
             try await Task.sleep(for: .milliseconds(100))
         }
@@ -117,6 +123,25 @@ struct AXSystemTests {
     @MainActor
     @Suite("WindowActions AX integration")
     struct WindowActionsSuite {
+        /// The target must be the only TextEdit window for the whole test. Tests
+        /// force-kill TextEdit, so it restores earlier targets ~1 s after launch, and a
+        /// hotkey then moved a restored window instead of the target (flaky Hotkey E2E,
+        /// 2026-10-14). The document goes with the target, so nothing is left to restore.
+        @Test func textEditTargetIsTheOnlyWindowAndLeavesNoDocument() async throws {
+            let target = try await AXSystemTests.launchTextEdit(activate: false)
+            try await Task.sleep(for: .milliseconds(1500))
+            var raw: CFTypeRef?
+            AXUIElementCopyAttributeValue(target.axApp, kAXWindowsAttribute as CFString, &raw)
+            let titles = (raw as? [AXUIElement] ?? []).map { window -> String in
+                var title: CFTypeRef?
+                AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &title)
+                return title as? String ?? "?"
+            }
+            target.terminate()
+            #expect(titles == [target.document.lastPathComponent])
+            #expect(!FileManager.default.fileExists(atPath: target.document.path))
+        }
+
         @Test func maximizeFillsVisibleFrame() async throws {
             let target = try await AXSystemTests.launchTextEdit(activate: false)
             defer { target.terminate() }
