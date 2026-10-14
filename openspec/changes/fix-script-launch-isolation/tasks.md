@@ -82,10 +82,16 @@ Global constraints (every task includes them):
       installed copy kept PID 90834 and both assertions; `launch v` 88 → 88 (the
       only new non-heartbeat line, `power 30% battery`, is the installed copy's);
       settings export identical.
-- [ ] 7. Gates: `swift build && swift test`; `swift format lint --recursive
+- [x] 7. Gates: `swift build && swift test`; `swift format lint --recursive
       --strict Sources`; `zsh -n` on the four scripts; `Scripts/lib/build-copy-test.zsh`;
       `Scripts/check-english.sh`.
-- [ ] 8. Docs: `openspec/project.md` build/test notes — one paragraph: the two
+      Verified 2026-10-14: build complete; `swift test` 55 integration + 149 core
+      passed (Hotkey E2E skipped with the live-session reason — the installed
+      copy kept PID 90834); swift-format clean; `zsh -n` clean on all four; self-
+      test ALL PASS; check-english PASS. The build's "x86_64 deprecated for
+      deployment target 27.0" warning is a toolchain notice: both slices carry
+      minos 15.0 and `LSMinimumSystemVersion` is 15.0.
+- [x] 8. Docs: `openspec/project.md` build/test notes — one paragraph: the two
       scripts launch the build by absolute path with log off / gestures off,
       never touch the installed copy, and refuse (exit 2) while sleep is
       disabled. Commit locally. (Archiving and the active-change lines move at

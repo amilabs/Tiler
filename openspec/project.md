@@ -74,13 +74,21 @@ if the run is killed. The build under test gets its settings from launch
 arguments: tests never write the owner's `pro.amilabs.tilerx` settings and never
 stop a copy by name pattern.
 
+`Scripts/run-acceptance.sh` and `Scripts/record-golden.sh` follow the same rule
+through `Scripts/lib/build-copy.zsh` (fix-script-launch-isolation; self-test
+`Scripts/lib/build-copy-test.zsh`): they launch this checkout's build by its
+absolute path with debug logging and gestures off (nothing in the owner's
+power-debug.log, no window moves; recording still captures every frame), stop
+only that exact executable, never touch the installed copy, and refuse with
+exit 2 while sleep is disabled.
+
 ## Active changes
 
 - `fix-e2e-test-isolation` (2026-10-14, test harness only, no spec delta): the
   Hotkey E2E stops killing the owner's installed Tiler, skips without a build,
   and no longer writes the owner's settings.
-- `fix-script-launch-isolation` (2026-10-14, designed — awaiting owner approval;
-  developer scripts only, no spec delta): `Scripts/run-acceptance.sh` and
+- `fix-script-launch-isolation` (2026-10-14, approved and implemented — awaiting
+  acceptance; developer scripts only, no spec delta): `Scripts/run-acceptance.sh` and
   `Scripts/record-golden.sh` launch the build by absolute path with debug log and
   gestures off, stop only that build, never touch the installed copy, and refuse
   while sleep is disabled. Depends on `fix-e2e-test-isolation`.

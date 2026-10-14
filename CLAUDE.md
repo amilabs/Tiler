@@ -6,7 +6,7 @@
    **`fix-e2e-test-isolation`** (2026-10-14, test harness only: the Hotkey E2E
    parks and relaunches the owner's installed Tiler instead of killing it, skips
    without a build, never writes the owner's settings) and, designed on top of
-   it, **`fix-script-launch-isolation`** (awaiting approval: run-acceptance /
+   it, **`fix-script-launch-isolation`** (implemented, awaiting acceptance: run-acceptance /
    record-golden launch the build isolated and stop only that build) — latest shipped: `add-noarm-diagnostics` as v0.3.6 (2026-08-01, noarm + near= diagnostics for never-arming attempts), `improve-failure-attribution` as v0.3.5 (reject raw= + window-failure why/app; AX grant survives installs), `fix-rebuild-gesture-loss` + `rename-deep-sleep-battery` as v0.3.4 (polite display-change rebuilds + reject diagnostics + honest Deep Sleep naming), `add-conflict-indicators` as v0.3.3 (2026-07-17,
    colored menu/tab conflict marks gated on gesturesEnabled), `lower-macos-floor`
    as v0.3.2 (launch floor 15 + universal; target/tested OS stays macOS 26 — owner
