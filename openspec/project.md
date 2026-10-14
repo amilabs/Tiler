@@ -78,8 +78,15 @@ stop a copy by name pattern.
 
 - `fix-e2e-test-isolation` (2026-10-14, test harness only, no spec delta): the
   Hotkey E2E stops killing the owner's installed Tiler, skips without a build,
-  and no longer writes the owner's settings. Start other new work as a fresh
-  change folder (kebab-case) with proposal/design/tasks/spec deltas.
+  and no longer writes the owner's settings.
+- `fix-script-launch-isolation` (2026-10-14, designed — awaiting owner approval;
+  developer scripts only, no spec delta): `Scripts/run-acceptance.sh` and
+  `Scripts/record-golden.sh` launch the build by absolute path with debug log and
+  gestures off, stop only that build, never touch the installed copy, and refuse
+  while sleep is disabled. Depends on `fix-e2e-test-isolation`.
+
+Start other new work as a fresh change folder (kebab-case) with
+proposal/design/tasks/spec deltas.
 
 Archived: `2026-08-01-add-noarm-diagnostics` (v0.3.6: noarm lines for saw-3-never-armed sessions + near= hover counts in rejects — the never-arming attempts made visible), `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
 `raw=` — size-filter vs physical-lift discriminator for the up-swipe issue;
