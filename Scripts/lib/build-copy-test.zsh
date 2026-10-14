@@ -27,8 +27,17 @@ alive() {
     [[ "$state" != Z* ]]
 }
 
-print -r -- '#include <unistd.h>
-int main(void) { sleep(300); return 0; }' > "$TMP/decoy.c"
+# Like the app, a decoy takes a moment to quit on SIGTERM (0.6 s), so the stop must wait.
+print -r -- '#include <signal.h>
+#include <unistd.h>
+static volatile sig_atomic_t term = 0;
+static void on_term(int sig) { (void)sig; term = 1; }
+int main(void) {
+    signal(SIGTERM, on_term);
+    for (int i = 0; i < 3000 && !term; i++) usleep(100000);
+    if (term) usleep(600000);
+    return 0;
+}' > "$TMP/decoy.c"
 cc -o "$TMP/decoy" "$TMP/decoy.c" || { echo "FAIL: cannot build the decoy"; exit 1; }
 
 # Regex metacharacters and a space in the checkout path prove the escaping.

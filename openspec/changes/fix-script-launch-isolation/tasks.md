@@ -35,7 +35,7 @@ Global constraints (every task includes them):
       Prints `PASS:`/`FAIL:` lines and exits non-zero on any failure; kills every
       decoy it started.
       Produces: the executable spec for task 2.
-- [ ] 2. Helper `Scripts/lib/build-copy.zsh` per design.md (names and contracts
+- [x] 2. Helper `Scripts/lib/build-copy.zsh` per design.md (names and contracts
       exactly: `TILER_BUILD_BIN`, `TILER_BUILD_PATTERN`, `TILER_ISOLATED_ARGS`,
       `tiler_build_running`, `tiler_stop_build`, `tiler_sleep_disabled`,
       `tiler_require_sleep_enabled`); header comment names its consumers and that
