@@ -27,6 +27,19 @@ struct TilerCopiesTests {
         #expect(!TilerCopies.isBuildUnderTest(nil, buildBinary: build))
     }
 
+    /// Another checkout's build runs with its own launch arguments (another session's
+    /// E2E or acceptance script); parking it would relaunch it without them, so the
+    /// suite skips instead. The installed copy is parked as before.
+    @Test func onlyOtherCheckoutBuildsCountAsAnotherCheckoutsBuild() {
+        let other = URL(fileURLWithPath: "/Users/x/Tiler/.claude/worktrees/w/build/Tiler.app")
+        let installed = URL(fileURLWithPath: "/Users/x/Applications/Tiler.app")
+        let own = URL(fileURLWithPath: "/Users/x/Tiler/build/Tiler.app")
+        #expect(TilerCopies.isAnotherCheckoutsBuild(other, buildBinary: build))
+        #expect(!TilerCopies.isAnotherCheckoutsBuild(installed, buildBinary: build))
+        #expect(!TilerCopies.isAnotherCheckoutsBuild(own, buildBinary: build))
+        #expect(!TilerCopies.isAnotherCheckoutsBuild(nil, buildBinary: build))
+    }
+
     // MARK: - Live session detection
 
     /// Every Prevent Sleep session holds an IOPM assertion; the lookup must attribute
@@ -94,6 +107,42 @@ struct TilerCopiesTests {
         watched.terminate()
         watched.waitUntilExit()
         #expect(!(try await waitForFile(marker, seconds: 2.5)), "a disarmed sentinel still fired")
+    }
+
+    /// When only the runner dies (a tool timeout kills its PID), the build under test
+    /// survives and keeps the hotkeys; the sentinel's command stops exactly that build
+    /// before relaunching parked copies, and nothing else.
+    @Test func relaunchCommandStopsOnlyTheBuildUnderTestFirst() async throws {
+        // Decoys run the real /bin/sleep under a fake argv[0]: pkill -f sees only argv,
+        // and a copied system binary would be killed by launch constraints.
+        let root = "/nonexistent/tiler-relaunch-\(UUID().uuidString)"
+        let own = URL(fileURLWithPath: "\(root)/t.e+s(t)/build/Tiler.app/Contents/MacOS/Tiler")
+        let other = URL(fileURLWithPath: "\(root)/other/build/Tiler.app/Contents/MacOS/Tiler")
+        func decoy(_ argv0: URL) throws -> Process {
+            let run = Process()
+            run.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            run.arguments = ["-c", #"exec -a "$0" /bin/sleep 30"#, argv0.path]
+            try run.run()
+            return run
+        }
+        let ownRun = try decoy(own)
+        let otherRun = try decoy(other)
+        defer {
+            ownRun.terminate()
+            otherRun.terminate()
+            otherRun.waitUntilExit()
+        }
+        try await Task.sleep(for: .milliseconds(200))  // let zsh exec into sleep
+
+        let command = TilerCopies.relaunchCommand(stopping: own, thenOpening: [])
+        let shell = Process()
+        shell.executableURL = URL(fileURLWithPath: command[0])
+        shell.arguments = Array(command.dropFirst())
+        try shell.run()
+        shell.waitUntilExit()
+        ownRun.waitUntilExit()  // returns only once the build under test is gone
+        #expect(ownRun.terminationReason == .uncaughtSignal)
+        #expect(otherRun.isRunning, "another checkout's build was stopped too")
     }
 
     /// Ctrl-C and tool timeouts signal the whole process group of the test run; the

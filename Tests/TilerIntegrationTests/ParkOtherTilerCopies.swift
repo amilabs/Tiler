@@ -20,10 +20,14 @@ struct ParkOtherTilerCopies: SuiteTrait, TestScoping {
         if TilerCopies.otherCopyHoldsPowerAssertion() || DisableSleepGovernor.sleepDisabledNow() {
             throw Refused(description: "a Prevent Sleep session started after planning; not parking Tiler")
         }
+        if TilerCopies.anotherCheckoutsBuildRuns() {
+            throw Refused(description: "another checkout's build started after planning; not parking it")
+        }
         let bundles = TilerCopies.otherCopies().compactMap(\.bundleURL)
-        let sentinel =
-            bundles.isEmpty
-            ? nil : TilerCopies.armSentinel(watching: getpid(), run: ["/usr/bin/open", "-g"] + bundles.map(\.path))
+        // Armed even with nothing to relaunch: it still stops a build under test that
+        // outlives a killed runner.
+        let sentinel = TilerCopies.armSentinel(
+            watching: getpid(), run: TilerCopies.relaunchCommand(stopping: TilerCopies.buildBinary, thenOpening: bundles))
         let parked = await TilerCopies.parkOtherCopies()
 
         var failure: (any Error)?

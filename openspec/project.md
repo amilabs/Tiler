@@ -67,36 +67,33 @@ Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to
 
 On an AX-trusted host `swift test` also runs the Hotkey E2E against this
 checkout's `build/Tiler.app` (fix-e2e-test-isolation). It is skipped without a
-build, or while another Tiler copy holds a live Prevent Sleep session / sleep is
-disabled. Otherwise every other running copy (the owner's installed app) is quit
-for the suite and relaunched afterwards; a detached sentinel relaunches it even
-if the run is killed. The build under test gets its settings from launch
-arguments: tests never write the owner's `pro.amilabs.tilerx` settings and never
-stop a copy by name pattern.
+build, while another checkout's build runs, or while another Tiler copy holds a
+live Prevent Sleep session / sleep is disabled. Otherwise every other running copy
+(the owner's installed app) is quit for the suite and relaunched afterwards; a
+detached sentinel stops a surviving build under test and relaunches the parked
+copies even if the run is killed. The build under test gets its settings from
+launch arguments: tests never write the owner's `pro.amilabs.tilerx` settings and
+never stop a copy by name pattern. TextEdit test targets launch without window
+restoration and delete their document.
 
-`Scripts/run-acceptance.sh` and `Scripts/record-golden.sh` follow the same rule
+`Scripts/run-acceptance.sh` and `Scripts/record-golden.sh` isolate their copy
 through `Scripts/lib/build-copy.zsh` (fix-script-launch-isolation; self-test
 `Scripts/lib/build-copy-test.zsh`): they launch this checkout's build by its
 absolute path with debug logging and gestures off (nothing in the owner's
-power-debug.log, no window moves; recording still captures every frame), stop
-only that exact executable, never touch the installed copy, and refuse with
-exit 2 while sleep is disabled.
+power-debug.log, no window moves; the recorder still receives frames — code-level
+evidence until the next real recording), stop only that exact executable (a
+`pkill -f` regex anchored to its escaped absolute path), never touch the installed
+copy, and refuse with exit 2 while sleep is disabled.
 
 ## Active changes
 
-- `fix-e2e-test-isolation` (2026-10-14, test harness only, no spec delta): the
-  Hotkey E2E stops killing the owner's installed Tiler, skips without a build,
-  and no longer writes the owner's settings.
-- `fix-script-launch-isolation` (2026-10-14, approved and implemented — awaiting
-  acceptance; developer scripts only, no spec delta): `Scripts/run-acceptance.sh` and
-  `Scripts/record-golden.sh` launch the build by absolute path with debug log and
-  gestures off, stop only that build, never touch the installed copy, and refuse
-  while sleep is disabled. Depends on `fix-e2e-test-isolation`.
+- None. Start new work as a fresh change folder (kebab-case) with
+  proposal/design/tasks/spec deltas.
 
-Start other new work as a fresh change folder (kebab-case) with
-proposal/design/tasks/spec deltas.
-
-Archived: `2026-08-01-add-noarm-diagnostics` (v0.3.6: noarm lines for saw-3-never-armed sessions + near= hover counts in rejects — the never-arming attempts made visible), `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
+Archived: `2026-10-14-fix-e2e-test-isolation` + `2026-10-14-fix-script-launch-isolation`
+(test harness and developer scripts only, no release: the Hotkey E2E parks and
+relaunches the owner's Tiler instead of killing it; run-acceptance / record-golden
+launch their copy isolated and stop only that build), `2026-08-01-add-noarm-diagnostics` (v0.3.6: noarm lines for saw-3-never-armed sessions + near= hover counts in rejects — the never-arming attempts made visible), `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
 `raw=` — size-filter vs physical-lift discriminator for the up-swipe issue;
 `window ok=false` carries `why=` + frontmost app id; stale "re-confirm AX after
 install" advice dropped everywhere — grant survives, field-confirmed),

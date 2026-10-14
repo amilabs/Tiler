@@ -45,7 +45,7 @@ for step in "${steps[@]}"; do
     read -r "?      done? [Enter] "
     i=$((i+1))
 done
-kill "$PID" 2>/dev/null
+kill "$PID" 2>/dev/null || true  # the recorder may already be gone; still report
 sleep 0.5
 LINES=$(wc -l < "$OUT" | tr -d ' ')
 echo ""

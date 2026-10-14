@@ -41,6 +41,21 @@ enum TilerCopies {
         url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 
+    /// Another checkout's `build/Tiler.app` (another session's E2E or acceptance script).
+    /// It runs on launch arguments a relaunch could not restore, so it is never parked:
+    /// the suite skips while one runs.
+    static func isAnotherCheckoutsBuild(_ bundle: URL?, buildBinary: URL = buildBinary) -> Bool {
+        guard let bundle else { return false }
+        let path = canonicalPath(bundle)
+        let ownBundle = canonicalPath(
+            buildBinary.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent())
+        return path.hasSuffix("/build/Tiler.app") && path != ownBundle
+    }
+
+    static func anotherCheckoutsBuildRuns(bundleID: String = bundleID) -> Bool {
+        otherCopies(bundleID: bundleID).contains { isAnotherCheckoutsBuild($0.bundleURL) }
+    }
+
     /// A fresh LaunchServices query (NSWorkspace.runningApplications only refreshes
     /// while a main run loop spins, which the test runner does not guarantee).
     static func otherCopies(bundleID: String = bundleID, buildBinary: URL = buildBinary) -> [NSRunningApplication] {
@@ -153,6 +168,15 @@ enum TilerCopies {
             var status: Int32 = 0
             waitpid(pid, &status, 0)
         }
+    }
+
+    /// The sentinel's command: first SIGKILL any surviving copy of `build` (it outlives a
+    /// runner killed alone and would keep the hotkeys), matched by its anchored, escaped
+    /// path like Scripts/lib/build-copy.zsh, then `open -g` the parked bundles.
+    static func relaunchCommand(stopping build: URL, thenOpening bundles: [URL]) -> [String] {
+        let escaped = build.path.map { #"[]\.^$*+?(){}|"#.contains($0) ? "\\\($0)" : "\($0)" }.joined()
+        let script = #"/usr/bin/pkill -9 -f "$1"; shift; [ $# -eq 0 ] || exec /usr/bin/open -g "$@""#
+        return ["/bin/sh", "-c", script, "tiler-e2e-relaunch", "^\(escaped)( |$)"] + bundles.map(\.path)
     }
 
     static func armSentinel(watching watched: pid_t, run command: [String]) -> Sentinel? {

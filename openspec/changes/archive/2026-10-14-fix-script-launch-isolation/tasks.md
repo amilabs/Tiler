@@ -100,3 +100,11 @@ Global constraints (every task includes them):
 No `[USER GATE]`: every verification above runs without the owner. The next
 real golden recording confirms frames arrive with gestures off (code-level
 evidence: `GestureEngine.handle` appends each frame before routing).
+
+## Acceptance (2026-10-14)
+
+Accepted together with `fix-e2e-test-isolation`. Plan review: no blockers; the
+project.md note was reworded (the scripts stop by an anchored `pkill -f` regex, and
+"records every frame" is code-level evidence until the next real recording). Code
+review: `record-golden.sh` no longer ends silently under `set -e` when the recorder
+is already gone at the final `kill`.

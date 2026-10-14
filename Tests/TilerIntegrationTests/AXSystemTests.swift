@@ -69,6 +69,8 @@ struct AXSystemTests {
             }
             try await Task.sleep(for: .milliseconds(100))
         }
+        // A failed attempt must not linger: its window could still appear and take focus.
+        TextEditTarget(running: running, axApp: axApp, window: axApp, document: doc).terminate()
         throw CancellationError()
     }
 
@@ -303,6 +305,9 @@ struct AXSystemTests {
         .disabled(
             if: TilerCopies.otherCopyHoldsPowerAssertion(),
             "another Tiler copy holds a live Prevent Sleep session; parking it would end the session"),
+        .disabled(
+            if: TilerCopies.anotherCheckoutsBuildRuns(),
+            "another checkout's build runs (another session's test or script); a relaunch would drop its launch arguments"),
         .disabled(
             if: DisableSleepGovernor.sleepDisabledNow(),
             "sleep is disabled (lid-closed session or leftover flag); the build would stop at its alert"),
