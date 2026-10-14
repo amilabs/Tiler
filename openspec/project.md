@@ -65,10 +65,21 @@ Scripts/make-app.sh         # assemble + codesign Tiler.app (release)
 Scripts/run-acceptance.sh   # integration/acceptance suites (needs AX granted to host)
 ```
 
+On an AX-trusted host `swift test` also runs the Hotkey E2E against this
+checkout's `build/Tiler.app` (fix-e2e-test-isolation). It is skipped without a
+build, or while another Tiler copy holds a live Prevent Sleep session / sleep is
+disabled. Otherwise every other running copy (the owner's installed app) is quit
+for the suite and relaunched afterwards; a detached sentinel relaunches it even
+if the run is killed. The build under test gets its settings from launch
+arguments: tests never write the owner's `pro.amilabs.tilerx` settings and never
+stop a copy by name pattern.
+
 ## Active changes
 
-- None. Start new work as a fresh change folder (kebab-case) with
-  proposal/design/tasks/spec deltas.
+- `fix-e2e-test-isolation` (2026-10-14, test harness only, no spec delta): the
+  Hotkey E2E stops killing the owner's installed Tiler, skips without a build,
+  and no longer writes the owner's settings. Start other new work as a fresh
+  change folder (kebab-case) with proposal/design/tasks/spec deltas.
 
 Archived: `2026-08-01-add-noarm-diagnostics` (v0.3.6: noarm lines for saw-3-never-armed sessions + near= hover counts in rejects — the never-arming attempts made visible), `2026-08-01-improve-failure-attribution` (v0.3.5: reject lines carry
 `raw=` — size-filter vs physical-lift discriminator for the up-swipe issue;

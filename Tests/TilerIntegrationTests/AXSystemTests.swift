@@ -264,43 +264,70 @@ struct AXSystemTests {
     /// (CGEventPost does NOT reach Carbon RegisterEventHotKey on this macOS) and must
     /// move the frontmost TextEdit window. Needs AX + Automation (osascript → System
     /// Events). Posts real global key events — don't type while this runs.
+    ///
+    /// Isolation (fix-e2e-test-isolation): runs only when this checkout has a build;
+    /// every other running Tiler copy (normally the owner's installed app) is parked for
+    /// the suite and relaunched afterwards, so only the build under test holds the
+    /// hotkeys; and the suite is skipped rather than end a live Prevent Sleep session.
+    /// The build under test takes its settings from launch arguments — nothing is
+    /// written to the owner's settings.
     @MainActor
-    @Suite("Hotkey E2E")
+    @Suite(
+        "Hotkey E2E",
+        .enabled(if: TilerCopies.isBuilt, "no build/Tiler.app in this checkout (Scripts/make-app.sh)"),
+        .disabled(
+            if: TilerCopies.otherCopyHoldsPowerAssertion(),
+            "another Tiler copy holds a live Prevent Sleep session; parking it would end the session"),
+        .disabled(
+            if: DisableSleepGovernor.sleepDisabledNow(),
+            "sleep is disabled (lid-closed session or leftover flag); the build would stop at its alert"),
+        .parkingOtherTilerCopies)
     struct HotkeyE2ESuite {
-        // Package root derived from this file's path (cwd is unreliable under
-        // `swift test`): Tests/TilerIntegrationTests/AXSystemTests.swift → up 3.
-        private static let tilerBinary: URL = {
-            URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent()   // TilerIntegrationTests
-                .deletingLastPathComponent()   // Tests
-                .deletingLastPathComponent()   // package root
-                .appendingPathComponent("build/Tiler.app/Contents/MacOS/Tiler")
-        }()
-
-        private func launchTiler() throws -> Process {
-            let kill = Process()
-            kill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            kill.arguments = ["-f", "Tiler.app/Contents/MacOS/Tiler"]
-            try? kill.run()
-            kill.waitUntilExit()
-
-            // Window hotkeys are OFF by default (split-hotkey-groups): enable them
-            // for the instance under test, then restore the user's value — the
-            // launched process has already read its settings by then.
-            let domain = UserDefaults(suiteName: "pro.amilabs.tilerx")!
-            let prior = domain.object(forKey: "windowHotkeysEnabled")
-            domain.set(true, forKey: "windowHotkeysEnabled")
-
+        /// Stops only leftovers of this checkout's build — never another copy by name
+        /// (the 2026-10-14 `pkill -f Tiler.app/...` also killed the owner's app).
+        private func launchTiler(standardError: Pipe? = nil) async throws -> Process {
+            await TilerCopies.stopBuildUnderTest()
             let process = Process()
-            process.executableURL = Self.tilerBinary
+            process.executableURL = TilerCopies.buildBinary
+            process.arguments = TilerCopies.isolatedLaunchArguments
+            if let standardError { process.standardError = standardError }
             try process.run()
-            usleep(900_000)
-            if let prior {
-                domain.set(prior, forKey: "windowHotkeysEnabled")
-            } else {
-                domain.removeObject(forKey: "windowHotkeysEnabled")
-            }
+            try await Task.sleep(for: .milliseconds(900))
             return process
+        }
+
+        /// The owner's stored values for the keys the build under test overrides.
+        private static func storedOverriddenSettings() -> [String: String] {
+            let domain = UserDefaults.standard.persistentDomain(forName: TilerCopies.bundleID) ?? [:]
+            var values: [String: String] = [:]
+            for key in ["windowHotkeysEnabled", "powerDebugLogging"] {
+                values[key] = domain[key].map { "\($0)" } ?? "absent"
+            }
+            return values
+        }
+
+        private static func ownerLogSize() -> Int? {
+            let log = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Logs/Tiler/power-debug.log")
+            return (try? FileManager.default.attributesOfItem(atPath: log.path))?[.size] as? Int
+        }
+
+        /// Window hotkeys come on from the launch arguments alone (the stored default is
+        /// OFF); the owner's stored settings and debug log stay untouched. Other copies
+        /// are parked here, so nothing else writes either of them meanwhile.
+        @Test func buildUnderTestRunsOnLaunchArgumentsWithoutTouchingOwnerState() async throws {
+            let storedBefore = Self.storedOverriddenSettings()
+            let logBefore = Self.ownerLogSize()
+            let output = Pipe()
+            let tiler = try await launchTiler(standardError: output)
+            try await Task.sleep(for: .milliseconds(600))
+            tiler.terminate()
+            tiler.waitUntilExit()
+
+            let log = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+            #expect(log.contains("hotkeys configured (window: on"), "window hotkeys not on: \(log)")
+            #expect(Self.storedOverriddenSettings() == storedBefore, "the owner's stored settings changed")
+            #expect(Self.ownerLogSize() == logBefore, "the build under test wrote the owner's debug log")
         }
 
         private func refocus(_ target: AXSystemTests.TextEditTarget) {
@@ -338,7 +365,7 @@ struct AXSystemTests {
         }
 
         @Test func ctrlShiftLeftSnapsFrontmostWindowToLeftHalf() async throws {
-            let tiler = try launchTiler()
+            let tiler = try await launchTiler()
             defer { tiler.terminate() }
             try await Task.sleep(nanoseconds: 1_500_000_000)
             let target = try await AXSystemTests.launchTextEdit(activate: true)
@@ -355,7 +382,7 @@ struct AXSystemTests {
         }
 
         @Test func singleUpPressMaximizesOnceAfterDisambiguationDelay() async throws {
-            let tiler = try launchTiler()
+            let tiler = try await launchTiler()
             defer { tiler.terminate() }
             try await Task.sleep(nanoseconds: 1_500_000_000)
             let target = try await AXSystemTests.launchTextEdit(activate: true)
@@ -374,7 +401,7 @@ struct AXSystemTests {
         }
 
         @Test func doubleUpPressGivesCenterThirdAndNeverMaximizes() async throws {
-            let tiler = try launchTiler()
+            let tiler = try await launchTiler()
             defer { tiler.terminate() }
             try await Task.sleep(nanoseconds: 1_500_000_000)
             let target = try await AXSystemTests.launchTextEdit(activate: true)
@@ -392,7 +419,7 @@ struct AXSystemTests {
         }
 
         @Test func restoreHotkeyReturnsPreTilerFrame() async throws {
-            let tiler = try launchTiler()
+            let tiler = try await launchTiler()
             defer { tiler.terminate() }
             try await Task.sleep(nanoseconds: 1_500_000_000)
             let target = try await AXSystemTests.launchTextEdit(activate: true)
